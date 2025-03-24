@@ -1,6 +1,6 @@
 import React from "react"
 import { List } from "@chakra-ui/react"
-import { TOKEN_AMOUNT_FIELD_NAME } from "#/components/shared/TokenAmountForm/TokenAmountFormBase"
+import { TOKEN_AMOUNT_FIELD_NAME } from "#/components/TokenAmountForm/TokenAmountFormBase"
 import {
   useFormField,
   useMinWithdrawAmount,
@@ -8,8 +8,8 @@ import {
 } from "#/hooks"
 import { ACTION_FLOW_TYPES, CurrencyType } from "#/types"
 import { currencies } from "#/constants"
-import FeesDetailsAmountItem from "#/components/shared/FeesDetails/FeesDetailsAmountItem"
-import TransactionDetailsAmountItem from "#/components/shared/TransactionDetails/TransactionDetailsAmountItem"
+import FeesDetailsAmountItem from "#/components/FeesDetails/FeesDetailsAmountItem"
+import TransactionDetailsAmountItem from "#/components/TransactionDetails/TransactionDetailsAmountItem"
 import FeesTooltip from "../../FeesTooltip"
 
 function UnstakeDetails({ currency }: { currency: CurrencyType }) {

@@ -12,7 +12,7 @@ import { time } from "#/constants"
 import ConfettiExplosion from "react-confetti-explosion"
 import { BaseModalProps } from "#/types"
 import withBaseModal from "./ModalRoot/withBaseModal"
-import AnimatedNumber from "./shared/AnimatedNumber"
+import AnimatedNumber from "./AnimatedNumber"
 
 const MotionBox = motion(Box)
 

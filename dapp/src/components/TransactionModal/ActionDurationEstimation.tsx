@@ -3,7 +3,7 @@ import { ActivityType } from "#/types"
 import { activitiesUtils } from "#/utils"
 import { useFormField } from "#/hooks"
 import { Text } from "@chakra-ui/react"
-import { TOKEN_AMOUNT_FIELD_NAME } from "../shared/TokenAmountForm/TokenAmountFormBase"
+import { TOKEN_AMOUNT_FIELD_NAME } from "../TokenAmountForm/TokenAmountFormBase"
 
 export default function ActionDurationEstimation({
   type,

@@ -28,7 +28,7 @@ import { IconArrowNarrowRight } from "@tabler/icons-react"
 import { AnimatePresence, Variants, motion } from "framer-motion"
 import ArrivingSoonTooltip from "../ArrivingSoonTooltip"
 import ConnectWalletStatusLabel from "./ConnectWalletStatusLabel"
-import Spinner from "../shared/Spinner"
+import Spinner from "../Spinner"
 import { ConnectionAlert } from "./ConnectWalletAlert"
 
 type ConnectWalletButtonProps = {

@@ -1,6 +1,6 @@
 import React from "react"
 import { HStack, Text } from "@chakra-ui/react"
-import Countdown from "#/components/shared/Countdown"
+import Countdown from "#/components/Countdown"
 import { logPromiseFailure } from "#/utils"
 import { useAcrePointsData, useUserPointsData } from "#/hooks"
 import LabelWrapper from "./LabelWrapper"

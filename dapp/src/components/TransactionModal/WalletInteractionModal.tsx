@@ -13,7 +13,7 @@ import {
 import { AcreSignIcon } from "#/assets/icons"
 import { useActionFlowType, useConnector, useIsEmbed } from "#/hooks"
 import { ACTION_FLOW_TYPES, DappMode } from "#/types"
-import { Alert, AlertIcon } from "../shared/Alert"
+import { Alert, AlertIcon } from "../Alert"
 
 const ICON_STYLES = {
   boxSize: 14,

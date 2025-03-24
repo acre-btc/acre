@@ -11,12 +11,12 @@ import {
   Text,
 } from "@chakra-ui/react"
 import { CableWithPlugIcon } from "#/assets/icons"
-import IconWrapper from "#/components/shared/IconWrapper"
+import IconWrapper from "#/components/IconWrapper"
 import { timeUtils, numbersUtils } from "#/utils"
 import { useCountdown } from "#/hooks"
 import { time } from "#/constants"
 import { IconShieldCheckFilled, IconX } from "@tabler/icons-react"
-import Skeleton from "#/components/shared/Skeleton"
+import Skeleton from "#/components/Skeleton"
 
 const getCounterData = (minutes: string, seconds: string) => {
   const isLessThanMinute = parseInt(minutes, 10) <= 0

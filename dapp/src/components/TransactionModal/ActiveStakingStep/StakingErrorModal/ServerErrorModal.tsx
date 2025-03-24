@@ -13,13 +13,13 @@ import {
 } from "@chakra-ui/react"
 import { CableWithPlugIcon } from "#/assets/icons"
 import { externalHref } from "#/constants"
-import IconWrapper from "#/components/shared/IconWrapper"
+import IconWrapper from "#/components/IconWrapper"
 import {
   IconBrandDiscordFilled,
   IconReload,
   IconServerBolt,
 } from "@tabler/icons-react"
-// import TooltipIcon from "#/components/shared/TooltipIcon"
+// import TooltipIcon from "#/components/TooltipIcon"
 
 export default function ServerErrorModal({
   isLoading,

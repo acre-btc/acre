@@ -10,8 +10,8 @@ import {
 } from "@chakra-ui/react"
 import { useStatistics } from "#/hooks"
 import { BitcoinIcon } from "#/assets/icons"
-import CurrencyBalance from "#/components/shared/CurrencyBalance"
-import ProgressBar from "#/components/shared/ProgressBar"
+import CurrencyBalance from "#/components/CurrencyBalance"
+import ProgressBar from "#/components/ProgressBar"
 
 type AcreTVLProgressProps = StackProps
 

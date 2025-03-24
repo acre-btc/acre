@@ -13,7 +13,7 @@ import {
   Text,
 } from "@chakra-ui/react"
 import { acrePointsCardPlaceholder } from "#/assets/images"
-import UserDataSkeleton from "#/components/shared/UserDataSkeleton"
+import UserDataSkeleton from "#/components/UserDataSkeleton"
 import {
   IconArrowUpRight,
   IconPlayerTrackNextFilled,

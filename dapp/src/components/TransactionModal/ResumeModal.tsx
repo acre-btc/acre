@@ -7,11 +7,10 @@ import {
   HStack,
   Text,
 } from "@chakra-ui/react"
-
-import Spinner from "#/components/shared/Spinner"
 import { PauseIcon } from "#/assets/icons"
 import { useActionFlowPause, useActionFlowType } from "#/hooks"
 import { ACTION_FLOW_TYPES, BaseModalProps } from "#/types"
+import Spinner from "../Spinner"
 
 export default function ResumeModal({ closeModal }: BaseModalProps) {
   const { handleResume } = useActionFlowPause()

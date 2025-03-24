@@ -6,11 +6,11 @@ import {
   PaginationFooter,
   PaginationPage,
   PaginationStatus,
-} from "#/components/shared/Pagination"
-import CurrencyBalance from "#/components/shared/CurrencyBalance"
+} from "#/components/Pagination"
+import CurrencyBalance from "#/components/CurrencyBalance"
 import { timeUtils, activitiesUtils } from "#/utils"
 import { Activity } from "#/types"
-import BlockExplorerLink from "#/components/shared/BlockExplorerLink"
+import BlockExplorerLink from "#/components/BlockExplorerLink"
 import { IconArrowUpRight } from "@tabler/icons-react"
 import { useActivities, useMobileMode } from "#/hooks"
 import { semanticTokens } from "#/theme/utils"

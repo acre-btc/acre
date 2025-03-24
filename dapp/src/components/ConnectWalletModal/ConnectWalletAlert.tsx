@@ -8,7 +8,7 @@ import {
   AlertTitle,
   AlertIcon,
   AlertProps,
-} from "../shared/Alert"
+} from "../Alert"
 
 export enum ConnectionAlert {
   Rejected = "REJECTED",

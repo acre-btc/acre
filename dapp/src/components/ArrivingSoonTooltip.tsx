@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react"
-import Tooltip from "./shared/Tooltip"
+import Tooltip from "./Tooltip"
 
 export default function ArrivingSoonTooltip({
   label,
