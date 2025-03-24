@@ -205,8 +205,9 @@ export default function ConnectWalletButton({
       <CardHeader>
         <ArrivingSoonTooltip shouldDisplayTooltip={connector.isDisabled}>
           <Button
-            variant="ghost"
+            variant="unstyled"
             boxSize="full"
+            display="flex"
             justifyContent="start"
             p={6}
             onClick={handleButtonClick}

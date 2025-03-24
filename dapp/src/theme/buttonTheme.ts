@@ -1,167 +1,197 @@
-import {
-  ComponentSingleStyleConfig,
-  defineStyle,
-  StyleFunctionProps,
-} from "@chakra-ui/react"
+import { defineStyle, defineStyleConfig } from "@chakra-ui/react"
 
-// TODO: should be updated when style guide will be ready
+const baseStyle = defineStyle({
+  borderRadius: "sm",
+  gap: 1,
+})
+
+const loadingStyles = defineStyle({
+  _disabled: {
+    bg: "ivoire.30",
+    color: "brown.100",
+    opacity: 1,
+  },
+})
+
+const disabledStyles = defineStyle({
+  opacity: 1,
+  color: "brown.40",
+  bg: "brown.20",
+})
+
+const variantSolidAcre = defineStyle(() => ({
+  bg: "acre.50",
+  color: "ivoire.10",
+
+  _loading: loadingStyles,
+  _disabled: disabledStyles,
+  _active: { bg: "acre.80" },
+  _hover: {
+    bg: "acre.60",
+    _disabled: disabledStyles,
+  },
+}))
+
+const variantSolidBrown = defineStyle(() => ({
+  bg: "brown.80",
+  color: "ivoire.10",
+
+  _loading: loadingStyles,
+  _disabled: disabledStyles,
+  _active: { bg: "black" },
+  _hover: {
+    bg: "brown.90",
+    _disabled: disabledStyles,
+  },
+}))
+
+const variantSolidIvoire = defineStyle(() => ({
+  bg: "ivoire.10",
+  color: "brown.100",
+
+  _loading: loadingStyles,
+  _disabled: disabledStyles,
+  _active: { bg: "brown.30" },
+  _hover: {
+    bg: "brown.10",
+    _disabled: disabledStyles,
+  },
+}))
+
+const variantSolid = defineStyle(({ colorScheme }) => {
+  if (colorScheme === "brown") return variantSolidBrown()
+
+  if (colorScheme === "ivoire") return variantSolidIvoire()
+
+  return variantSolidAcre()
+})
+
+const variantOutline = defineStyle(() => ({
+  color: "brown.100",
+  borderColor: "brown.20",
+
+  _loading: loadingStyles,
+  _disabled: disabledStyles,
+  _active: { bg: "brown.30" },
+  _hover: {
+    bg: "brown.10",
+    _disabled: disabledStyles,
+  },
+}))
+
+const varianLink = defineStyle(() => ({
+  fontWeight: "medium",
+  color: "brown.100",
+
+  _disabled: {
+    color: disabledStyles.color,
+  },
+  _active: { color: "acre.70" },
+  _hover: {
+    color: "acre.50",
+    textDecoration: "none",
+    _disabled: {
+      color: disabledStyles.color,
+    },
+  },
+}))
+
+// TODO: Need to update styles for pagination
+const variantPagination = defineStyle({
+  bg: "white",
+  color: "oldPalette.grey.700",
+  ring: 0,
+  ringInset: "inset",
+  ringColor: "white",
+
+  _hover: {
+    color: "oldPalette.brand.400",
+    bg: "oldPalette.opacity.white.6",
+    ring: 1,
+  },
+  _active: {
+    ring: 1,
+    ringColor: "oldPalette.brand.400",
+  },
+  _disabled: {
+    color: "oldPalette.grey.300",
+    bg: "white",
+    opacity: 1,
+    pointerEvents: "none",
+  },
+})
+
+// TODO: Need to update styles for wallet connection component
 const variantCard = defineStyle({
   h: 12,
   p: 3,
   pr: 4,
   fontWeight: "semibold",
-  bg: "surface.3",
-  color: "acre.50",
+  bg: "oldPalette.gold.200",
+  color: "oldPalette.brand.400",
 
   _hover: {
-    bg: "surface.3",
+    bg: "oldPalette.gold.400",
     textDecoration: "none",
   },
 })
 
-// TODO: Update the button styles correctly when ready
-const buttonTheme: ComponentSingleStyleConfig = {
-  baseStyle: {
-    // Remove a blue outline when the button is in focus.
-    boxShadow: "none !important",
-  },
-  sizes: {
-    md: {
-      fontSize: "sm",
-      py: 2,
-      borderRadius: "sm",
-    },
-    lg: {
-      fontSize: "md",
-      py: 4,
-      borderRadius: "sm",
-      h: 14,
-    },
-  },
-  variants: {
-    solid: ({ colorScheme }: StyleFunctionProps) => {
-      let baseBg = `${colorScheme}.400`
-      let hoverBg = `${colorScheme}.500`
-
-      if (colorScheme === "oldPalette.green") {
-        baseBg = `${colorScheme}.500`
-        hoverBg = `${colorScheme}.600`
-      }
-
-      return {
-        bg: baseBg,
-        color: "white",
-        _hover: {
-          bg: hoverBg,
-          _disabled: {
-            bg: "oldPalette.grey.400",
-          },
-        },
-        _active: {
-          bg: baseBg,
-        },
-        _loading: {
-          _disabled: {
-            background: "oldPalette.gold.300",
-            opacity: 1,
-          },
-        },
-        _disabled: {
-          bg: "oldPalette.grey.500",
-          color: "oldPalette.gold.200",
-        },
-      }
-    },
-    outline: ({ colorScheme }: StyleFunctionProps) => {
-      const defaultStyles = {
-        color: "oldPalette.grey.700",
-        borderColor: "oldPalette.grey.700",
-
-        _hover: {
-          bg: "oldPalette.opacity.grey.700.05",
-        },
-        _active: {
-          bg: "transparent",
-        },
-        _loading: {
-          _disabled: {
-            borderColor: "white",
-            background: "oldPalette.opacity.white.5",
-            opacity: 1,
-          },
-        },
-      }
-      if (colorScheme === "oldPalette.gold") {
-        return {
-          ...defaultStyles,
-          bg: "oldPalette.gold.100",
-          borderColor: "white",
-          borderStyle: "solid",
-
-          _hover: {
-            borderColor: "oldPalette.grey.500",
-            bg: "transparent",
-          },
-        }
-      }
-
-      if (colorScheme === "white") {
-        return {
-          ...defaultStyles,
-          color: "white",
-          borderColor: "white",
-
-          _hover: {
-            bg: "oldPalette.opacity.black.05",
-          },
-        }
-      }
-      return defaultStyles
-    },
-    ghost: {
-      color: "inherit",
-      _hover: {
-        bg: "transparent",
-      },
-      _active: {
-        bg: "transparent",
-      },
-    },
-    card: variantCard,
-    pagination: {
-      bg: "white",
-      color: "oldPalette.grey.700",
-      ring: 0,
-      ringInset: "inset",
-      ringColor: "white",
-
-      _hover: {
-        color: "acre.50",
-        bg: "oldPalette.opacity.white.6",
-        ring: 1,
-      },
-      _active: {
-        ring: 1,
-        ringColor: "acre.50",
-      },
-      _disabled: {
-        color: "oldPalette.grey.300",
-        bg: "white",
-        opacity: 1,
-        pointerEvents: "none",
-      },
-    },
-    link: {
-      bg: "initial",
-      color: "inherit",
-      p: 0,
-      textDecoration: "underline",
-      fontWeight: "medium",
-    },
-  },
-  defaultProps: {
-    colorScheme: "oldPalette.brand",
-  },
+const variants = {
+  solid: variantSolid,
+  outline: variantOutline,
+  link: varianLink,
+  pagination: variantPagination,
+  card: variantCard,
 }
 
-export default buttonTheme
+const sizeLg = defineStyle({
+  py: "1.063rem", // 17px
+  px: 6,
+  h: 14,
+  fontSize: "md",
+  lineHeight: "md",
+  fontWeight: "semibold",
+})
+
+const sizeMd = defineStyle({
+  px: 4,
+  py: 3,
+  h: 12,
+  fontSize: "md",
+  lineHeight: "md",
+  fontWeight: "semibold",
+})
+
+const sizeSm = defineStyle({
+  px: 4,
+  py: 2.5,
+  h: 10,
+  fontSize: "sm",
+  lineHeight: "sm",
+  fontWeight: "medium",
+})
+
+const sizeXs = defineStyle({
+  px: 3,
+  py: "0.438rem", // 7px
+  h: 8,
+  fontSize: "sm",
+  lineHeight: "sm",
+  fontWeight: "medium",
+})
+
+const sizes = {
+  lg: sizeLg,
+  md: sizeMd,
+  sm: sizeSm,
+  xs: sizeXs,
+}
+
+export default defineStyleConfig({
+  defaultProps: {
+    colorScheme: "acre",
+  },
+  baseStyle,
+  sizes,
+  variants,
+})
