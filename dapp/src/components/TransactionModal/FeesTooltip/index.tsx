@@ -19,17 +19,31 @@ const mapFeeToLabel = (feeId: keyof AcreFee) => {
   }
 }
 
+const mapFeeToReimbursableFeeLabel = (feeId: keyof AcreFee) => {
+  switch (feeId) {
+    case "tbtc":
+      return "*tBTC Bridge fee covered by Acre"
+    case "acre":
+    default:
+      return ""
+  }
+}
+
 export default function FeesTooltip({ fees }: Props) {
   return (
     <TooltipIcon
       placement="right"
       label={
-        <List spacing={0.5} minW={60}>
-          {Object.entries(fees).map(([feeKey, feeValue]) => (
+        <List spacing={2} minW={60}>
+          {Object.entries(fees).map(([feeKey, { fee, isReimbursable }]) => (
             <FeesTooltipItem
               key={feeKey}
               label={mapFeeToLabel(feeKey as keyof AcreFee)}
-              amount={feeValue}
+              amount={fee}
+              isReimbursable={isReimbursable}
+              reimbursableFeeLabel={mapFeeToReimbursableFeeLabel(
+                feeKey as keyof AcreFee,
+              )}
               currency="bitcoin"
             />
           ))}
