@@ -11,9 +11,9 @@ type Props = {
 const mapFeeToLabel = (feeId: keyof AcreFee) => {
   switch (feeId) {
     case "acre":
-      return "Acre protocol fees"
+      return "Protocol fee"
     case "tbtc":
-      return "tBTC bridge fees"
+      return "tBTC Bridge fee"
     default:
       return ""
   }
