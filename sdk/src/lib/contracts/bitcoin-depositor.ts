@@ -27,6 +27,11 @@ type TBTCMintingFees = {
    * deposit being part of the given sweep transaction.
    */
   depositTxMaxFee: bigint
+
+  /**
+   * Maximum amount of fees eligible to be reimbursed upon deposit.
+   */
+  reimbursableFee: bigint
 }
 
 /**

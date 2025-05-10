@@ -39,6 +39,7 @@ type TbtcBridgeMintingParameters = {
 type BitcoinDepositorCache = {
   tbtcBridgeMintingParameters: TbtcBridgeMintingParameters | undefined
   depositorFeeDivisor: bigint | undefined
+  feesReimbursementPool: EthereumAddress | undefined
 }
 
 /**
@@ -77,6 +78,7 @@ class EthereumBitcoinDepositor
     this.#cache = {
       tbtcBridgeMintingParameters: undefined,
       depositorFeeDivisor: undefined,
+      feesReimbursementPool: undefined,
     }
   }
 
@@ -164,9 +166,11 @@ class EthereumBitcoinDepositor
   async calculateDepositFee(amountToDeposit: bigint): Promise<DepositFees> {
     const {
       depositTreasuryFeeDivisor,
-      depositTxMaxFee,
+      depositTxMaxFee: depositTxMaxFeeInSatoshi,
       optimisticMintingFeeDivisor,
     } = await this.#getTbtcBridgeMintingParameters()
+
+    const depositTxMaxFee = fromSatoshi(depositTxMaxFeeInSatoshi)
 
     const treasuryFee =
       depositTreasuryFeeDivisor > 0
@@ -186,11 +190,32 @@ class EthereumBitcoinDepositor
     const depositorFee =
       depositorFeeDivisor > 0n ? amountToDeposit / depositorFeeDivisor : 0n
 
+    const bridgeFeesReimbursementThreshold =
+      await this.bridgeFeesReimbursementThreshold()
+
+    const areTbtcFeesReimbursable =
+      bridgeFeesReimbursementThreshold > 0 &&
+      bridgeFeesReimbursementThreshold >= amountToDeposit
+
+    const balanceOfReimbursementPool =
+      await this.#getTbtcBalanceOfFeesReimbursementPool()
+
+    const totalFee = treasuryFee + optimisticMintingFee + depositTxMaxFee
+    let reimbursableFee = 0n
+
+    if (areTbtcFeesReimbursable) {
+      reimbursableFee =
+        balanceOfReimbursementPool > totalFee
+          ? balanceOfReimbursementPool
+          : totalFee
+    }
+
     return {
       tbtc: {
         treasuryFee,
         optimisticMintingFee,
-        depositTxMaxFee: fromSatoshi(depositTxMaxFee),
+        depositTxMaxFee,
+        reimbursableFee,
       },
       acre: {
         bitcoinDepositorFee: depositorFee,
@@ -230,6 +255,24 @@ class EthereumBitcoinDepositor
     this.#cache.depositorFeeDivisor = await this.instance.depositorFeeDivisor()
 
     return this.#cache.depositorFeeDivisor
+  }
+
+  async #getTbtcBalanceOfFeesReimbursementPool() {
+    if (!this.#tbtcToken) throw new Error("tBTC contracts not set")
+
+    return this.#tbtcToken.balanceOf(await this.#getFeesReimbursementPool())
+  }
+
+  async #getFeesReimbursementPool() {
+    if (this.#cache.feesReimbursementPool) {
+      return this.#cache.feesReimbursementPool
+    }
+
+    this.#cache.feesReimbursementPool = EthereumAddress.from(
+      await this.instance.feesReimbursementPool(),
+    )
+
+    return this.#cache.feesReimbursementPool
   }
 
   async getTbtcBridgeAddress(): Promise<string> {
