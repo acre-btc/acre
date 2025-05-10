@@ -28,6 +28,7 @@ import { Hex, fromSatoshi } from "../utils"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
 import TbtcVault from "./tbtc-vault"
+import ERC20Token from "./erc20-token"
 
 type TbtcBridgeMintingParameters = {
   depositTreasuryFeeDivisor: bigint
@@ -56,6 +57,8 @@ class EthereumBitcoinDepositor
 
   #tbtcVault: TbtcVault | undefined
 
+  #tbtcToken: ERC20Token | undefined
+
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
@@ -80,12 +83,15 @@ class EthereumBitcoinDepositor
   setTbtcContracts({
     tbtcBridge,
     tbtcVault,
+    tbtcToken,
   }: {
     tbtcBridge: TbtcBridge
     tbtcVault: TbtcVault
+    tbtcToken: ERC20Token
   }): void {
     this.#tbtcBridge = tbtcBridge
     this.#tbtcVault = tbtcVault
+    this.#tbtcToken = tbtcToken
   }
 
   /**
@@ -232,6 +238,10 @@ class EthereumBitcoinDepositor
 
   async getTbtcVaultAddress(): Promise<string> {
     return this.instance.tbtcVault()
+  }
+
+  async getTbtcTokenAddress(): Promise<string> {
+    return this.instance.tbtcToken()
   }
 
   /**
