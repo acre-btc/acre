@@ -59,6 +59,9 @@ export default class Protocol {
 
     const { reimbursableFee, ...restTbtcFees } = tbtcFees
 
+    const totalTbtcFees = sumFees(restTbtcFees)
+    const isTbtcFeeReimbursable = totalTbtcFees - reimbursableFee <= 0n
+
     const tbtc = toSatoshi(sumFees(restTbtcFees))
 
     const acre = toSatoshi(sumFees(acreFees)) + toSatoshi(depositFee)
@@ -66,7 +69,7 @@ export default class Protocol {
     return {
       tbtc: {
         fee: tbtc,
-        isReimbursable: tbtc - reimbursableFee <= 0n,
+        isReimbursable: isTbtcFeeReimbursable,
       },
       acre: {
         fee: acre,
@@ -100,7 +103,7 @@ export default class Protocol {
 
     return {
       tbtc: {
-        fee: acre,
+        fee: tbtc,
         isReimbursable: false,
       },
       acre: {
