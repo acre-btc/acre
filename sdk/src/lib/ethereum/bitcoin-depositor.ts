@@ -233,6 +233,13 @@ class EthereumBitcoinDepositor
   async getTbtcVaultAddress(): Promise<string> {
     return this.instance.tbtcVault()
   }
+
+  /**
+   * @see {BitcoinDepositor#bridgeFeesReimbursementThreshold}
+   */
+  async bridgeFeesReimbursementThreshold(): Promise<bigint> {
+    return this.instance.bridgeFeesReimbursementThreshold()
+  }
 }
 
 export { EthereumBitcoinDepositor, packRevealDepositParameters }

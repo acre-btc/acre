@@ -84,4 +84,11 @@ export interface BitcoinDepositor extends DepositorProxy {
    * @returns Minimum deposit amount.
    */
   minDepositAmount(): Promise<bigint>
+
+  /**
+   * @returns Minimum deposit amount threshold for tBTC Bridge fees
+   *          reimbursement. For deposits below this threshold, the fees will be
+   *          reimbursed from the fees reimbursement pool.
+   */
+  bridgeFeesReimbursementThreshold(): Promise<bigint>
 }
