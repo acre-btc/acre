@@ -197,17 +197,18 @@ class EthereumBitcoinDepositor
       bridgeFeesReimbursementThreshold > 0 &&
       bridgeFeesReimbursementThreshold >= amountToDeposit
 
-    const balanceOfReimbursementPool =
-      await this.#getTbtcBalanceOfFeesReimbursementPool()
-
-    const totalFee = treasuryFee + optimisticMintingFee + depositTxMaxFee
     let reimbursableFee = 0n
 
     if (areTbtcFeesReimbursable) {
+      const balanceOfReimbursementPool =
+        await this.#getTbtcBalanceOfFeesReimbursementPool()
+
+      const totalFee = treasuryFee + optimisticMintingFee + depositTxMaxFee
+
       reimbursableFee =
         balanceOfReimbursementPool > totalFee
-          ? balanceOfReimbursementPool
-          : totalFee
+          ? totalFee
+          : balanceOfReimbursementPool
     }
 
     return {

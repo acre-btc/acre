@@ -19,6 +19,6 @@ export default class ERC20Token extends EthersContractWrapper<EthersContract> {
   }
 
   async balanceOf(owner: EthereumAddress): Promise<bigint> {
-    return (await this.instance.balanceOf(owner)) as bigint
+    return (await this.instance.balanceOf(`0x${owner.identifierHex}`)) as bigint
   }
 }
