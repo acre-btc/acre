@@ -285,7 +285,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
 
         if (
             bridgeFeesReimbursementThreshold > 0 &&
-            initialAmount < bridgeFeesReimbursementThreshold
+            initialAmount <= bridgeFeesReimbursementThreshold
         ) {
             uint256 tbtcBridgeFee = initialAmount - tbtcAmount;
 
