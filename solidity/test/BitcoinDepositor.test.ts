@@ -667,6 +667,121 @@ describe("BitcoinDepositor", () => {
     })
   })
 
+  describe("updateFeesReimbursementPool", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not governance", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateFeesReimbursementPool(ZeroAddress),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is governance", () => {
+      describe("when new value is zero address", () => {
+        it("should revert", async () => {
+          await expect(
+            bitcoinDepositor
+              .connect(governance)
+              .updateFeesReimbursementPool(ZeroAddress),
+          ).to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "FeesReimbursementPoolZeroAddress",
+          )
+        })
+      })
+
+      describe("when new value is non-zero address", () => {
+        let tx: ContractTransactionResponse
+
+        before(async () => {
+          tx = await bitcoinDepositor
+            .connect(governance)
+            .updateFeesReimbursementPool(thirdParty.address)
+        })
+
+        it("should emit FeesReimbursementPoolUpdated event", async () => {
+          await expect(tx)
+            .to.emit(bitcoinDepositor, "FeesReimbursementPoolUpdated")
+            .withArgs(thirdParty.address)
+        })
+
+        it("should update value correctly", async () => {
+          expect(await bitcoinDepositor.feesReimbursementPool()).to.be.equal(
+            thirdParty.address,
+          )
+        })
+      })
+    })
+  })
+
+  describe("updateBridgeFeesReimbursementThreshold", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not governance", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateBridgeFeesReimbursementThreshold(1234),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is governance", () => {
+      const testUpdateBridgeFeesReimbursementThreshold = (newValue: bigint) =>
+        function () {
+          beforeAfterSnapshotWrapper()
+
+          let tx: ContractTransactionResponse
+
+          before(async () => {
+            tx = await bitcoinDepositor
+              .connect(governance)
+              .updateBridgeFeesReimbursementThreshold(newValue)
+          })
+
+          it("should emit BridgeFeesReimbursementThresholdUpdated event", async () => {
+            await expect(tx)
+              .to.emit(
+                bitcoinDepositor,
+                "BridgeFeesReimbursementThresholdUpdated",
+              )
+              .withArgs(newValue)
+          })
+
+          it("should update value correctly", async () => {
+            expect(
+              await bitcoinDepositor.bridgeFeesReimbursementThreshold(),
+            ).to.be.eq(newValue)
+          })
+        }
+
+      describe(
+        "when new value is non-zero",
+        testUpdateBridgeFeesReimbursementThreshold(92193n),
+      )
+
+      describe(
+        "when new value is zero",
+        testUpdateBridgeFeesReimbursementThreshold(0n),
+      )
+    })
+  })
+
   const extraDataValidTestData = new Map<
     string,
     {
