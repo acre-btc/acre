@@ -195,9 +195,6 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
 
         minDepositAmount = 0.015 * 1e18; // 0.015 BTC
         depositorFeeDivisor = 1000; // 1/1000 == 10bps == 0.1% == 0.001
-
-        // Disable fees reimbursement by default.
-        bridgeFeesReimbursementThreshold = 0;
     }
 
     /// @notice This function allows depositing process initialization for a Bitcoin
