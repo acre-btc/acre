@@ -128,6 +128,10 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @param depositorFeeDivisor New value of the depositor fee divisor.
     event DepositorFeeDivisorUpdated(uint64 depositorFeeDivisor);
 
+    /// @notice Emitted when a fees reimbursement pool is updated.
+    /// @param newFeesReimbursementPool New value of the fees reimbursement pool.
+    event FeesReimbursementPoolUpdated(address newFeesReimbursementPool);
+
     /// @notice Emitted when a tBTC Bridge fees reimbursement threshold is updated.
     /// @param bridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
     ///        reimbursement threshold.
@@ -162,6 +166,9 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         uint256 minDepositAmount,
         uint256 bridgeMinDepositAmount
     );
+
+    /// @dev Attempted to set fees reimbursement pool to a zero address.
+    error FeesReimbursementPoolZeroAddress();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -356,6 +363,20 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         depositorFeeDivisor = newDepositorFeeDivisor;
 
         emit DepositorFeeDivisorUpdated(newDepositorFeeDivisor);
+    }
+
+    /// @notice Updates the fees reimbursement pool contract address.
+    /// @param newFeesReimbursementPool New address of the fees reimbursement pool.
+    function updateFeesReimbursementPool(
+        address newFeesReimbursementPool
+    ) external onlyOwner {
+        if (address(newFeesReimbursementPool) == address(0)) {
+            revert FeesReimbursementPoolZeroAddress();
+        }
+
+        emit FeesReimbursementPoolUpdated(newFeesReimbursementPool);
+
+        feesReimbursementPool = FeesReimbursementPool(newFeesReimbursementPool);
     }
 
     /// @notice Updates the tBTC Bridge fees reimbursement threshold.
