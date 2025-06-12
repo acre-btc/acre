@@ -290,6 +290,10 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
             uint256 tbtcBridgeFee = initialAmount - tbtcAmount;
 
             if (tbtcBridgeFee > 0) {
+                if (address(feesReimbursementPool) == address(0)) {
+                    revert FeesReimbursementPoolZeroAddress();
+                }
+
                 uint256 reimbursedAmount = feesReimbursementPool.reimburse(
                     tbtcBridgeFee
                 );
