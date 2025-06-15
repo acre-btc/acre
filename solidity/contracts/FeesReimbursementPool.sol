@@ -20,6 +20,9 @@ contract FeesReimbursementPool is Ownable2StepUpgradeable {
     /// @dev Attempted to reimburse zero amount.
     error ZeroAmount();
 
+    event Reimbursed(uint256 amount);
+    event Withdrawn(address indexed recipient, uint256 amount);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -52,6 +55,8 @@ contract FeesReimbursementPool is Ownable2StepUpgradeable {
             reimbursedAmount = availableBalance;
         }
 
+        emit Reimbursed(reimbursedAmount);
+
         if (reimbursedAmount > 0) {
             IERC20(tbtcToken).safeTransfer(msg.sender, reimbursedAmount);
         }
@@ -63,6 +68,7 @@ contract FeesReimbursementPool is Ownable2StepUpgradeable {
     /// @param to The address to withdraw to.
     /// @param amount The amount to withdraw.
     function withdraw(address to, uint256 amount) external onlyOwner {
+        emit Withdrawn(to, amount);
         IERC20(tbtcToken).safeTransfer(to, amount);
     }
 }
