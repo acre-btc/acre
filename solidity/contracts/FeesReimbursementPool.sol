@@ -14,13 +14,22 @@ contract FeesReimbursementPool is Ownable2StepUpgradeable {
     address public tbtcToken;
     address public bitcoinDepositor;
 
+    /// @dev Reverts if the tBTC Token address is zero.
+    error TbtcTokenZeroAddress();
+
+    /// @dev Reverts if the BitcoinDepositor address is zero.
+    error BitcoinDepositorZeroAddress();
+
     /// @dev Caller is not the Bitcoin Depositor contract.
     error CallerNotBitcoinDepositor();
 
     /// @dev Attempted to reimburse zero amount.
     error ZeroAmount();
 
+    /// @dev Emitted when the amount is reimbursed.
     event Reimbursed(uint256 amount);
+
+    /// @dev Emitted when the given amount is withdrawn by the governance.
     event Withdrawn(address indexed recipient, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -35,6 +44,13 @@ contract FeesReimbursementPool is Ownable2StepUpgradeable {
         address _tbtcToken,
         address _bitcoinDepositor
     ) external initializer {
+        if (_tbtcToken == address(0)) {
+            revert TbtcTokenZeroAddress();
+        }
+        if (_bitcoinDepositor == address(0)) {
+            revert BitcoinDepositorZeroAddress();
+        }
+
         __Ownable2Step_init();
         __Ownable_init(msg.sender);
 
