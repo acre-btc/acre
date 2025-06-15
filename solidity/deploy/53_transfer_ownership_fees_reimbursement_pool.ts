@@ -22,7 +22,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     governance,
   )
 
-  if (hre.network.name !== "mainnet" && hre.network.name !== "integration") {
+  // Run only on Hardhat network. On all other networks this function needs to
+  // be called by the governance.
+  if (hre.network.name === "hardhat") {
     await deployments.execute(
       "FeesReimbursementPool",
       {

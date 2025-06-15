@@ -25,3 +25,8 @@ export default func
 
 func.tags = ["UpdateFeesReimbursementPool"]
 func.dependencies = ["BitcoinDepositor", "FeesReimbursementPool"]
+
+// Run only on Hardhat network. On all other networks this function needs to be
+// called by the governance.
+func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
+  Promise.resolve(hre.network.name !== "hardhat")
