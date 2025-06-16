@@ -104,14 +104,23 @@ describe("FeesReimbursementPool", () => {
         ) => {
           beforeAfterSnapshotWrapper()
 
+          let result: bigint
           let tx: ContractTransactionResponse
 
           before(async () => {
             await tbtc.mint(feesReimbursementPoolAddress, poolBalance)
 
+            result = await feesReimbursementPool
+              .connect(bitcoinDepositorFakeSigner)
+              .reimburse.staticCall(toReimburse)
+
             tx = await feesReimbursementPool
               .connect(bitcoinDepositorFakeSigner)
               .reimburse(toReimburse)
+          })
+
+          it("should return the reimbursed amount", () => {
+            expect(result).to.equal(expectedReimbursement)
           })
 
           it("should reimburse the expected amount", async () => {
@@ -133,7 +142,7 @@ describe("FeesReimbursementPool", () => {
               .withArgs(expectedReimbursement)
           })
 
-          it("should leave remainig amount in the pool", async () => {
+          it("should leave remaining amount in the pool", async () => {
             expect(await tbtc.balanceOf(feesReimbursementPoolAddress)).to.eq(
               poolBalance - expectedReimbursement,
             )
