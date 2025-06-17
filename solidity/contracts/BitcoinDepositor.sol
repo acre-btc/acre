@@ -80,7 +80,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @notice Fees reimbursement pool.
     FeesReimbursementPool public feesReimbursementPool;
 
-    /// @notice Minimum deposit amount threshold for tBTC Bridge fees reimbursement.
+    /// @notice Maximum deposit amount threshold for tBTC Bridge fees reimbursement.
     ///         For deposits below this threshold, the fees will be reimbursed
     ///         from the fees reimbursement pool.
     /// @dev If the threshold is set to 0, the fees reimbursement is disabled.
