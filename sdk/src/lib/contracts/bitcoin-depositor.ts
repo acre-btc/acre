@@ -27,6 +27,11 @@ type TBTCMintingFees = {
    * deposit being part of the given sweep transaction.
    */
   depositTxMaxFee: bigint
+
+  /**
+   * Maximum amount of fees eligible to be reimbursed upon deposit.
+   */
+  reimbursableFee: bigint
 }
 
 /**
@@ -84,4 +89,11 @@ export interface BitcoinDepositor extends DepositorProxy {
    * @returns Minimum deposit amount.
    */
   minDepositAmount(): Promise<bigint>
+
+  /**
+   * @returns Minimum deposit amount threshold for tBTC Bridge fees
+   *          reimbursement. For deposits below this threshold, the fees will be
+   *          reimbursed from the fees reimbursement pool.
+   */
+  bridgeFeesReimbursementThreshold(): Promise<bigint>
 }

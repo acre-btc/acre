@@ -25,8 +25,8 @@ const data = {
     // 0.001 in 1e18 precision.
     stBTCDepositFee: 1000000000000000n,
     expectedDepositFeesInSatoshi: {
-      tbtc: 124990n,
-      acre: 110000n,
+      tbtc: { fee: 124990n, isReimbursable: false },
+      acre: { fee: 110000n, isReimbursable: false },
       total: 234990n,
     },
   },
@@ -43,8 +43,8 @@ const data = {
     // 0.00025 in 1e18 precision.
     stBTCWithdrawalFee: 250000000000000n,
     expectedWithdrawalFeesInSatoshi: {
-      tbtc: 5000n,
-      acre: 25000n,
+      tbtc: { fee: 5000n, isReimbursable: false },
+      acre: { fee: 25000n, isReimbursable: false },
       total: 30000n,
     },
   },
@@ -114,59 +114,125 @@ describe("Protocol", () => {
       },
     } = data
 
+    const { tbtc: mockedTbtcFees, acre: mockedAcreFees } = mockedDepositFees
+
     let result: Fees
     const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
 
-    beforeAll(async () => {
+    beforeAll(() => {
       spyOnToSatoshi.mockClear()
-
-      contracts.bitcoinDepositor.calculateDepositFee = jest
-        .fn()
-        .mockResolvedValue(mockedDepositFees)
 
       contracts.stBTC.calculateDepositFee = jest
         .fn()
         .mockResolvedValue(stBTCDepositFee)
-
-      result = await protocol.estimateDepositFee(amount)
     })
 
-    it("should convert provided amount from satoshi to token precision", () => {
-      expect(spyOnFromSatoshi).toHaveBeenNthCalledWith(1, amount)
+    describe("when tBTC bridge fees are not reimbursable", () => {
+      beforeAll(async () => {
+        const reimbursableFee = 0n
+        const mockedDepositFeesData = {
+          acre: mockedAcreFees,
+          tbtc: { ...mockedTbtcFees, reimbursableFee },
+        }
+
+        contracts.bitcoinDepositor.calculateDepositFee = jest
+          .fn()
+          .mockResolvedValue(mockedDepositFeesData)
+
+        result = await protocol.estimateDepositFee(amount)
+      })
+
+      it("should convert provided amount from satoshi to token precision", () => {
+        expect(spyOnFromSatoshi).toHaveBeenNthCalledWith(1, amount)
+      })
+
+      it("should get the deposit fees from Acre Bitcoin Depositor contract handle", () => {
+        expect(
+          contracts.bitcoinDepositor.calculateDepositFee,
+        ).toHaveBeenCalledWith(amountIn1e18)
+      })
+
+      it("should get the stBTC deposit fee", () => {
+        expect(contracts.stBTC.calculateDepositFee).toHaveBeenCalledWith(
+          amountIn1e18,
+        )
+      })
+
+      it("should convert tBTC network fees to satoshi", () => {
+        const {
+          tbtc: { depositTxMaxFee, treasuryFee, optimisticMintingFee },
+        } = mockedDepositFees
+        const totalTbtcFees =
+          depositTxMaxFee + treasuryFee + optimisticMintingFee
+
+        expect(spyOnToSatoshi).toHaveBeenNthCalledWith(1, totalTbtcFees)
+      })
+
+      it("should convert Acre network fees to satoshi", () => {
+        const {
+          acre: { bitcoinDepositorFee },
+        } = mockedDepositFees
+        const totalAcreFees = bitcoinDepositorFee
+
+        expect(spyOnToSatoshi).toHaveBeenNthCalledWith(2, totalAcreFees)
+      })
+
+      it("should return the deposit fees in satoshi precision", () => {
+        expect(result).toMatchObject(expectedDepositFeesInSatoshi)
+      })
     })
 
-    it("should get the deposit fees from Acre Bitcoin Depositor contract handle", () => {
-      expect(
-        contracts.bitcoinDepositor.calculateDepositFee,
-      ).toHaveBeenCalledWith(amountIn1e18)
+    describe("when tBTC bridge fees can be fully covered", () => {
+      beforeAll(async () => {
+        const reimbursableFee =
+          mockedTbtcFees.depositTxMaxFee +
+          mockedTbtcFees.optimisticMintingFee +
+          mockedTbtcFees.treasuryFee
+
+        const mockedDepositFeesData = {
+          acre: mockedAcreFees,
+          tbtc: { ...mockedTbtcFees, reimbursableFee },
+        }
+
+        contracts.bitcoinDepositor.calculateDepositFee = jest
+          .fn()
+          .mockResolvedValue(mockedDepositFeesData)
+
+        result = await protocol.estimateDepositFee(amount)
+      })
+
+      it("should return the deposit fees in satoshi precision", () => {
+        const expectedResult = {
+          ...expectedDepositFeesInSatoshi,
+          tbtc: { ...expectedDepositFeesInSatoshi.tbtc, isReimbursable: true },
+        }
+        expect(result).toMatchObject(expectedResult)
+      })
     })
 
-    it("should get the stBTC deposit fee", () => {
-      expect(contracts.stBTC.calculateDepositFee).toHaveBeenCalledWith(
-        amountIn1e18,
-      )
-    })
+    describe("when tBTC bridge fees can be partially covered", () => {
+      beforeAll(async () => {
+        const reimbursableFee =
+          mockedTbtcFees.depositTxMaxFee +
+          mockedTbtcFees.optimisticMintingFee +
+          mockedTbtcFees.treasuryFee -
+          2n
 
-    it("should convert tBTC network fees to satoshi", () => {
-      const {
-        tbtc: { depositTxMaxFee, treasuryFee, optimisticMintingFee },
-      } = mockedDepositFees
-      const totalTbtcFees = depositTxMaxFee + treasuryFee + optimisticMintingFee
+        const mockedDepositFeesData = {
+          acre: mockedAcreFees,
+          tbtc: { ...mockedTbtcFees, reimbursableFee },
+        }
 
-      expect(spyOnToSatoshi).toHaveBeenNthCalledWith(1, totalTbtcFees)
-    })
+        contracts.bitcoinDepositor.calculateDepositFee = jest
+          .fn()
+          .mockResolvedValue(mockedDepositFeesData)
 
-    it("should convert Acre network fees to satoshi", () => {
-      const {
-        acre: { bitcoinDepositorFee },
-      } = mockedDepositFees
-      const totalAcreFees = bitcoinDepositorFee
+        result = await protocol.estimateDepositFee(amount)
+      })
 
-      expect(spyOnToSatoshi).toHaveBeenNthCalledWith(2, totalAcreFees)
-    })
-
-    it("should return the deposit fees in satoshi precision", () => {
-      expect(result).toMatchObject(expectedDepositFeesInSatoshi)
+      it("should return the deposit fees in satoshi precision", () => {
+        expect(result).toMatchObject(expectedDepositFeesInSatoshi)
+      })
     })
   })
 

@@ -28,6 +28,7 @@ import { Hex, fromSatoshi } from "../utils"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
 import TbtcVault from "./tbtc-vault"
+import ERC20Token from "./erc20-token"
 
 type TbtcBridgeMintingParameters = {
   depositTreasuryFeeDivisor: bigint
@@ -38,6 +39,7 @@ type TbtcBridgeMintingParameters = {
 type BitcoinDepositorCache = {
   tbtcBridgeMintingParameters: TbtcBridgeMintingParameters | undefined
   depositorFeeDivisor: bigint | undefined
+  feesReimbursementPool: EthereumAddress | undefined
 }
 
 /**
@@ -55,6 +57,8 @@ class EthereumBitcoinDepositor
   #tbtcBridge: TbtcBridge | undefined
 
   #tbtcVault: TbtcVault | undefined
+
+  #tbtcToken: ERC20Token | undefined
 
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
@@ -74,18 +78,22 @@ class EthereumBitcoinDepositor
     this.#cache = {
       tbtcBridgeMintingParameters: undefined,
       depositorFeeDivisor: undefined,
+      feesReimbursementPool: undefined,
     }
   }
 
   setTbtcContracts({
     tbtcBridge,
     tbtcVault,
+    tbtcToken,
   }: {
     tbtcBridge: TbtcBridge
     tbtcVault: TbtcVault
+    tbtcToken: ERC20Token
   }): void {
     this.#tbtcBridge = tbtcBridge
     this.#tbtcVault = tbtcVault
+    this.#tbtcToken = tbtcToken
   }
 
   /**
@@ -158,9 +166,11 @@ class EthereumBitcoinDepositor
   async calculateDepositFee(amountToDeposit: bigint): Promise<DepositFees> {
     const {
       depositTreasuryFeeDivisor,
-      depositTxMaxFee,
+      depositTxMaxFee: depositTxMaxFeeInSatoshi,
       optimisticMintingFeeDivisor,
     } = await this.#getTbtcBridgeMintingParameters()
+
+    const depositTxMaxFee = fromSatoshi(depositTxMaxFeeInSatoshi)
 
     const treasuryFee =
       depositTreasuryFeeDivisor > 0
@@ -180,11 +190,33 @@ class EthereumBitcoinDepositor
     const depositorFee =
       depositorFeeDivisor > 0n ? amountToDeposit / depositorFeeDivisor : 0n
 
+    const bridgeFeesReimbursementThreshold =
+      await this.bridgeFeesReimbursementThreshold()
+
+    const areTbtcFeesReimbursable =
+      bridgeFeesReimbursementThreshold > 0 &&
+      bridgeFeesReimbursementThreshold >= amountToDeposit
+
+    let reimbursableFee = 0n
+
+    if (areTbtcFeesReimbursable) {
+      const balanceOfReimbursementPool =
+        await this.#getTbtcBalanceOfFeesReimbursementPool()
+
+      const totalFee = treasuryFee + optimisticMintingFee + depositTxMaxFee
+
+      reimbursableFee =
+        balanceOfReimbursementPool > totalFee
+          ? totalFee
+          : balanceOfReimbursementPool
+    }
+
     return {
       tbtc: {
         treasuryFee,
         optimisticMintingFee,
-        depositTxMaxFee: fromSatoshi(depositTxMaxFee),
+        depositTxMaxFee,
+        reimbursableFee,
       },
       acre: {
         bitcoinDepositorFee: depositorFee,
@@ -226,12 +258,41 @@ class EthereumBitcoinDepositor
     return this.#cache.depositorFeeDivisor
   }
 
+  async #getTbtcBalanceOfFeesReimbursementPool() {
+    if (!this.#tbtcToken) throw new Error("tBTC contracts not set")
+
+    return this.#tbtcToken.balanceOf(await this.#getFeesReimbursementPool())
+  }
+
+  async #getFeesReimbursementPool() {
+    if (this.#cache.feesReimbursementPool) {
+      return this.#cache.feesReimbursementPool
+    }
+
+    this.#cache.feesReimbursementPool = EthereumAddress.from(
+      await this.instance.feesReimbursementPool(),
+    )
+
+    return this.#cache.feesReimbursementPool
+  }
+
   async getTbtcBridgeAddress(): Promise<string> {
     return this.instance.bridge()
   }
 
   async getTbtcVaultAddress(): Promise<string> {
     return this.instance.tbtcVault()
+  }
+
+  async getTbtcTokenAddress(): Promise<string> {
+    return this.instance.tbtcToken()
+  }
+
+  /**
+   * @see {BitcoinDepositor#bridgeFeesReimbursementThreshold}
+   */
+  async bridgeFeesReimbursementThreshold(): Promise<bigint> {
+    return this.instance.bridgeFeesReimbursementThreshold()
   }
 }
 

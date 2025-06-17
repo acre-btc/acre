@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { ACTION_FLOW_TYPES, ActionFlowType, Fee } from "#/types"
 import { useAppDispatch } from "./store"
 
-export const initialFee = {
-  tbtc: 0n,
-  acre: 0n,
+export const initialFee: Fee = {
+  tbtc: { fee: 0n, isReimbursable: false },
+  acre: { fee: 0n, isReimbursable: false },
   total: 0n,
 }
 
@@ -30,7 +30,6 @@ export default function useTransactionFee(
         if (flow === ACTION_FLOW_TYPES.STAKE) {
           fee = await acre.protocol.estimateDepositFee(amount)
         } else if (flow === ACTION_FLOW_TYPES.UNSTAKE) {
-          // TODO: Fetch fees from SDK.
           fee = await acre.protocol.estimateWithdrawalFee(amount)
         }
 
