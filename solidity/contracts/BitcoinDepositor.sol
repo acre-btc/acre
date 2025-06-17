@@ -389,11 +389,11 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     function updateBridgeFeesReimbursementThreshold(
         uint256 newBridgeFeesReimbursementThreshold
     ) external onlyOwner {
-        bridgeFeesReimbursementThreshold = newBridgeFeesReimbursementThreshold;
-
         emit BridgeFeesReimbursementThresholdUpdated(
             newBridgeFeesReimbursementThreshold
         );
+
+        bridgeFeesReimbursementThreshold = newBridgeFeesReimbursementThreshold;
     }
 
     /// @notice Encodes deposit owner address and referral as extra data.
