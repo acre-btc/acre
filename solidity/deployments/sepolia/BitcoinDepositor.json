@@ -56,6 +56,11 @@
     },
     {
       "inputs": [],
+      "name": "FeesReimbursementPoolZeroAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "InvalidInitialization",
       "type": "error"
     },
@@ -143,6 +148,19 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bridgeFeesReimbursementThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "BridgeFeesReimbursementThresholdUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "uint256",
           "name": "depositKey",
@@ -224,6 +242,19 @@
         }
       ],
       "name": "DepositorFeeDivisorUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newFeesReimbursementPool",
+          "type": "address"
+        }
+      ],
+      "name": "FeesReimbursementPoolUpdated",
       "type": "event"
     },
     {
@@ -324,6 +355,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "bridgeFeesReimbursementThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -401,6 +445,19 @@
         }
       ],
       "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feesReimbursementPool",
+      "outputs": [
+        {
+          "internalType": "contract FeesReimbursementPool",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -627,12 +684,38 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "newBridgeFeesReimbursementThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateBridgeFeesReimbursementThreshold",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint64",
           "name": "newDepositorFeeDivisor",
           "type": "uint64"
         }
       ],
       "name": "updateDepositorFeeDivisor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newFeesReimbursementPool",
+          "type": "address"
+        }
+      ],
+      "name": "updateFeesReimbursementPool",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -652,7 +735,7 @@
     }
   ],
   "transactionHash": "0x290113c31036422c5d19ec62189059667fe895b67cda247a848cfbeea3ee2d35",
-  "numDeployments": 1,
-  "implementation": "0x8E6a858b53a237EEA6A16f3917f939B78B92aF45",
+  "numDeployments": 2,
+  "implementation": "0x6a7CF37080ABC3Cc811fB2aC8445F555C5CB19cB",
   "devdoc": "Contract deployed as upgradable proxy"
 }
