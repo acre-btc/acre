@@ -13,7 +13,9 @@ const useAmplitude = () => {
 
     amplitude.add(
       sessionReplayPlugin({
-        privacyConfig: {},
+        privacyConfig: {
+          maskSelector: ["[data-sensitive]"],
+        },
       }),
     )
 

@@ -120,7 +120,7 @@ export default function ConnectWallet() {
             leftIcon={<Icon as={BitcoinIcon} boxSize={6} color="acre.50" />}
             rightIcon={isOpen ? <IconChevronUp /> : <IconChevronDown />}
           >
-            <Text size="md" color="acre.50">
+            <Text size="md" color="acre.50" data-sensitive>
               {addressUtils.truncateAddress(address)}
             </Text>
           </MenuButton>
@@ -168,7 +168,7 @@ export default function ConnectWallet() {
           spacing={3}
         >
           <Icon as={BitcoinIcon} boxSize={6} color="acre.50" />
-          <Text size="md" color="acre.50">
+          <Text size="md" color="acre.50" data-sensitive>
             {addressUtils.truncateAddress(address)}
           </Text>
         </HStack>
