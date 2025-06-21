@@ -6,6 +6,7 @@ import UserDataSkeleton from "#/components/shared/UserDataSkeleton"
 import { useMats, useModal } from "#/hooks"
 import { MODAL_TYPES } from "#/types"
 import { numbersUtils } from "#/utils"
+import { trackEvent } from "#/amplitude"
 import {
   Box,
   Button,
@@ -25,6 +26,7 @@ export default function BeehiveCard(props: CardProps) {
   const { data } = useMats()
 
   const handleOpenBeehiveModal = () => {
+    trackEvent("mezo_mats_clicked")
     openModal(MODAL_TYPES.MEZO_BEEHIVE)
   }
 
