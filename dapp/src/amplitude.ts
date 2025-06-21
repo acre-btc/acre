@@ -1,5 +1,6 @@
 import * as amplitude from "@amplitude/analytics-browser"
 import env from "#/constants/env"
+import bitcoinAddressToUserId from "./utils/bitcoinAddressToUserId"
 
 type WalletType = "okx" | "unisat" | "xverse"
 
@@ -34,7 +35,11 @@ export const trackEvent = <T extends AnalyticsEvent>(
   eventName: T,
   eventData?: AnalyticsEventData[T],
 ) => {
-  if (env.AMPLITUDE_API_KEY) {
-    amplitude.track(eventName, eventData)
-  }
+  amplitude.track(eventName, eventData)
+}
+
+export const identifyUser = (bitcoinAddress: string | undefined) => {
+  const id = new amplitude.Identify()
+  if (bitcoinAddress) id.set("user_id", bitcoinAddressToUserId(bitcoinAddress))
+  amplitude.identify(id)
 }
