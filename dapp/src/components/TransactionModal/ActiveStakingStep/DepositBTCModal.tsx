@@ -17,6 +17,7 @@ import { PROCESS_STATUSES } from "#/types"
 import { eip1193, logPromiseFailure } from "#/utils"
 import { useTimeout } from "@chakra-ui/react"
 import { useMutation } from "@tanstack/react-query"
+import { trackEvent } from "#/amplitude"
 import WalletInteractionModal from "../WalletInteractionModal"
 
 export default function DepositBTCModal() {
@@ -58,6 +59,7 @@ export default function DepositBTCModal() {
     (transactionHash: string) => {
       dispatch(setTxHash(transactionHash))
       handleStake()
+      trackEvent("deposit_btc_completed", {})
       handleCapture(PostHogEvent.DepositSuccess, {
         transactionHash,
       })
@@ -75,6 +77,7 @@ export default function DepositBTCModal() {
         onError(error)
       }
 
+      trackEvent("deposit_btc_failed", {})
       handleCaptureWithCause(error, PostHogEvent.DepositFailure)
     },
     [sessionIdToPromise, handlePause, onError, handleCaptureWithCause],
