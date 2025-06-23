@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react"
 import { numbersUtils } from "#/utils"
 import { IconChevronDown } from "@tabler/icons-react"
-import { TOKEN_AMOUNT_FIELD_NAME } from "#/components/shared/TokenAmountForm/TokenAmountFormBase"
+import { TOKEN_AMOUNT_FIELD_NAME } from "#/components/TokenAmountForm/TokenAmountFormBase"
 import {
   useFormField,
   useMinDepositAmount,

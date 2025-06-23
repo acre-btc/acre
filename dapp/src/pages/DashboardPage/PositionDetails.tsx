@@ -1,5 +1,5 @@
 import React from "react"
-import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
+import CurrencyBalanceWithConversion from "#/components/CurrencyBalanceWithConversion"
 import {
   useActivitiesCount,
   useBitcoinPosition,
@@ -19,10 +19,10 @@ import {
   Text,
 } from "@chakra-ui/react"
 import ArrivingSoonTooltip from "#/components/ArrivingSoonTooltip"
-import UserDataSkeleton from "#/components/shared/UserDataSkeleton"
+import UserDataSkeleton from "#/components/UserDataSkeleton"
 import { featureFlags } from "#/constants"
 import { IconClockHour5Filled } from "@tabler/icons-react"
-import TooltipIcon from "#/components/shared/TooltipIcon"
+import TooltipIcon from "#/components/TooltipIcon"
 import { activitiesUtils } from "#/utils"
 import AcreTVLMessage from "./AcreTVLMessage"
 

@@ -13,7 +13,7 @@ import {
   BaseFormProps,
   PROCESS_STATUSES,
 } from "#/types"
-import { TokenAmountFormValues } from "#/components/shared/TokenAmountForm/TokenAmountFormBase"
+import { TokenAmountFormValues } from "#/components/TokenAmountForm/TokenAmountFormBase"
 import { logPromiseFailure } from "#/utils"
 import { setStatus, setTokenAmount } from "#/store/action-flow"
 import StakeFormModal from "./ActiveStakingStep/StakeFormModal"

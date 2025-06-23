@@ -1,6 +1,6 @@
 import React from "react"
 import { Box, Tag, TagLabel, Flex, TagLeftIcon } from "@chakra-ui/react"
-import Spinner from "#/components/shared/Spinner"
+import Spinner from "#/components/Spinner"
 import { activitiesUtils } from "#/utils"
 import { Activity } from "#/types"
 

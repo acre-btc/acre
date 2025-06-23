@@ -1,7 +1,7 @@
 import React from "react"
 import { StackProps, VStack, Image, Text } from "@chakra-ui/react"
 import { useActivitiesCount, useIsFetchedWalletData } from "#/hooks"
-import UserDataSkeleton from "#/components/shared/UserDataSkeleton"
+import UserDataSkeleton from "#/components/UserDataSkeleton"
 import { emptyState } from "#/assets/images"
 import TransactionTable from "./TransactionTable"
 

@@ -11,12 +11,12 @@ import {
 } from "@chakra-ui/react"
 import { LoadingSpinnerSuccessIcon } from "#/assets/icons"
 import { useActionFlowTokenAmount, useActionFlowTxHash } from "#/hooks"
-import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
 import { ACTION_FLOW_TYPES, ActionFlowType } from "#/types"
 import { IconArrowUpRight } from "@tabler/icons-react"
 import { activitiesUtils } from "#/utils"
-import { Alert, AlertIcon, AlertDescription } from "#/components/shared/Alert"
-import BlockExplorerLink from "../shared/BlockExplorerLink"
+import CurrencyBalanceWithConversion from "../CurrencyBalanceWithConversion"
+import BlockExplorerLink from "../BlockExplorerLink"
+import { Alert, AlertIcon, AlertDescription } from "../Alert"
 
 type SuccessModalProps = {
   type: ActionFlowType

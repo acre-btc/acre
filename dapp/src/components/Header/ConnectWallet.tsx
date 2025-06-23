@@ -21,7 +21,6 @@ import {
   usePostHogIdentity,
   useWallet,
 } from "#/hooks"
-import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import { BitcoinIcon } from "#/assets/icons"
 import { referralProgram, addressUtils } from "#/utils"
 import { motion } from "framer-motion"
@@ -35,7 +34,8 @@ import {
   IconChevronUp,
 } from "@tabler/icons-react"
 import { useMatch } from "react-router-dom"
-import Tooltip from "../shared/Tooltip"
+import Tooltip from "../Tooltip"
+import CurrencyBalance from "../CurrencyBalance"
 
 function isChangeAccountFeatureSupported(embeddedApp: string | undefined) {
   return referralProgram.isEmbedApp(embeddedApp)

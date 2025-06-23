@@ -6,7 +6,7 @@ import {
   IconCircleX,
   IconInfoCircle,
 } from "@tabler/icons-react"
-import Spinner from "../shared/Spinner"
+import Spinner from "../Spinner"
 
 const statusToLabelProps: Record<Status, { color: string }> = {
   idle: {

@@ -10,8 +10,8 @@ import { externalHref } from "#/constants"
 import { BaseModalProps } from "#/types"
 import { useAccessCode } from "#/hooks"
 import withBaseModal from "./ModalRoot/withBaseModal"
-import PasswordForm from "./shared/PasswordForm"
-import { PasswordFormValues } from "./shared/PasswordForm/PasswordFormBase"
+import PasswordForm from "./PasswordForm"
+import { PasswordFormValues } from "./PasswordForm/PasswordFormBase"
 
 export function GateModalBase({ closeModal }: BaseModalProps) {
   const { saveAccessCode } = useAccessCode()

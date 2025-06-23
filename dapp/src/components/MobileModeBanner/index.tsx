@@ -14,7 +14,7 @@ import { IconChevronDown } from "@tabler/icons-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { externalHref } from "#/constants"
 import AcreAnimatedBadge from "./AcreAnimatedBadge"
-import LiveTag from "../shared/LiveTag"
+import LiveTag from "../LiveTag"
 
 const MotionIcon = motion(Icon)
 const MotionBox = motion(Box)

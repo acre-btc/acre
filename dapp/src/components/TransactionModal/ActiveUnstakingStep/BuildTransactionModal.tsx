@@ -6,7 +6,7 @@ import {
   ModalHeader,
   Text,
 } from "@chakra-ui/react"
-import Spinner from "#/components/shared/Spinner"
+import Spinner from "#/components/Spinner"
 
 export default function BuildTransactionModal({
   onClose,

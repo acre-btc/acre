@@ -2,7 +2,7 @@ import React from "react"
 import { Box, HStack, StackProps, VStack, Text } from "@chakra-ui/react"
 import { useActivitiesCount, useStatistics, useWallet } from "#/hooks"
 import { IconBolt } from "@tabler/icons-react"
-import CurrencyBalance from "#/components/shared/CurrencyBalance"
+import CurrencyBalance from "#/components/CurrencyBalance"
 
 type AcreTVLMessageProps = Omit<StackProps, "children">
 

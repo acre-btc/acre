@@ -1,7 +1,7 @@
 import React from "react"
-import TokenAmountForm from "#/components/shared/TokenAmountForm"
-import { TokenAmountFormValues } from "#/components/shared/TokenAmountForm/TokenAmountFormBase"
-import { FormSubmitButton } from "#/components/shared/Form"
+import TokenAmountForm from "#/components/TokenAmountForm"
+import { TokenAmountFormValues } from "#/components/TokenAmountForm/TokenAmountFormBase"
+import { FormSubmitButton } from "#/components/Form"
 import { ACTION_FLOW_TYPES, BaseFormProps, PROCESS_STATUSES } from "#/types"
 import {
   useActionFlowStatus,

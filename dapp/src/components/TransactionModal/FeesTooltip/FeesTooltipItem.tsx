@@ -2,7 +2,7 @@ import React from "react"
 import { ListItem, Text } from "@chakra-ui/react"
 import CurrencyBalance, {
   CurrencyBalanceProps,
-} from "#/components/shared/CurrencyBalance"
+} from "#/components/CurrencyBalance"
 import { currencies } from "#/constants"
 
 type FeesItemType = CurrencyBalanceProps & {
