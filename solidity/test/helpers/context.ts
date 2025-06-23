@@ -11,6 +11,7 @@ import type {
   TestTBTC,
   AcreMultiAssetVault,
   MezoPortalStub,
+  FeesReimbursementPool,
 } from "../../typechain"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -22,6 +23,8 @@ export async function deployment() {
     await getDeployedContract("BitcoinDepositor")
   const bitcoinRedeemer: BitcoinRedeemer =
     await getDeployedContract("BitcoinRedeemer")
+  const feesReimbursementPool: FeesReimbursementPool =
+    await getDeployedContract("FeesReimbursementPool")
 
   const multiAssetVault: AcreMultiAssetVault = await getDeployedContract(
     "AcreMultiAssetVault",
@@ -40,6 +43,7 @@ export async function deployment() {
     stbtc,
     bitcoinDepositor,
     bitcoinRedeemer,
+    feesReimbursementPool,
     multiAssetVault,
     tbtcBridge,
     tbtcVault,
