@@ -1,6 +1,6 @@
 import { createMultiStyleConfigHelpers, defineStyle } from "@chakra-ui/react"
 
-const PARTS = ["container", "wrapper", "logo", "list", "link"]
+const PARTS = ["container", "wrapper", "logo", "list"]
 
 const containerStyles = defineStyle({
   w: "full",
@@ -35,19 +35,6 @@ const listStyles = defineStyle({
   },
 })
 
-const linkStyles = defineStyle({
-  display: "flex",
-  color: "text.primary",
-  fontWeight: "medium",
-  fontSize: {
-    base: "xs",
-    md: "sm",
-  },
-  m: -2,
-  p: 2,
-  whiteSpace: "nowrap",
-})
-
 const multiStyleConfig = createMultiStyleConfigHelpers(PARTS)
 
 const baseStyle = multiStyleConfig.definePartsStyle({
@@ -55,7 +42,6 @@ const baseStyle = multiStyleConfig.definePartsStyle({
   wrapper: wrapperStyles,
   logo: logoStyles,
   list: listStyles,
-  link: linkStyles,
 })
 
 export default multiStyleConfig.defineMultiStyleConfig({

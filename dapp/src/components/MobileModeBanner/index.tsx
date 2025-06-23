@@ -58,7 +58,8 @@ function MobileModeBanner(props: MobileModeBannerProps) {
         {!forceOpen && (
           <Button
             onClick={handleBannerOpen}
-            variant="ghost"
+            variant="unstyled"
+            display="flex"
             rightIcon={
               <MotionIcon
                 as={IconChevronDown}
@@ -68,7 +69,6 @@ function MobileModeBanner(props: MobileModeBannerProps) {
             }
             iconSpacing={0}
             color="acre.50"
-            p={0}
             h="auto"
             ml={2}
           >
