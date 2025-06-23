@@ -106,19 +106,18 @@ contract AcreMultiAssetVault is
         address[] memory _supportedAssets
     ) public initializer {
         __Ownable2Step_init();
-        __Ownable_init(_owner);
         __ReentrancyGuard_init();
 
-        if (_mezoPortal == address(0)) {
+          if (_mezoPortal == address(0)) {
             revert ZeroAddress();
-        }
+    }
 
         mezoPortal = IMezoPortal(_mezoPortal);
 
         for (uint256 i = 0; i < _supportedAssets.length; i++) {
             _addSupportedAsset(_supportedAssets[i]);
-        }
     }
+}
 
     /// @notice Adds an asset to the list of assets supported by the vault.
     /// @dev This function can only be called by the owner.
