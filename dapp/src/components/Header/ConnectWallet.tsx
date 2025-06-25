@@ -24,6 +24,7 @@ import {
 import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import { BitcoinIcon } from "#/assets/icons"
 import { referralProgram, addressUtils } from "#/utils"
+import { trackEvent } from "#/amplitude"
 import { motion } from "framer-motion"
 import { MODAL_TYPES } from "#/types"
 import {
@@ -55,6 +56,7 @@ export default function ConnectWallet() {
   const isMobile = useMobileMode()
 
   const handleConnectWallet = (isReconnecting: boolean = false) => {
+    trackEvent("wallet_connection_clicked")
     openModal(MODAL_TYPES.CONNECT_WALLET, { isReconnecting })
   }
 
@@ -118,7 +120,7 @@ export default function ConnectWallet() {
             leftIcon={<Icon as={BitcoinIcon} boxSize={6} color="acre.50" />}
             rightIcon={isOpen ? <IconChevronUp /> : <IconChevronDown />}
           >
-            <Text size="md" color="acre.50">
+            <Text size="md" color="acre.50" data-sensitive>
               {addressUtils.truncateAddress(address)}
             </Text>
           </MenuButton>
@@ -166,7 +168,7 @@ export default function ConnectWallet() {
           spacing={3}
         >
           <Icon as={BitcoinIcon} boxSize={6} color="acre.50" />
-          <Text size="md" color="acre.50">
+          <Text size="md" color="acre.50" data-sensitive>
             {addressUtils.truncateAddress(address)}
           </Text>
         </HStack>
