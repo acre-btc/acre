@@ -1,9 +1,9 @@
 import { useAcreContext } from "#/acre-react/hooks"
 import { queryKeysFactory } from "#/constants"
-import { ACTION_FLOW_TYPES, ActionFlowType, Fee } from "#/types"
+import { ACTION_FLOW_TYPES, ActionFlowType, Fees } from "#/types"
 import { useQuery } from "@tanstack/react-query"
 
-export const initialFee: Fee = {
+export const initialFee: Fees = {
   tbtc: { fee: 0n, isReimbursable: false },
   acre: { fee: 0n, isReimbursable: false },
   total: 0n,

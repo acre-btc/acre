@@ -1,7 +1,7 @@
 import React from "react"
 import { List } from "@chakra-ui/react"
 import TooltipIcon from "#/components/shared/TooltipIcon"
-import { Fee as AcreFee } from "#/types"
+import { Fees as AcreFee } from "#/types"
 import FeesTooltipItem from "./FeesTooltipItem"
 
 type Props = {

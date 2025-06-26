@@ -3,7 +3,7 @@ export type ProtocolFee = {
   isReimbursable?: boolean
 }
 
-export type Fee = {
+export type Fees = {
   tbtc: ProtocolFee
   acre: ProtocolFee
   total: bigint
