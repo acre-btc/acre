@@ -194,7 +194,7 @@ class EthereumBitcoinDepositor
       await this.bridgeFeesReimbursementThreshold()
 
     const areTbtcFeesReimbursable =
-      bridgeFeesReimbursementThreshold > 0 &&
+      bridgeFeesReimbursementThreshold > 0n &&
       bridgeFeesReimbursementThreshold >= amountToDeposit
 
     let reimbursableFee = 0n
@@ -261,6 +261,11 @@ class EthereumBitcoinDepositor
   async #getTbtcBalanceOfFeesReimbursementPool() {
     if (!this.#tbtcToken) throw new Error("tBTC contracts not set")
 
+    const feesReimbursementPool = await this.#getFeesReimbursementPool()
+
+    if (feesReimbursementPool.equals(EthereumAddress.from(ZeroAddress)))
+      return 0n
+
     return this.#tbtcToken.balanceOf(await this.#getFeesReimbursementPool())
   }
 
@@ -269,8 +274,19 @@ class EthereumBitcoinDepositor
       return this.#cache.feesReimbursementPool
     }
 
+    let feesReimbursementPool
+
+    // Use try catch to check if the `BitcoinDepositor` contract has
+    // `feesReimbursementPool` function. The contract has been updated on the
+    // testnet but not on the mainnet, which is why we're using a try-catch.
+    try {
+      feesReimbursementPool = await this.instance.feesReimbursementPool()
+    } catch (error) {
+      feesReimbursementPool = ZeroAddress
+    }
+
     this.#cache.feesReimbursementPool = EthereumAddress.from(
-      await this.instance.feesReimbursementPool(),
+      feesReimbursementPool,
     )
 
     return this.#cache.feesReimbursementPool
@@ -292,7 +308,15 @@ class EthereumBitcoinDepositor
    * @see {BitcoinDepositor#bridgeFeesReimbursementThreshold}
    */
   async bridgeFeesReimbursementThreshold(): Promise<bigint> {
-    return this.instance.bridgeFeesReimbursementThreshold()
+    // Use try catch to check if the `BitcoinDepositor` contract has
+    // `bridgeFeesReimbursementThreshold` function. The contract has been
+    // updated on the testnet but not on the mainnet, which is why we're using a
+    // try-catch.
+    try {
+      return await this.instance.bridgeFeesReimbursementThreshold()
+    } catch (error) {
+      return 0n
+    }
   }
 }
 
