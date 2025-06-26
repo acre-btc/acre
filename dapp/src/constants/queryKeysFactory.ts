@@ -4,6 +4,7 @@ const userKeys = {
   position: () => [...userKeys.all, "position"] as const,
   activities: () => [...userKeys.all, "activities"] as const,
   pointsData: () => [...userKeys.all, "points-data"] as const,
+  estimateFee: () => [...userKeys.all, "estimateFee"] as const,
 }
 
 const acreKeys = {

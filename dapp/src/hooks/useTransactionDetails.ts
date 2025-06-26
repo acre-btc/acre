@@ -1,41 +1,15 @@
-import { useEffect, useState } from "react"
-import { ACTION_FLOW_TYPES, ActionFlowType, Fee } from "#/types"
-import useTransactionFee, { initialFee } from "./useTransactionFee"
-
-type UseTransactionDetailsResult = {
-  amount: bigint
-  transactionFee: Fee
-  estimatedAmount: bigint
-}
-
-const initialTransactionDetails = {
-  amount: 0n,
-  transactionFee: initialFee,
-  estimatedAmount: 0n,
-}
+import { ACTION_FLOW_TYPES, ActionFlowType } from "#/types"
+import useTransactionFee from "./useTransactionFee"
 
 export default function useTransactionDetails(
   amount: bigint | undefined,
   flow: ActionFlowType = ACTION_FLOW_TYPES.STAKE,
 ) {
-  const transactionFee = useTransactionFee(amount, flow)
-  const [details, setDetails] = useState<UseTransactionDetailsResult>(
-    initialTransactionDetails,
-  )
+  const { data: transactionFee } = useTransactionFee(amount, flow)
 
-  useEffect(() => {
-    if (!amount) {
-      setDetails(initialTransactionDetails)
-    } else {
-      const estimatedAmount = amount - transactionFee.total
-
-      setDetails({
-        amount,
-        transactionFee,
-        estimatedAmount,
-      })
-    }
-  }, [amount, transactionFee])
-
-  return details
+  return {
+    amount,
+    transactionFee,
+    estimatedAmount: amount ?? 0n - transactionFee.total,
+  }
 }

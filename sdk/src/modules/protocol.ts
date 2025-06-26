@@ -1,12 +1,17 @@
 import { AcreContracts } from "../lib/contracts"
 import { fromSatoshi, toSatoshi } from "../lib/utils"
 
+export type ProtocolFee = {
+  fee: bigint
+  isReimbursable: boolean
+}
+
 /**
  * Represents all total deposit fees grouped by network.
  */
 export type Fees = {
-  tbtc: bigint
-  acre: bigint
+  tbtc: ProtocolFee
+  acre: ProtocolFee
   total: bigint
 }
 
@@ -52,13 +57,24 @@ export default class Protocol {
       amountInTokenPrecision,
     )
 
-    const tbtc = toSatoshi(sumFees(tbtcFees))
+    const { reimbursableFee, ...restTbtcFees } = tbtcFees
+
+    const totalTbtcFees = sumFees(restTbtcFees)
+    const isTbtcFeeReimbursable = totalTbtcFees - reimbursableFee <= 0n
+
+    const tbtc = toSatoshi(sumFees(restTbtcFees))
 
     const acre = toSatoshi(sumFees(acreFees)) + toSatoshi(depositFee)
 
     return {
-      tbtc,
-      acre,
+      tbtc: {
+        fee: tbtc,
+        isReimbursable: isTbtcFeeReimbursable,
+      },
+      acre: {
+        fee: acre,
+        isReimbursable: false,
+      },
       total: tbtc + acre,
     }
   }
@@ -86,8 +102,14 @@ export default class Protocol {
     const acre = toSatoshi(withdrawalFee)
 
     return {
-      tbtc,
-      acre,
+      tbtc: {
+        fee: tbtc,
+        isReimbursable: false,
+      },
+      acre: {
+        fee: acre,
+        isReimbursable: false,
+      },
       total: tbtc + acre,
     }
   }
