@@ -6,6 +6,7 @@ import { EthereumStBTC } from "./stbtc"
 import EthereumBitcoinRedeemer from "./bitcoin-redeemer"
 import TbtcBridge from "./tbtc-bridge"
 import TbtcVault from "./tbtc-vault"
+import ERC20Token from "./erc20-token"
 
 export * from "./bitcoin-depositor"
 export * from "./address"
@@ -17,14 +18,17 @@ async function initializeTbtcContracts(
 ): Promise<{
   tbtcBridge: TbtcBridge
   tbtcVault: TbtcVault
+  tbtcToken: ERC20Token
 }> {
   const tbtcBridgeAddress = await bitcoinDepositor.getTbtcBridgeAddress()
   const tbtcVaultAddress = await bitcoinDepositor.getTbtcVaultAddress()
+  const tbtcTokenAddress = await bitcoinDepositor.getTbtcTokenAddress()
 
   const tbtcBridge = new TbtcBridge(runner, tbtcBridgeAddress)
   const tbtcVault = new TbtcVault(runner, tbtcVaultAddress)
+  const tbtcToken = new ERC20Token(runner, tbtcTokenAddress)
 
-  return { tbtcBridge, tbtcVault }
+  return { tbtcBridge, tbtcVault, tbtcToken }
 }
 
 async function getEthereumContracts(
