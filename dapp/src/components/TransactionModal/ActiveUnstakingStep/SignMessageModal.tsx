@@ -17,6 +17,7 @@ import { useInitializeWithdraw } from "#/acre-react/hooks"
 import { time, queryKeysFactory } from "#/constants"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import PostHogEvent from "#/posthog/events"
+import { trackEvent } from "#/amplitude"
 import BuildTransactionModal from "./BuildTransactionModal"
 import WalletInteractionModal from "../WalletInteractionModal"
 
@@ -58,6 +59,7 @@ export default function SignMessageModal() {
   const onSignMessageSuccess = useCallback(() => {
     logPromiseFailure(refetchBitcoinPosition())
     dispatch(setStatus(PROCESS_STATUSES.SUCCEEDED))
+    trackEvent("withdraw_btc_completed", {})
     handleCapture(PostHogEvent.WithdrawalSuccess)
   }, [dispatch, refetchBitcoinPosition, handleCapture])
 
@@ -79,6 +81,7 @@ export default function SignMessageModal() {
         onSignMessageError(error)
       }
 
+      trackEvent("withdraw_btc_failed", {})
       handleCaptureWithCause(error, PostHogEvent.WithdrawalFailure)
     },
     [
