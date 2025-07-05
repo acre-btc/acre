@@ -168,5 +168,4 @@ export default {
     5: secondary.ivoire["40"],
     6: secondary.ivoire["50"],
   },
-  mezo: "#FF004D",
 }
