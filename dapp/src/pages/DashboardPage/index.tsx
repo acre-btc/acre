@@ -5,7 +5,6 @@ import { Grid } from "@chakra-ui/react"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
-import BeehiveCard from "./BeehiveCard"
 import AcreTVLProgress from "./AcreTVLProgress"
 
 export default function DashboardPage() {
@@ -19,12 +18,11 @@ export default function DashboardPage() {
           ${featureFlags.TVL_ENABLED ? '"tvl"' : ""}
           "dashboard"
           "acre-points"
-          "beehive"
         `,
         sm: `
           ${featureFlags.TVL_ENABLED ? '"tvl tvl"' : ""}
           "dashboard acre-points"
-          "dashboard beehive"
+          "dashboard acre-points"
           `,
       }}
       gridTemplateColumns={{
@@ -56,8 +54,6 @@ export default function DashboardPage() {
       ) : (
         <AcrePointsTemplateCard gridArea="acre-points" h="fit-content" />
       )}
-
-      <BeehiveCard gridArea="beehive" h="fit-content" />
     </Grid>
   )
 }
