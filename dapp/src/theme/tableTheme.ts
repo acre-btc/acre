@@ -28,6 +28,7 @@ const sizes = {
     table: {
       borderCollapse: "separate",
       borderSpacing: "0 8px",
+      mb: -2, // To normalize bottom spacing
     },
     th: {
       fontSize: "sm",

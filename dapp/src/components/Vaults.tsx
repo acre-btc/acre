@@ -20,8 +20,14 @@ import {
   Tr,
 } from "@chakra-ui/react"
 import { numbersUtils } from "#/utils"
-import { IconArrowUpRight, IconChevronRight } from "@tabler/icons-react"
-import { vaults } from "#/constants"
+import {
+  IconArrowUpRight,
+  IconChevronRight,
+  IconExclamationCircle,
+  IconRefresh,
+} from "@tabler/icons-react"
+import { queryKeysFactory, vaults } from "#/constants"
+import { useQuery } from "@tanstack/react-query"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -43,17 +49,27 @@ const MOCK_VAULTS: VaultItem[] = [
   },
 ]
 
-type VaultProps = Omit<CardProps, "children">
+type VaultsRootProps = CardProps
 
-function Vaults(props: VaultProps) {
+function VaultsRoot(props: VaultsRootProps) {
+  const { children, ...restProps } = props
+
   return (
-    <Card {...props}>
+    <Card {...restProps}>
       <CardHeader as={Text} size="md" mb={3}>
         Acre Vaults
       </CardHeader>
 
       <CardBody as={TableContainer}>
         <Table>
+          <colgroup>
+            <col style={{ width: "35%" }} />
+            <col style={{ width: "20%" }} />
+            <col style={{ width: "12.5%" }} />
+            <col style={{ width: "12.5%" }} />
+            <col style={{ width: "20%" }} />
+          </colgroup>
+
           <Thead>
             <Tr>
               <Th>Name</Th>
@@ -64,68 +80,131 @@ function Vaults(props: VaultProps) {
             </Tr>
           </Thead>
 
-          <Tbody>
-            {MOCK_VAULTS.map((vault) => {
-              const provider = vaults.VAULT_PROVIDERS[vault.provider]
-              const curator = vaults.VAULT_CURATORS[vault.curator]
-
-              return (
-                <Tr key={vault.portfolioWeight}>
-                  <Td>
-                    <Box display="flex" gap={2} alignItems="center">
-                      <Icon as={provider.icon} boxSize={6} />
-                      {provider.label}
-                    </Box>
-                  </Td>
-                  <Td>
-                    <Box display="flex" gap={2} alignItems="center">
-                      <CircularProgress
-                        size={5}
-                        thickness={40}
-                        clipPath="circle(50%)"
-                        color="green.50"
-                        value={getPercentValue(vault.portfolioWeight * 100)}
-                      />
-                      {getPercentValue(vault.portfolioWeight * 100)}%
-                    </Box>
-                  </Td>
-                  <Td>{getPercentValue(vault.apr * 100)}%</Td>
-                  <Td>{formatNumberToCompactString(vault.tvl)}</Td>
-                  <Td>
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Button
-                        as={Link}
-                        variant="link"
-                        leftIcon={
-                          <Icon as={IconArrowUpRight} color="acre.50" />
-                        }
-                        href={curator.url}
-                        isExternal
-                      >
-                        {curator.label}
-                      </Button>
-                      <Icon
-                        as={IconChevronRight}
-                        boxSize={5}
-                        color="brown.40"
-                      />
-                    </Box>
-                  </Td>
-                </Tr>
-              )
-            })}
-          </Tbody>
-
-          <Tfoot>
-            <Td colSpan={5}>More vaults coming soon</Td>
-          </Tfoot>
+          {children}
         </Table>
       </CardBody>
     </Card>
+  )
+}
+
+function Vaults(props: VaultsRootProps) {
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: queryKeysFactory.acreKeys.vaultsData(),
+    queryFn: () =>
+      // TODO: Replace with actual API call(s)
+      new Promise<VaultItem[]>((resolve, reject) => {
+        setTimeout(
+          () =>
+            Math.random() < 0.5
+              ? resolve(MOCK_VAULTS)
+              : reject(new Error("Failed to load vaults")),
+          2000,
+        )
+      }),
+    retry: false,
+  })
+
+  if (isPending) {
+    return (
+      <VaultsRoot {...props}>
+        <Tbody>
+          <Tr>
+            <Td colSpan={5}>
+              <Box display="flex" alignItems="center" gap={3}>
+                <CircularProgress isIndeterminate color="acre.50" size={5} />
+                <Text>Loading...</Text>
+              </Box>
+            </Td>
+          </Tr>
+        </Tbody>
+      </VaultsRoot>
+    )
+  }
+
+  if (isError) {
+    return (
+      <VaultsRoot {...props}>
+        <Tbody>
+          <Tr>
+            <Td colSpan={5}>
+              <Box display="flex" alignItems="center" gap={3} color="red.500">
+                <Icon as={IconExclamationCircle} boxSize={5} />
+                <Text>Error loading vaults</Text>
+                <Button
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                  onClick={() => refetch()}
+                  size="sm"
+                  variant="ghost"
+                  ml="auto"
+                  h="auto"
+                  leftIcon={<Icon as={IconRefresh} boxSize={4} />}
+                >
+                  Try again
+                </Button>
+              </Box>
+            </Td>
+          </Tr>
+        </Tbody>
+      </VaultsRoot>
+    )
+  }
+
+  return (
+    <VaultsRoot {...props}>
+      <Tbody>
+        {data.map((vault) => {
+          const provider = vaults.VAULT_PROVIDERS[vault.provider]
+          const curator = vaults.VAULT_CURATORS[vault.curator]
+
+          return (
+            <Tr key={vault.portfolioWeight}>
+              <Td>
+                <Box display="flex" gap={2} alignItems="center">
+                  <Icon as={provider.icon} boxSize={6} />
+                  {provider.label}
+                </Box>
+              </Td>
+              <Td>
+                <Box display="flex" gap={2} alignItems="center">
+                  <CircularProgress
+                    size={5}
+                    thickness={40}
+                    clipPath="circle(50%)"
+                    color="green.50"
+                    value={getPercentValue(vault.portfolioWeight * 100)}
+                  />
+                  {getPercentValue(vault.portfolioWeight * 100)}%
+                </Box>
+              </Td>
+              <Td>{getPercentValue(vault.apr * 100)}%</Td>
+              <Td>{formatNumberToCompactString(vault.tvl)}</Td>
+              <Td>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Button
+                    as={Link}
+                    variant="link"
+                    leftIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
+                    href={curator.url}
+                    isExternal
+                  >
+                    {curator.label}
+                  </Button>
+                  <Icon as={IconChevronRight} boxSize={5} color="brown.40" />
+                </Box>
+              </Td>
+            </Tr>
+          )
+        })}
+      </Tbody>
+
+      <Tfoot>
+        <Td colSpan={5}>More vaults coming soon</Td>
+      </Tfoot>
+    </VaultsRoot>
   )
 }
 
