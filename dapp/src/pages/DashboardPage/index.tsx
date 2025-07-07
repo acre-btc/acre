@@ -2,6 +2,7 @@ import React from "react"
 import { featureFlags } from "#/constants"
 import { useTriggerConnectWalletModal } from "#/hooks"
 import { Grid } from "@chakra-ui/react"
+import Vaults from "#/components/Vaults"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
@@ -18,6 +19,7 @@ export default function DashboardPage() {
         base: `
           ${featureFlags.TVL_ENABLED ? '"tvl"' : ""}
           "dashboard"
+          "vaults"
           "acre-points"
           "beehive"
         `,
@@ -25,6 +27,7 @@ export default function DashboardPage() {
           ${featureFlags.TVL_ENABLED ? '"tvl tvl"' : ""}
           "dashboard acre-points"
           "dashboard beehive"
+          "vaults vaults"
           `,
       }}
       gridTemplateColumns={{
@@ -58,6 +61,8 @@ export default function DashboardPage() {
       )}
 
       <BeehiveCard gridArea="beehive" h="fit-content" />
+
+      <Vaults gridArea="vaults" />
     </Grid>
   )
 }
