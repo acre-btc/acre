@@ -7,31 +7,44 @@ import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
 import TransactionHistory from "./TransactionHistory"
 
+const fullWidthGridColum = { base: "1", md: "span 3" }
+
+const grid = {
+  dashboard: { base: "1", md: "span 2" },
+  points: { base: "1", md: "3 / span 1" },
+  stats: { base: "1", md: "auto / span 1" },
+  vaults: fullWidthGridColum,
+  history: fullWidthGridColum,
+}
+
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
 
   return (
-    <Grid gridGap={{ base: 4, "2xl": 8 }} templateColumns="repeat(3, 1fr)">
-      <DashboardCard gridColumn="span 2" />
+    <Grid
+      gridGap={{ base: 4, "2xl": 8 }}
+      templateColumns={{ base: "1fr ", md: "repeat(3, 1fr)" }}
+    >
+      <DashboardCard gridColumn={grid.dashboard} />
 
       {featureFlags.ACRE_POINTS_ENABLED ? (
-        <AcrePointsCard gridColumn="3 / span 1" />
+        <AcrePointsCard gridColumn={grid.points} />
       ) : (
-        <AcrePointsTemplateCard gridRow="1 / 1" gridColumn="3 / span 1" />
+        <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
 
-      <Card w="100%" gridColumn="1 / span 1">
+      <Card w="100%" gridColumn={grid.stats}>
         BTC deposited
       </Card>
-      <Card w="100%" gridColumn="2 / span 1">
+      <Card w="100%" gridColumn={grid.stats}>
         Rewards
       </Card>
-      <Card w="100%" gridColumn="3 / span 1">
+      <Card w="100%" gridColumn={grid.stats}>
         APR(Est.)
       </Card>
 
-      <Card gridColumn="span 3">Acre Vaults</Card>
-      <Card gridColumn="span 3">
+      <Card gridColumn={grid.vaults}>Acre Vaults</Card>
+      <Card gridColumn={grid.history}>
         <TransactionHistory />
       </Card>
     </Grid>
