@@ -129,7 +129,10 @@ export default function SignMessageModal() {
             status: "pending",
             // This is a requested amount. The amount of BTC received will be
             // around: `amount - transactionFee.total`.
-            amount: amount - transactionFee.acre,
+            // TODO: Based on the comment above: shouldn't we use total fee
+            // instead of only Acre fee. We can also use `estimatedAmount` from
+            // `useTransactionDetails` hook.
+            amount: amount - transactionFee.acre.fee,
             initializedAt: timeUtils.dateToUnixTimestamp(),
             // The message is signed immediately after the initialization.
             finalizedAt: timeUtils.dateToUnixTimestamp(),
