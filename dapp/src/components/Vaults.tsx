@@ -41,11 +41,11 @@ type VaultItem = {
 
 const MOCK_VAULTS: VaultItem[] = [
   {
-    provider: "starknet",
+    provider: "tbtc",
     portfolioWeight: 1,
-    apr: 0.03,
+    apr: 0.09,
     tvl: 5_000_000,
-    curator: "august",
+    curator: "re7",
   },
 ]
 
