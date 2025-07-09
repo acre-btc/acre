@@ -24,6 +24,7 @@ import {
 import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import { BitcoinIcon } from "#/assets/icons"
 import { referralProgram, addressUtils } from "#/utils"
+import { trackEvent } from "#/amplitude"
 import { motion } from "framer-motion"
 import { MODAL_TYPES } from "#/types"
 import {
@@ -55,6 +56,7 @@ export default function ConnectWallet() {
   const isMobile = useMobileMode()
 
   const handleConnectWallet = (isReconnecting: boolean = false) => {
+    trackEvent("wallet_connection_clicked")
     openModal(MODAL_TYPES.CONNECT_WALLET, { isReconnecting })
   }
 

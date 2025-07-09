@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@acre-btc/sdk": "workspace:*",
+    "@amplitude/analytics-browser": "^2.17.10",
+    "@amplitude/plugin-session-replay-browser": "^1.19.0",
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",

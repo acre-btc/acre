@@ -26,6 +26,8 @@ const POSTHOG_API_HOST = import.meta.env.VITE_POSTHOG_API_HOST
 
 const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY
 
+const AMPLITUDE_API_KEY = import.meta.env.VITE_AMPLITUDE_API_KEY
+
 export default {
   PROD,
   USE_TESTNET,
@@ -41,4 +43,5 @@ export default {
   ACRE_API_ENDPOINT,
   POSTHOG_API_HOST,
   POSTHOG_API_KEY,
+  AMPLITUDE_API_KEY,
 }

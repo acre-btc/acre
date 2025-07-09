@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useCallback } from "react"
 import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
 import {
   useActivitiesCount,
@@ -24,6 +24,7 @@ import { featureFlags } from "#/constants"
 import { IconClockHour5Filled } from "@tabler/icons-react"
 import TooltipIcon from "#/components/shared/TooltipIcon"
 import { activitiesUtils } from "#/utils"
+import { trackEvent } from "#/amplitude"
 import AcreTVLMessage from "./AcreTVLMessage"
 
 const isWithdrawalFlowEnabled = featureFlags.WITHDRAWALS_ENABLED
@@ -43,7 +44,17 @@ export default function PositionDetails() {
   const bitcoinAmount = bitcoinPosition?.estimatedBitcoinBalance ?? 0n
 
   const openDepositModal = useTransactionModal(ACTION_FLOW_TYPES.STAKE)
+  const handleDeposit = useCallback(() => {
+    openDepositModal()
+    trackEvent("deposit_btc_started")
+  }, [openDepositModal])
+
   const openWithdrawModal = useTransactionModal(ACTION_FLOW_TYPES.UNSTAKE)
+  const handleWithdraw = useCallback(() => {
+    openWithdrawModal()
+    trackEvent("withdraw_btc_started")
+  }, [openWithdrawModal])
+
   const activitiesCount = useActivitiesCount()
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
@@ -97,7 +108,7 @@ export default function PositionDetails() {
           >
             <Button
               {...buttonStyles}
-              onClick={openDepositModal}
+              onClick={handleDeposit}
               isDisabled={
                 (featureFlags.DEPOSIT_CAP_ENABLED && tvl.isCapExceeded) ||
                 isDisabledForMobileMode
@@ -122,7 +133,7 @@ export default function PositionDetails() {
               <Button
                 variant="outline"
                 {...buttonStyles}
-                onClick={openWithdrawModal}
+                onClick={handleWithdraw}
                 isDisabled={!isWithdrawalFlowEnabled || isDisabledForMobileMode}
               >
                 Withdraw

@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react"
-import { sha256, toUtf8Bytes } from "ethers"
+import bitcoinAddressToUserId from "#/utils/bitcoinAddressToUserId"
 
 const initialize = (dsn: string) => {
   Sentry.init({
@@ -20,9 +20,6 @@ const initialize = (dsn: string) => {
 
 /**
  * Sets the user in Sentry with an ID from hashed Bitcoin address.
- * The Bitcoin address is first converted to lowercase and then hashed using SHA-256.
- * The resulting hash is then converted to a hexadecimal string and the first 10
- * characters are set as the user ID.
  *
  * @param bitcoinAddress - The Bitcoin address of the user. If undefined, the user
  * is set to null in Sentry.
@@ -33,9 +30,7 @@ const setUser = (bitcoinAddress: string | undefined) => {
     return
   }
 
-  const hashedBitcoinAddress = sha256(toUtf8Bytes(bitcoinAddress.toLowerCase()))
-  // Remove the 0x prefix and take the first 10 characters.
-  const id = hashedBitcoinAddress.slice(2, 12)
+  const id = bitcoinAddressToUserId(bitcoinAddress)
 
   Sentry.setUser({ id })
 }

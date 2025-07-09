@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { time } from "#/constants"
 import {
   useAppDispatch,
@@ -12,6 +12,7 @@ import {
 import { setIsSignedMessage } from "#/store/wallet"
 import { OrangeKitConnector, OrangeKitError, OnSuccessCallback } from "#/types"
 import { eip1193, logPromiseFailure, orangeKit } from "#/utils"
+import { trackEvent } from "#/amplitude"
 import {
   Button,
   Card,
@@ -82,14 +83,23 @@ export default function ConnectWalletButton({
   const shouldShowStatuses = isSelected && !hasConnectionError
   const shouldShowRetryButton = address && hasSignMessageErrorStatus
 
+  const walletType = useMemo(
+    () => connector.id.replace("orangekit-", "") as "okx" | "unisat" | "xverse",
+    [connector.id],
+  )
+
   const onSuccessSignMessage = useCallback(() => {
     closeModal()
     dispatch(setIsSignedMessage(true))
 
+    trackEvent("wallet_connection_completed", {
+      wallet_type: walletType,
+    })
+
     if (onSuccess) {
       onSuccess()
     }
-  }, [closeModal, dispatch, onSuccess])
+  }, [closeModal, dispatch, onSuccess, walletType])
 
   const handleSignMessageAndCreateSession = useCallback(
     async (connectedConnector: OrangeKitConnector, btcAddress: string) => {
@@ -169,6 +179,11 @@ export default function ConnectWalletButton({
     // Do not trigger action again when wallet connection is in progress
     if (shouldShowStatuses) return
 
+    trackEvent("wallet_connection_started", {
+      wallet_type: walletType,
+      is_embed: false,
+    })
+
     if (!isReconnecting) onDisconnect()
     resetConnectionAlert()
     resetMessageStatus()
@@ -187,9 +202,13 @@ export default function ConnectWalletButton({
   useEffect(() => {
     if (!isMounted.current && isEmbed && isSelected) {
       isMounted.current = true
+      trackEvent("wallet_connection_started", {
+        wallet_type: walletType,
+        is_embed: true,
+      })
       handleConnection()
     }
-  }, [handleConnection, isEmbed, isSelected])
+  }, [handleConnection, isEmbed, isSelected, walletType])
 
   return (
     <Card
