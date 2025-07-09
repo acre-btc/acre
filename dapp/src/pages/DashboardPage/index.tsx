@@ -6,6 +6,7 @@ import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
 import TransactionHistory from "./TransactionHistory"
+import BTCDepositedCard from "./BTCDepositedCard"
 
 const fullWidthGridColumn = { base: "1", md: "span 3" }
 
@@ -33,17 +34,13 @@ export default function DashboardPage() {
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
 
-      <Card w="100%" gridColumn={grid.stats}>
-        BTC deposited
-      </Card>
-      <Card w="100%" gridColumn={grid.stats}>
-        Rewards
-      </Card>
-      <Card w="100%" gridColumn={grid.stats}>
-        APR(Est.)
-      </Card>
+      {/* TODO: Add all cards */}
+      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
+      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
+      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
 
       <Card gridColumn={grid.vaults}>Acre Vaults</Card>
+
       <Card gridColumn={grid.history}>
         <TransactionHistory />
       </Card>
