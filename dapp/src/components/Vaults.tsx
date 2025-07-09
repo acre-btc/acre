@@ -19,7 +19,7 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { numbersUtils } from "#/utils"
+import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
   IconChevronRight,
@@ -104,6 +104,8 @@ function Vaults(props: VaultsRootProps) {
     retry: false,
   })
 
+  const handleRefetch = () => logPromiseFailure(refetch())
+
   if (isPending) {
     return (
       <VaultsRoot {...props}>
@@ -131,8 +133,7 @@ function Vaults(props: VaultsRootProps) {
                 <Icon as={IconExclamationCircle} boxSize={5} />
                 <Text>Error loading vaults</Text>
                 <Button
-                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                  onClick={() => refetch()}
+                  onClick={handleRefetch}
                   size="sm"
                   variant="ghost"
                   ml="auto"
