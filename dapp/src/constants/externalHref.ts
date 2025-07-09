@@ -8,4 +8,5 @@ export default {
   TERMS_OF_USE: "https://acre.fi/terms-of-use",
   PRIVACY_POLICY: "https://acre.fi/privacy-policy",
   X: "https://x.com/AcreBTC",
+  AUGUST: "", // TODO
 }

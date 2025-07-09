@@ -1,4 +1,5 @@
 import StarknetIcon from "../assets/icons/StarknetIcon"
+import externalHref from "./externalHref"
 
 const VAULT_PROVIDERS = {
   starknet: {
@@ -10,7 +11,7 @@ const VAULT_PROVIDERS = {
 const VAULT_CURATORS = {
   august: {
     label: "August",
-    url: "", // TODO
+    url: externalHref.AUGUST,
   },
 }
 
