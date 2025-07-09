@@ -154,6 +154,12 @@ function Vaults(props: VaultsRootProps) {
       <Tbody>
         {data.map((vault) => {
           const provider = vaults.VAULT_PROVIDERS[vault.provider]
+          const portfolioWeightPercentage = getPercentValue(
+            vault.portfolioWeight,
+            1,
+          )
+          const aprPercentage = getPercentValue(vault.apr, 1)
+          const formattedTvl = formatNumberToCompactString(vault.tvl)
           const curator = vaults.VAULT_CURATORS[vault.curator]
 
           return (
@@ -171,13 +177,13 @@ function Vaults(props: VaultsRootProps) {
                     thickness={40}
                     clipPath="circle(50%)"
                     color="green.50"
-                    value={getPercentValue(vault.portfolioWeight * 100)}
+                    value={portfolioWeightPercentage}
                   />
-                  {getPercentValue(vault.portfolioWeight * 100)}%
+                  {portfolioWeightPercentage}%
                 </Box>
               </Td>
-              <Td>{getPercentValue(vault.apr * 100)}%</Td>
-              <Td>{formatNumberToCompactString(vault.tvl)}</Td>
+              <Td>{aprPercentage}%</Td>
+              <Td>{formattedTvl}</Td>
               <Td>
                 <Box
                   display="flex"
