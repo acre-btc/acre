@@ -209,7 +209,9 @@ function Vaults(props: VaultsRootProps) {
       </Tbody>
 
       <Tfoot>
-        <Td colSpan={5}>More vaults coming soon</Td>
+        <Tr>
+          <Td colSpan={5}>More vaults coming soon</Td>
+        </Tr>
       </Tfoot>
     </VaultsRoot>
   )
