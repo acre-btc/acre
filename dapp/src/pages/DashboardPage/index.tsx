@@ -7,14 +7,14 @@ import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
 import TransactionHistory from "./TransactionHistory"
 
-const fullWidthGridColum = { base: "1", md: "span 3" }
+const fullWidthGridColumn = { base: "1", md: "span 3" }
 
 const grid = {
   dashboard: { base: "1", md: "span 2" },
   points: { base: "1", md: "3 / span 1" },
   stats: { base: "1", md: "auto / span 1" },
-  vaults: fullWidthGridColum,
-  history: fullWidthGridColum,
+  vaults: fullWidthGridColumn,
+  history: fullWidthGridColumn,
 }
 
 export default function DashboardPage() {
