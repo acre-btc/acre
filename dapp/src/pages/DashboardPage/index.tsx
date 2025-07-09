@@ -1,11 +1,21 @@
 import React from "react"
 import { featureFlags } from "#/constants"
 import { useTriggerConnectWalletModal } from "#/hooks"
-import { Grid } from "@chakra-ui/react"
+import { Card, Grid } from "@chakra-ui/react"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
-import AcreTVLProgress from "./AcreTVLProgress"
+import TransactionHistory from "./TransactionHistory"
+
+const fullWidthGridColumn = { base: "1", md: "span 3" }
+
+const grid = {
+  dashboard: { base: "1", md: "span 2" },
+  points: { base: "1", md: "3 / span 1" },
+  stats: { base: "1", md: "auto / span 1" },
+  vaults: fullWidthGridColumn,
+  history: fullWidthGridColumn,
+}
 
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
@@ -13,47 +23,30 @@ export default function DashboardPage() {
   return (
     <Grid
       gridGap={{ base: 4, "2xl": 8 }}
-      gridTemplateAreas={{
-        base: `
-          ${featureFlags.TVL_ENABLED ? '"tvl"' : ""}
-          "dashboard"
-          "acre-points"
-        `,
-        sm: `
-          ${featureFlags.TVL_ENABLED ? '"tvl tvl"' : ""}
-          "dashboard acre-points"
-          "dashboard acre-points"
-          `,
-      }}
-      gridTemplateColumns={{
-        base: "1fr",
-        sm: "1fr 1fr",
-        lg: "1fr 31%",
-        "2xl": "1fr 36%",
-      }}
-      gridTemplateRows={{
-        base: `
-          ${featureFlags.TVL_ENABLED ? "auto" : ""}
-          auto
-          auto
-          1fr
-        `,
-        sm: `
-          ${featureFlags.TVL_ENABLED ? "auto" : ""}
-          auto
-          1fr
-          `,
-      }}
+      templateColumns={{ base: "1fr ", md: "repeat(3, 1fr)" }}
     >
-      {featureFlags.TVL_ENABLED && <AcreTVLProgress gridArea="tvl" />}
-
-      <DashboardCard gridArea="dashboard" h="fit-content" />
+      <DashboardCard gridColumn={grid.dashboard} />
 
       {featureFlags.ACRE_POINTS_ENABLED ? (
-        <AcrePointsCard gridArea="acre-points" h="fit-content" />
+        <AcrePointsCard gridColumn={grid.points} />
       ) : (
-        <AcrePointsTemplateCard gridArea="acre-points" h="fit-content" />
+        <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
+
+      <Card w="100%" gridColumn={grid.stats}>
+        BTC deposited
+      </Card>
+      <Card w="100%" gridColumn={grid.stats}>
+        Rewards
+      </Card>
+      <Card w="100%" gridColumn={grid.stats}>
+        APR(Est.)
+      </Card>
+
+      <Card gridColumn={grid.vaults}>Acre Vaults</Card>
+      <Card gridColumn={grid.history}>
+        <TransactionHistory />
+      </Card>
     </Grid>
   )
 }
