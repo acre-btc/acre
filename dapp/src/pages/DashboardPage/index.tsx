@@ -36,7 +36,6 @@ export default function DashboardPage() {
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
 
-      {/* TODO: Add all cards */}
       <BTCDepositedCard gridColumn={grid.stats} />
       <RewardsEarnedCard gridColumn={grid.stats} />
       <EstimatedAPRCard gridColumn={grid.stats} />
