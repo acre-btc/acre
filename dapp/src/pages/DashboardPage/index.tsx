@@ -7,6 +7,8 @@ import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
 import TransactionHistory from "./TransactionHistory"
 import BTCDepositedCard from "./BTCDepositedCard"
+import RewardsEarnedCard from "./RewardsEarnedCard"
+import EstimatedAPRCard from "./EstimatedAPRCard"
 
 const fullWidthGridColumn = { base: "1", md: "span 3" }
 
@@ -35,9 +37,9 @@ export default function DashboardPage() {
       )}
 
       {/* TODO: Add all cards */}
-      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
-      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
-      <BTCDepositedCard w="100%" gridColumn={grid.stats} />
+      <BTCDepositedCard gridColumn={grid.stats} />
+      <RewardsEarnedCard gridColumn={grid.stats} />
+      <EstimatedAPRCard gridColumn={grid.stats} />
 
       <Card gridColumn={grid.vaults}>Acre Vaults</Card>
 

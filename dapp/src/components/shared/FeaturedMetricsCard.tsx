@@ -47,7 +47,7 @@ function FeaturedMetricsCard(props: FeaturedMetricsCardProps) {
         </Text>
 
         {secondaryValue && (
-          <Text fontSize="md" color="neutral.60">
+          <Text fontSize="sm" color="neutral.60">
             {secondaryValue}
           </Text>
         )}
