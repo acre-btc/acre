@@ -145,7 +145,7 @@ function Vaults(props: VaultsRootProps) {
             1,
           )
           const aprPercentage = getPercentValue(vault.apr, 1)
-          const formattedTvl = formatNumberToCompactString(vault.tvl)
+          const formattedTvl = formatNumberToCompactString(vault.tvl, 2)
           const curator = vaults.VAULT_CURATORS[vault.curator]
 
           return (
