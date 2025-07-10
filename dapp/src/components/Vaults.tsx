@@ -130,7 +130,7 @@ function Vaults(props: VaultsRootProps) {
       provider: "tbtc",
       portfolioWeight: 1,
       apr: 0.09,
-      tvl: statistics.data.tvl.value,
+      tvl: statistics.data.tvl.usdValue,
       curator: "re7",
     },
   ]
