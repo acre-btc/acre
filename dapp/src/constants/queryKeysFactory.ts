@@ -13,7 +13,6 @@ const acreKeys = {
   statistics: () => [...acreKeys.all, "statistics"] as const,
   mats: () => [...acreKeys.all, "mats"] as const,
   pointsData: () => [...acreKeys.all, "points-data"] as const,
-  vaultsData: () => [...acreKeys.all, "vaults-data"] as const,
 }
 
 export default {
