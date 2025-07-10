@@ -2,6 +2,7 @@ import React from "react"
 import { featureFlags } from "#/constants"
 import { useTriggerConnectWalletModal } from "#/hooks"
 import { Card, Grid } from "@chakra-ui/react"
+import Vaults from "#/components/Vaults"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
@@ -43,7 +44,8 @@ export default function DashboardPage() {
         APR(Est.)
       </Card>
 
-      <Card gridColumn={grid.vaults}>Acre Vaults</Card>
+      <Vaults gridColumn={grid.vaults} />
+
       <Card gridColumn={grid.history}>
         <TransactionHistory />
       </Card>
