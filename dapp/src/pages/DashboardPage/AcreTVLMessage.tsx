@@ -13,7 +13,10 @@ export default function AcreTVLMessage(props: AcreTVLMessageProps) {
 
   const isFirstTimeUser = activitiesCount === 0
 
-  if ((isConnected && !isFirstTimeUser) || !statistics.data) {
+  if (
+    (isConnected && !isFirstTimeUser) ||
+    !statistics.data?.tvl.isCapExceeded
+  ) {
     return null
   }
 

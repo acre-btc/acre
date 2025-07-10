@@ -10,9 +10,9 @@ const useStatistics = () =>
     queryFn: acreApi.getStatistics,
     refetchInterval: time.REFETCH_INTERVAL_IN_MILLISECONDS,
     select: (data) => {
-      const bitcoinTvl = data?.btc ?? 0
-      const usdTvl = data?.usd ?? 0
-      const tvlCap = data?.cap ?? 0
+      const bitcoinTvl = data.btc
+      const usdTvl = data.usd
+      const tvlCap = data.cap
 
       const isCapExceeded = bitcoinTvl > tvlCap
 
@@ -32,6 +32,11 @@ const useStatistics = () =>
           cap: tvlCap,
         },
       }
+    },
+    initialData: {
+      usd: 0,
+      btc: 0,
+      cap: 0,
     },
   })
 
