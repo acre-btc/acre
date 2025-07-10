@@ -10,6 +10,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@keep-network/tbtc-v2/contracts/integrator/AbstractTBTCDepositor.sol";
 
 import {stBTC} from "../../stBTC.sol";
+import {FeesReimbursementPool} from "../../FeesReimbursementPool.sol";
 
 /// @title BitcoinDepositorV2
 /// @dev This is a contract used to test Bitcoin Depositor upgradeability.
@@ -56,6 +57,16 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///       `1/50 = 0.02 = 2%`.
     uint64 public depositorFeeDivisor;
 
+    /// @notice Fees reimbursement pool.
+    FeesReimbursementPool public feesReimbursementPool;
+
+    /// @notice Minimum deposit amount threshold for tBTC Bridge fees reimbursement.
+    ///         For deposits below this threshold, the fees will be reimbursed
+    ///         from the fees reimbursement pool.
+    /// @dev If the threshold is set to 0, the fees reimbursement is disabled.
+    ///      The threshold is in tBTC token precision.
+    uint256 public bridgeFeesReimbursementThreshold;
+
     // TEST: New variable;
     uint256 public newVariable;
 
@@ -78,6 +89,7 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///      event emitted in the same transaction.
     /// @param depositKey Deposit key identifying the deposit.
     /// @param caller Address that finalized the deposit.
+    /// @param referral Data used for referral program.
     /// @param initialAmount Amount of funding transaction.
     /// @param bridgedAmount Amount of tBTC tokens that was bridged by the tBTC bridge.
     /// @param depositorFee Depositor fee amount.
@@ -98,6 +110,13 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @notice Emitted when a depositor fee divisor is updated.
     /// @param depositorFeeDivisor New value of the depositor fee divisor.
     event DepositorFeeDivisorUpdated(uint64 depositorFeeDivisor);
+
+    /// @notice Emitted when a tBTC Bridge fees reimbursement threshold is updated.
+    /// @param bridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
+    ///        reimbursement threshold.
+    event BridgeFeesReimbursementThresholdUpdated(
+        uint256 bridgeFeesReimbursementThreshold
+    );
 
     // TEST: New event;
     event NewEvent();
@@ -224,10 +243,25 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
             bytes32 extraData
         ) = _finalizeDeposit(depositKey);
 
+        if (
+            bridgeFeesReimbursementThreshold > 0 &&
+            initialAmount < bridgeFeesReimbursementThreshold
+        ) {
+            uint256 tbtcBridgeFee = initialAmount - tbtcAmount;
+
+            if (tbtcBridgeFee > 0) {
+                uint256 reimbursedAmount = feesReimbursementPool.reimburse(
+                    tbtcBridgeFee
+                );
+
+                tbtcAmount += reimbursedAmount;
+            }
+        }
+
         // Compute depositor fee. The fee is calculated based on the initial funding
         // transaction amount, before the tBTC protocol network fees were taken.
         uint256 depositorFee = depositorFeeDivisor > 0
-            ? (initialAmount / depositorFeeDivisor)
+            ? Math.ceilDiv(initialAmount, depositorFeeDivisor)
             : 0;
 
         // Ensure the depositor fee does not exceed the approximate minted tBTC
@@ -292,6 +326,19 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         depositorFeeDivisor = newDepositorFeeDivisor;
 
         emit DepositorFeeDivisorUpdated(newDepositorFeeDivisor);
+    }
+
+    /// @notice Updates the tBTC Bridge fees reimbursement threshold.
+    /// @param newBridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
+    ///        reimbursement threshold.
+    function updateBridgeFeesReimbursementThreshold(
+        uint256 newBridgeFeesReimbursementThreshold
+    ) external onlyOwner {
+        bridgeFeesReimbursementThreshold = newBridgeFeesReimbursementThreshold;
+
+        emit BridgeFeesReimbursementThresholdUpdated(
+            newBridgeFeesReimbursementThreshold
+        );
     }
 
     /// @notice Encodes deposit owner address and referral as extra data.
