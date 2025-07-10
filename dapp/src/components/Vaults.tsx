@@ -22,7 +22,6 @@ import {
 import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
-  IconChevronRight,
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
@@ -186,7 +185,6 @@ function Vaults(props: VaultsRootProps) {
                   >
                     {curator.label}
                   </Button>
-                  <Icon as={IconChevronRight} boxSize={5} color="brown.40" />
                 </Box>
               </Td>
             </Tr>
