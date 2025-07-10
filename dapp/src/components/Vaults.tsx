@@ -169,7 +169,7 @@ function Vaults(props: VaultsRootProps) {
                   {portfolioWeightPercentage}%
                 </Box>
               </Td>
-              <Td>{aprPercentage}%</Td>
+              <Td>{aprPercentage}% (est.)</Td>
               <Td>{formattedTvl}</Td>
               <Td>
                 <Box
