@@ -7,15 +7,20 @@ import CurrencyBalance from "#/components/shared/CurrencyBalance"
 type AcreTVLMessageProps = Omit<StackProps, "children">
 
 export default function AcreTVLMessage(props: AcreTVLMessageProps) {
-  const { tvl } = useStatistics()
+  const statistics = useStatistics()
   const { isConnected } = useWallet()
   const activitiesCount = useActivitiesCount()
 
   const isFirstTimeUser = activitiesCount === 0
 
-  if (isConnected && !isFirstTimeUser && !tvl.isCapExceeded) {
+  if (
+    (isConnected && !isFirstTimeUser) ||
+    !statistics.data?.tvl.isCapExceeded
+  ) {
     return null
   }
+
+  const { tvl } = statistics.data
 
   return (
     <HStack align="start" spacing={1} color="text.tertiary" {...props}>

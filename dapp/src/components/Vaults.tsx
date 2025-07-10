@@ -22,12 +22,11 @@ import {
 import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
-  IconChevronRight,
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
-import { queryKeysFactory, vaults } from "#/constants"
-import { useQuery } from "@tanstack/react-query"
+import { vaults } from "#/constants"
+import { useStatistics } from "#/hooks"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -38,16 +37,6 @@ type VaultItem = {
   tvl: number
   curator: keyof typeof vaults.VAULT_CURATORS
 }
-
-const MOCK_VAULTS: VaultItem[] = [
-  {
-    provider: "tbtc",
-    portfolioWeight: 1,
-    apr: 0.09,
-    tvl: 5_000_000,
-    curator: "re7",
-  },
-]
 
 type VaultsRootProps = CardProps
 
@@ -88,25 +77,11 @@ function VaultsRoot(props: VaultsRootProps) {
 }
 
 function Vaults(props: VaultsRootProps) {
-  const { data, isPending, isError, refetch } = useQuery({
-    queryKey: queryKeysFactory.acreKeys.vaultsData(),
-    queryFn: () =>
-      // TODO: Replace with actual API call(s)
-      new Promise<VaultItem[]>((resolve, reject) => {
-        setTimeout(
-          () =>
-            Math.random() < 0.5
-              ? resolve(MOCK_VAULTS)
-              : reject(new Error("Failed to load vaults")),
-          2000,
-        )
-      }),
-    retry: false,
-  })
+  const statistics = useStatistics()
 
-  const handleRefetch = () => logPromiseFailure(refetch())
+  const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
-  if (isPending) {
+  if (statistics.isPending) {
     return (
       <VaultsRoot {...props}>
         <Tbody>
@@ -123,7 +98,7 @@ function Vaults(props: VaultsRootProps) {
     )
   }
 
-  if (isError) {
+  if (statistics.isError) {
     return (
       <VaultsRoot {...props}>
         <Tbody>
@@ -150,17 +125,27 @@ function Vaults(props: VaultsRootProps) {
     )
   }
 
+  const vaultsItems: VaultItem[] = [
+    {
+      provider: "tbtc",
+      portfolioWeight: 1,
+      apr: 0.09,
+      tvl: statistics.data.tvl.usdValue,
+      curator: "re7",
+    },
+  ]
+
   return (
     <VaultsRoot {...props}>
       <Tbody>
-        {data.map((vault) => {
+        {vaultsItems.map((vault) => {
           const provider = vaults.VAULT_PROVIDERS[vault.provider]
           const portfolioWeightPercentage = getPercentValue(
             vault.portfolioWeight,
             1,
           )
           const aprPercentage = getPercentValue(vault.apr, 1)
-          const formattedTvl = formatNumberToCompactString(vault.tvl)
+          const formattedTvl = formatNumberToCompactString(vault.tvl, 2)
           const curator = vaults.VAULT_CURATORS[vault.curator]
 
           return (
@@ -183,7 +168,7 @@ function Vaults(props: VaultsRootProps) {
                   {portfolioWeightPercentage}%
                 </Box>
               </Td>
-              <Td>{aprPercentage}%</Td>
+              <Td>{aprPercentage}% (est.)</Td>
               <Td>{formattedTvl}</Td>
               <Td>
                 <Box
@@ -200,7 +185,6 @@ function Vaults(props: VaultsRootProps) {
                   >
                     {curator.label}
                   </Button>
-                  <Icon as={IconChevronRight} boxSize={5} color="brown.40" />
                 </Box>
               </Td>
             </Tr>
