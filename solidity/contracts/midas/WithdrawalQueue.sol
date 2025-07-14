@@ -7,6 +7,8 @@ import {Maintainable} from "../utils/Maintainable.sol";
 import {IVault} from "./IVault.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
 import {ITBTCToken} from "../bridge/ITBTCToken.sol";
+import {stBTC} from "../stBTC.sol";
+import {MidasAllocator} from "./MidasAllocator.sol";
 
 contract WithdrawalQueue is Maintainable {
     using SafeERC20 for IERC20;
@@ -21,6 +23,9 @@ contract WithdrawalQueue is Maintainable {
         bytes redeemerOutputScript;
         uint256 midasRequestId;
     }
+
+    /// @notice Basis point scale.
+    uint256 internal constant BASIS_POINT_SCALE = 1e4;
 
     /// @notice tBTC token contract.
     ITBTCToken public tbtc;
@@ -38,10 +43,13 @@ contract WithdrawalQueue is Maintainable {
     uint256 public count;
 
     // Midas Allocator
-    address public midasAllocator;
+    MidasAllocator public midasAllocator;
 
     /// @notice TBTC Vault contract.
     address public tbtcVault;
+
+    /// @notice stBTC contract.
+    stBTC public stbtc;
 
     /// @notice Not Midas Allocator.
     error NotMidasAllocator();
@@ -77,7 +85,8 @@ contract WithdrawalQueue is Maintainable {
         address _tbtc,
         address _vault,
         address _midasAllocator,
-        address _tbtcVault
+        address _tbtcVault,
+        address _stbtc
     ) public initializer {
         __MaintainableOwnable_init(msg.sender);
 
@@ -90,10 +99,14 @@ contract WithdrawalQueue is Maintainable {
         if (_tbtcVault == address(0)) {
             revert ZeroAddress();
         }
+        if (_stbtc == address(0)) {
+            revert ZeroAddress();
+        }
 
         tbtc = ITBTCToken(_tbtc);
         vault = IVault(_vault);
         tbtcVault = _tbtcVault;
+        stbtc = stBTC(_stbtc);
 
         vaultSharesToken = IERC20(vault.share());
         if (address(vaultSharesToken) == address(0)) {
@@ -104,26 +117,26 @@ contract WithdrawalQueue is Maintainable {
             revert ZeroAddress();
         }
 
-        midasAllocator = _midasAllocator;
+        midasAllocator = MidasAllocator(_midasAllocator);
     }
 
     /// @notice Creates a new withdrawal request.
-    /// @param _redeemer Address of the redeemer.
     /// @param _shares Amount of shares to withdraw.
-    /// @param _tbtcAmount Amount of tBTC to withdraw.
     /// @param _redeemerOutputScript Redeemer output script.
     function createWithdrawalRequest(
-        address _redeemer,
         uint256 _shares,
-        uint256 _tbtcAmount,
         bytes memory _redeemerOutputScript
-    ) external onlyMidasAllocator {
-        vaultSharesToken.transferFrom(msg.sender, address(this), _shares);
-        uint256 requestId = vault.requestRedeem(_shares);
+    ) external {
+        stbtc.transferFrom(msg.sender, address(this), _shares);
+        stbtc.burn(_shares);
+        uint256 tbtcAmount = stbtc.convertToAssets(_shares);
+        uint256 midasShares = vault.convertToShares(tbtcAmount);
+        midasAllocator.withdraw(midasShares);
+        uint256 requestId = vault.requestRedeem(midasShares);
         withdrawalRequests[count] = WithdrawalRequest({
-            redeemer: _redeemer,
-            shares: _shares,
-            tbtcAmount: _tbtcAmount,
+            redeemer: msg.sender,
+            shares: midasShares,
+            tbtcAmount: tbtcAmount,
             createdAt: block.timestamp,
             completedAt: 0,
             isCompleted: false,
@@ -135,9 +148,9 @@ contract WithdrawalQueue is Maintainable {
 
         emit WithdrawalRequestCreated(
             count,
-            _redeemer,
-            _shares,
-            _tbtcAmount,
+            msg.sender,
+            midasShares,
+            tbtcAmount,
             _redeemerOutputScript,
             requestId
         );
@@ -153,22 +166,21 @@ contract WithdrawalQueue is Maintainable {
         WithdrawalRequest storage request = withdrawalRequests[_requestId];
         request.completedAt = block.timestamp;
         request.isCompleted = true;
+        uint256 tbtcAmount = request.tbtcAmount; // cache the tbtc amount
+        uint256 exitFee = (tbtcAmount * stbtc.exitFeeBasisPoints()) /
+            BASIS_POINT_SCALE;
+        if (exitFee > 0) {
+            stbtc.transfer(stbtc.treasury(), exitFee);
+        }
 
         if (
             !tbtc.approveAndCall(
                 tbtcVault,
-                request.tbtcAmount,
+                tbtcAmount - exitFee,
                 request.redeemerOutputScript
             )
         ) {
             revert ApproveAndCallFailed();
         }
-    }
-
-    modifier onlyMidasAllocator() {
-        if (msg.sender != midasAllocator) {
-            revert NotMidasAllocator();
-        }
-        _;
     }
 }

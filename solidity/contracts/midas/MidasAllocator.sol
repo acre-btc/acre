@@ -8,6 +8,7 @@ import {ZeroAddress} from "../utils/Errors.sol";
 import "../stBTC.sol";
 import "../interfaces/IDispatcher.sol";
 import {IVault} from "./IVault.sol";
+import {WithdrawalQueue} from "./WithdrawalQueue.sol";
 
 /// @notice MidasAllocator routes tBTC to/from Midas Vault.
 contract MidasAllocator is IDispatcher, Maintainable {
@@ -25,8 +26,14 @@ contract MidasAllocator is IDispatcher, Maintainable {
     /// @notice Address of the VaultReceiptToken contract.
     IERC20 public vaultSharesToken;
 
+    /// @notice Address of the WithdrawalQueue contract.
+    WithdrawalQueue public withdrawalQueue;
+
     /// @notice Emitted when tBTC is deposited to Midas Vault.
     event DepositAllocated(uint256 addedAmount, uint256 shares);
+
+    /// @notice Not withdrawal queue.
+    error NotWithdrawalQueue();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -92,7 +99,10 @@ contract MidasAllocator is IDispatcher, Maintainable {
     }
 
     function withdraw(uint256 amount) external {
-        revert("not implemented");
+        if (msg.sender != address(withdrawalQueue)) {
+            revert NotWithdrawalQueue();
+        }
+        vaultSharesToken.transfer(address(withdrawalQueue), amount);
     }
 
     /// @notice Returns the total amount of tBTC allocated to MezoPortal including
@@ -109,5 +119,12 @@ contract MidasAllocator is IDispatcher, Maintainable {
     ///      allocator upgrade or in case of emergencies.
     function emergencyWithdraw() external onlyOwner {
         revert("not implemented");
+    }
+
+    function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {
+        if (address(_withdrawalQueue) == address(0)) {
+            revert ZeroAddress();
+        }
+        withdrawalQueue = WithdrawalQueue(_withdrawalQueue);
     }
 }
