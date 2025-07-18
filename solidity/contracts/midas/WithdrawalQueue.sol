@@ -20,8 +20,9 @@ contract WithdrawalQueue is Maintainable {
         uint256 createdAt;
         uint256 completedAt;
         bool isCompleted;
-        bytes redeemerOutputScript;
+        bytes20 walletPubKeyHash;
         uint256 midasRequestId;
+        bool receiveOnEVM;
     }
 
     /// @notice Basis point scale.
@@ -63,15 +64,27 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Withdrawal request already completed.
     error WithdrawalRequestAlreadyCompleted();
 
+    /// @notice Invalid redemption data.
+    error InvalidRedemptionData(
+        address redeemer,
+        address expectedRedeemer,
+        bytes20 walletPubKeyHash,
+        bytes20 expectedWalletPubKeyHash
+    );
+
     /// @notice Emitted when a withdrawal request is created.
     event WithdrawalRequestCreated(
         uint256 indexed requestId,
         address indexed redeemer,
         uint256 shares,
         uint256 tbtcAmount,
-        bytes redeemerOutputScript,
-        uint256 midasRequestId
+        bytes20 walletPubKeyHash,
+        uint256 midasRequestId,
+        bool receiveOnEVM
     );
+
+    /// @notice Emitted when a withdrawal request is completed.
+    event WithdrawalRequestCompleted(uint256 indexed requestId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -122,10 +135,12 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Creates a new withdrawal request.
     /// @param _shares Amount of shares to withdraw.
-    /// @param _redeemerOutputScript Redeemer output script.
+    /// @param _walletPubKeyHash Wallet public key hash.
+    /// @param _receiveOnEVM Whether to receive on EVM.
     function createWithdrawalRequest(
         uint256 _shares,
-        bytes memory _redeemerOutputScript
+        bytes20 _walletPubKeyHash,
+        bool _receiveOnEVM
     ) external {
         stbtc.transferFrom(msg.sender, address(this), _shares);
         stbtc.burn(_shares);
@@ -140,8 +155,9 @@ contract WithdrawalQueue is Maintainable {
             createdAt: block.timestamp,
             completedAt: 0,
             isCompleted: false,
-            redeemerOutputScript: _redeemerOutputScript,
-            midasRequestId: requestId
+            walletPubKeyHash: _walletPubKeyHash,
+            midasRequestId: requestId,
+            receiveOnEVM: _receiveOnEVM
         });
 
         count++;
@@ -151,36 +167,76 @@ contract WithdrawalQueue is Maintainable {
             msg.sender,
             midasShares,
             tbtcAmount,
-            _redeemerOutputScript,
-            requestId
+            _walletPubKeyHash,
+            requestId,
+            _receiveOnEVM
         );
     }
 
+    /// @notice Completes a withdrawal request.
+    /// @param _requestId ID of the withdrawal request.
+    /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
+    ///        See `redemptionData` parameter description of `Bridge.requestRedemption`
+    ///        function.
     function completeWithdrawalRequest(
-        uint256 _requestId
+        uint256 _requestId,
+        bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
         // TBTC Token contract owner resolves to the TBTCVault contract.
         if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
         if (withdrawalRequests[_requestId].isCompleted)
             revert WithdrawalRequestAlreadyCompleted();
+
+        (uint256 tbtcAmount, uint256 exitFee) = _finalizeRequestandTakeExitFee(
+            _requestId
+        );
+
+        if (withdrawalRequests[_requestId].receiveOnEVM) {
+            IERC20(address(tbtc)).transfer(
+                withdrawalRequests[_requestId].redeemer,
+                tbtcAmount - exitFee
+            );
+        } else {
+            (address redeemer, bytes20 walletPubKeyHash, , , , ) = abi.decode(
+                _tbtcRedemptionData,
+                (address, bytes20, bytes32, uint32, uint64, bytes)
+            );
+            if (
+                redeemer != withdrawalRequests[_requestId].redeemer &&
+                walletPubKeyHash !=
+                withdrawalRequests[_requestId].walletPubKeyHash
+            )
+                revert InvalidRedemptionData(
+                    redeemer,
+                    withdrawalRequests[_requestId].redeemer,
+                    walletPubKeyHash,
+                    withdrawalRequests[_requestId].walletPubKeyHash
+                );
+
+            if (
+                !tbtc.approveAndCall(
+                    tbtcVault,
+                    tbtcAmount - exitFee,
+                    _tbtcRedemptionData
+                )
+            ) {
+                revert ApproveAndCallFailed();
+            }
+        }
+
+        emit WithdrawalRequestCompleted(_requestId);
+    }
+
+    function _finalizeRequestandTakeExitFee(
+        uint256 _requestId
+    ) internal returns (uint256 tbtcAmount, uint256 exitFee) {
         WithdrawalRequest storage request = withdrawalRequests[_requestId];
         request.completedAt = block.timestamp;
         request.isCompleted = true;
-        uint256 tbtcAmount = request.tbtcAmount; // cache the tbtc amount
-        uint256 exitFee = (tbtcAmount * stbtc.exitFeeBasisPoints()) /
-            BASIS_POINT_SCALE;
+        tbtcAmount = request.tbtcAmount; // cache the tbtc amount
+        exitFee = (tbtcAmount * stbtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE;
         if (exitFee > 0) {
-            stbtc.transfer(stbtc.treasury(), exitFee);
-        }
-
-        if (
-            !tbtc.approveAndCall(
-                tbtcVault,
-                tbtcAmount - exitFee,
-                request.redeemerOutputScript
-            )
-        ) {
-            revert ApproveAndCallFailed();
+            IERC20(address(tbtc)).transfer(stbtc.treasury(), exitFee);
         }
     }
 }
