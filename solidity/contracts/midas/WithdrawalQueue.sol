@@ -143,10 +143,10 @@ contract WithdrawalQueue is Maintainable {
         bool _receiveOnEVM
     ) external {
         stbtc.transferFrom(msg.sender, address(this), _shares);
-        stbtc.burn(_shares);
         uint256 tbtcAmount = stbtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
+        stbtc.burn(_shares);
         uint256 requestId = vault.requestRedeem(midasShares);
         withdrawalRequests[count] = WithdrawalRequest({
             redeemer: msg.sender,
@@ -160,8 +160,6 @@ contract WithdrawalQueue is Maintainable {
             receiveOnEVM: _receiveOnEVM
         });
 
-        count++;
-
         emit WithdrawalRequestCreated(
             count,
             msg.sender,
@@ -171,6 +169,7 @@ contract WithdrawalQueue is Maintainable {
             requestId,
             _receiveOnEVM
         );
+        count++;
     }
 
     /// @notice Completes a withdrawal request.
@@ -202,7 +201,7 @@ contract WithdrawalQueue is Maintainable {
                 (address, bytes20, bytes32, uint32, uint64, bytes)
             );
             if (
-                redeemer != withdrawalRequests[_requestId].redeemer &&
+                redeemer != withdrawalRequests[_requestId].redeemer ||
                 walletPubKeyHash !=
                 withdrawalRequests[_requestId].walletPubKeyHash
             )
