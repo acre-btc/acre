@@ -218,6 +218,26 @@ const addLeadingZero = (num: number): string =>
 const getPercentValue = (value: number, maxValue: number) =>
   (value * 100) / maxValue
 
+type DesiredDecimals = Intl.NumberFormatOptions &
+  BigIntToLocaleStringOptions["minimumFractionDigits"]
+
+/**
+ * Formats a number or bigint into compact string with K, M, B, or T suffix.
+ * @param value The number or bigint to format.
+ * @param decimals Number of decimal places to include (ignored for bigint to avoid floating point issues).
+ * @returns The formatted number as a string.
+ */
+export function formatNumberToCompactString(
+  value: number | bigint,
+  decimals = 4,
+): string {
+  return value.toLocaleString("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: decimals as DesiredDecimals,
+  })
+}
+
 export default {
   roundUp,
   numberToLocaleString,
@@ -229,4 +249,5 @@ export default {
   randomInteger,
   addLeadingZero,
   getPercentValue,
+  formatNumberToCompactString,
 }

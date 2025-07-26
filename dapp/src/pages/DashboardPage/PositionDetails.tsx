@@ -48,7 +48,9 @@ export default function PositionDetails() {
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
 
-  const { tvl } = useStatistics()
+  const statistics = useStatistics()
+
+  const { tvl } = statistics.data
 
   const { isConnected } = useWallet()
 
