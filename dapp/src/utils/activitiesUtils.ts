@@ -21,11 +21,15 @@ const sortActivitiesByTimestamp = (activities: Activity[]): Activity[] =>
   )
 
 const isWithdrawType = (type: ActivityType) => type === "withdraw"
+const isWithdrawFundsType = (type: ActivityType) => type === "withdraw-funds"
 
 function getEstimatedDuration(amount: bigint, type: ActivityType): string {
+  // TODO: we need to rename type to `withdraw-request and update time to 72h
+  // see https://github.com/acre-btc/acre/pull/956.
+  if (isWithdrawType(type)) return "6 hours"
   // Withdrawal duration is related to the tBTC redemption process, which takes
   // approximately 5 - 7 hours. We use the average value of 6 hours.
-  if (isWithdrawType(type)) return "6 hours"
+  if (isWithdrawFundsType(type)) return "6 hours"
 
   // Deposit duration is related to the tBTC minting process, which varies based
   // on the amount of BTC deposited.
