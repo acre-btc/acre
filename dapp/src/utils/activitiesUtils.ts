@@ -25,7 +25,7 @@ const isWithdrawType = (type: ActivityType) => type === "withdraw"
 function getEstimatedDuration(amount: bigint, type: ActivityType): string {
   // Withdrawal duration is related to the tBTC redemption process, which takes
   // approximately 5 - 7 hours. We use the average value of 6 hours.
-  if (isWithdrawType(type)) return "6 hours"
+  if (isWithdrawType(type)) return "72h"
 
   // Deposit duration is related to the tBTC minting process, which varies based
   // on the amount of BTC deposited.

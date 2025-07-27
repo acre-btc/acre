@@ -31,7 +31,7 @@ const FORM_DATA: Record<
     FormComponent: StakeFormModal,
   },
   [ACTION_FLOW_TYPES.UNSTAKE]: {
-    heading: "Withdraw",
+    heading: "Request withdraw",
     FormComponent: UnstakeFormModal,
   },
 }
