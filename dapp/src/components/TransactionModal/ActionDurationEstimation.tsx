@@ -2,8 +2,12 @@ import React from "react"
 import { ActivityType } from "#/types"
 import { activitiesUtils } from "#/utils"
 import { useFormField } from "#/hooks"
-import { Text } from "@chakra-ui/react"
+import { HStack, Text } from "@chakra-ui/react"
 import { TOKEN_AMOUNT_FIELD_NAME } from "../shared/TokenAmountForm/TokenAmountFormBase"
+import TooltipIcon from "../shared/TooltipIcon"
+
+// TODO: Set correct tooltip content
+const TOOLTIP_CONTENT = "Test content"
 
 export default function ActionDurationEstimation({
   type,
@@ -15,11 +19,20 @@ export default function ActionDurationEstimation({
   )
 
   return (
-    <Text size="md" mt={4} color="text.tertiary">
-      Estimated duration&nbsp;
-      <Text size="md" as="span">
-        ~ {activitiesUtils.getEstimatedDuration(amount, type)}
+    <Text
+      size="md"
+      as={HStack}
+      mt={4}
+      color="text.tertiary"
+      justifyContent="center"
+      alignItems="center"
+      spacing={2}
+    >
+      <Text>Estimated duration</Text>
+      <Text size="md" color="text.primary">
+        ~{activitiesUtils.getEstimatedDuration(amount, type)}
       </Text>
+      <TooltipIcon as="span" label={TOOLTIP_CONTENT} placement="right" />
     </Text>
   )
 }

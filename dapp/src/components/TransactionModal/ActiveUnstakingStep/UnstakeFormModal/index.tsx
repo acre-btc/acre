@@ -22,7 +22,7 @@ function UnstakeFormModal({
 
   const { decimals } = currencyUtils.getCurrencyByType("bitcoin")
   const inputPlaceholder = `Minimum ${numbersUtils.fixedPointNumberToString(minTokenAmount, decimals)} BTC`
-  const tokenAmountLabel = "Acre balance"
+  const tokenAmountLabel = "Your deposit"
   const defaultAmount =
     status === PROCESS_STATUSES.REFINE_AMOUNT ? balance : undefined
 
@@ -39,7 +39,7 @@ function UnstakeFormModal({
       defaultAmount={defaultAmount}
     >
       <UnstakeDetails currency="bitcoin" />
-      <FormSubmitButton mt={8}>Withdraw</FormSubmitButton>
+      <FormSubmitButton mt={8}>Request Withdraw</FormSubmitButton>
       <ActionDurationEstimation type="withdraw" />
     </TokenAmountForm>
   )
