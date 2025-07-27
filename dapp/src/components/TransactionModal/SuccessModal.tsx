@@ -84,7 +84,7 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           )}
         </VStack>
       </ModalBody>
-      <ModalFooter pt={2}>
+      <ModalFooter pt={2} gap="2.5">
         <Alert variant="elevated">
           <AlertIcon status="loading" />
           <AlertDescription>
@@ -102,7 +102,6 @@ export default function SuccessModal({ type }: SuccessModalProps) {
         {type === "UNSTAKE" && (
           <Button
             onClick={() => dispatch(closeModal())}
-            mt="2.5"
             size="lg"
             variant="outline"
             w="100%"
