@@ -29,7 +29,7 @@ function StakeFormModal({
       tokenBalance={tokenBalance ?? 0n}
       minTokenAmount={minDepositAmount}
       onSubmitForm={onSubmitForm}
-      withMaxButton={false}
+      withMaxButton
     >
       {featureFlags.ACRE_POINTS_ENABLED && (
         <AcrePointsRewardEstimation mt={5} />
