@@ -103,7 +103,7 @@ export default function PositionDetails() {
                 isDisabledForMobileMode
               }
             >
-              Deposit
+              {isConnected ? <>Deposit</> : <>Connect wallet</>}
             </Button>
           </ArrivingSoonTooltip>
         </UserDataSkeleton>
