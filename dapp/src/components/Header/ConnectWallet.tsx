@@ -67,9 +67,7 @@ export default function ConnectWallet() {
     return (
       <Button
         size="lg"
-        variant="card"
-        color="text.primary"
-        leftIcon={<Icon as={BitcoinIcon} boxSize={6} color="acre.50" />}
+        leftIcon={<Icon as={BitcoinIcon} boxSize={6} />}
         onClick={() => handleConnectWallet(false)}
         {...((modalType === MODAL_TYPES.CONNECT_WALLET ||
           isOpenGlobalErrorModal) && {
