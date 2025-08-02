@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 /**
@@ -29,24 +29,14 @@ interface IVault {
      * @notice Emitted when a redeem request is made.
      * @param requestId The request ID.
      * @param sender The address that made the request.
+     * @param receiver The address that will received the assets.
      * @param shares The amount of shares that would be redeemed.
      */
     event RedeemRequest(
         uint256 indexed requestId,
         address indexed sender,
+        address indexed receiver,
         uint256 shares
-    );
-
-    /**
-     * @notice Emitted when a redeem request is finalized.
-     * @param requestId The request ID.
-     * @param shares The amount of shares that would be redeemed.
-     * @param assets The amount of assets that would be released.
-     */
-    event RedeemFinalize(
-        uint256 indexed requestId,
-        uint256 shares,
-        uint256 assets
     );
 
     /**
@@ -57,6 +47,14 @@ interface IVault {
      * - MUST NOT revert.
      */
     function share() external view returns (address shareTokenAddress);
+
+    /**
+     * @dev Returns the address of the asset token.
+     *
+     * - MUST be an ERC-20 token contract.
+     * - MUST NOT revert.
+     */
+    function asset() external view returns (address assetTokenAddress);
 
     /**
      * @dev Returns the amount of shares that the Vault would exchange for the amount of assets provided, in an ideal
@@ -93,13 +91,19 @@ interface IVault {
     ) external view returns (uint256 assets);
 
     /**
-     * @dev Mints shares Vault shares to receiver by depositing exactly amount of underlying tokens.
+     * @dev Mints shares Vault shares to owner by depositing exactly amount of underlying tokens.
      *
      * - MUST emit the Deposit event.
      *
+     * @param assets The amount of assets to be deposited.
+     * @param receiver The address that will received the shares.
+     *
      * NOTE: Implementation requires pre-approval of the Vault with the Vault’s underlying asset token.
      */
-    function deposit(uint256 assets) external returns (uint256 shares);
+    function deposit(
+        uint256 assets,
+        address receiver
+    ) external returns (uint256 shares);
 
     /**
      * @dev Assumes control of shares from sender into the Vault and submits a Request for asynchronous redeem.
@@ -107,9 +111,13 @@ interface IVault {
      * - MUST emit the RedeemRequest event.
      * - Once a request is finalized MUST emit the RedeemFinalize event.
      *
-     * @param shares the amount of shares to be redeemed
+     * @param shares The amount of shares to be redeemed.
+     * @param receiver The address that will receive assets on request finalization.
      *
      * NOTE: Implementations requires pre-approval of the Vault with the Vault's share token.
      */
-    function requestRedeem(uint256 shares) external returns (uint256 requestId);
+    function requestRedeem(
+        uint256 shares,
+        address receiver
+    ) external returns (uint256 requestId);
 }

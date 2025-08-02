@@ -22,7 +22,6 @@ contract WithdrawalQueue is Maintainable {
         bool isCompleted;
         bytes20 walletPubKeyHash;
         uint256 midasRequestId;
-        bool receiveOnEVM;
     }
 
     /// @notice Basis point scale.
@@ -79,8 +78,7 @@ contract WithdrawalQueue is Maintainable {
         uint256 shares,
         uint256 tbtcAmount,
         bytes20 walletPubKeyHash,
-        uint256 midasRequestId,
-        bool receiveOnEVM
+        uint256 midasRequestId
     );
 
     /// @notice Emitted when a withdrawal request is completed.
@@ -133,21 +131,38 @@ contract WithdrawalQueue is Maintainable {
         midasAllocator = MidasAllocator(_midasAllocator);
     }
 
-    /// @notice Creates a new withdrawal request.
+    function requestRedeem(uint256 _shares, address _receiver) external {
+        stbtc.transferFrom(msg.sender, address(this), _shares);
+        uint256 tbtcAmount = stbtc.convertToAssets(_shares);
+        uint256 midasShares = vault.convertToShares(tbtcAmount);
+        midasAllocator.withdraw(midasShares);
+        stbtc.burn(_shares);
+        uint256 exitFee = (midasShares * stbtc.exitFeeBasisPoints()) /
+            BASIS_POINT_SCALE;
+        if (exitFee > 0) {
+            IERC20(address(vaultSharesToken)).transfer(
+                stbtc.treasury(),
+                exitFee
+            );
+            midasShares -= exitFee;
+        }
+
+        uint256 requestId = vault.requestRedeem(midasShares, _receiver);
+    }
+
+    /// @notice Requests a redemption with extra bridge data
     /// @param _shares Amount of shares to withdraw.
     /// @param _walletPubKeyHash Wallet public key hash.
-    /// @param _receiveOnEVM Whether to receive on EVM.
-    function createWithdrawalRequest(
+    function requestRedeemAndBridge(
         uint256 _shares,
-        bytes20 _walletPubKeyHash,
-        bool _receiveOnEVM
+        bytes20 _walletPubKeyHash
     ) external {
         stbtc.transferFrom(msg.sender, address(this), _shares);
         uint256 tbtcAmount = stbtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
         stbtc.burn(_shares);
-        uint256 requestId = vault.requestRedeem(midasShares);
+        uint256 requestId = vault.requestRedeem(midasShares, address(this));
         withdrawalRequests[count] = WithdrawalRequest({
             redeemer: msg.sender,
             shares: midasShares,
@@ -156,8 +171,7 @@ contract WithdrawalQueue is Maintainable {
             completedAt: 0,
             isCompleted: false,
             walletPubKeyHash: _walletPubKeyHash,
-            midasRequestId: requestId,
-            receiveOnEVM: _receiveOnEVM
+            midasRequestId: requestId
         });
 
         emit WithdrawalRequestCreated(
@@ -166,8 +180,7 @@ contract WithdrawalQueue is Maintainable {
             midasShares,
             tbtcAmount,
             _walletPubKeyHash,
-            requestId,
-            _receiveOnEVM
+            requestId
         );
         count++;
     }
@@ -190,37 +203,29 @@ contract WithdrawalQueue is Maintainable {
             _requestId
         );
 
-        if (withdrawalRequests[_requestId].receiveOnEVM) {
-            IERC20(address(tbtc)).transfer(
+        (address redeemer, bytes20 walletPubKeyHash, , , , ) = abi.decode(
+            _tbtcRedemptionData,
+            (address, bytes20, bytes32, uint32, uint64, bytes)
+        );
+        if (
+            redeemer != withdrawalRequests[_requestId].redeemer ||
+            walletPubKeyHash != withdrawalRequests[_requestId].walletPubKeyHash
+        )
+            revert InvalidRedemptionData(
+                redeemer,
                 withdrawalRequests[_requestId].redeemer,
-                tbtcAmount - exitFee
-            );
-        } else {
-            (address redeemer, bytes20 walletPubKeyHash, , , , ) = abi.decode(
-                _tbtcRedemptionData,
-                (address, bytes20, bytes32, uint32, uint64, bytes)
-            );
-            if (
-                redeemer != withdrawalRequests[_requestId].redeemer ||
-                walletPubKeyHash !=
+                walletPubKeyHash,
                 withdrawalRequests[_requestId].walletPubKeyHash
-            )
-                revert InvalidRedemptionData(
-                    redeemer,
-                    withdrawalRequests[_requestId].redeemer,
-                    walletPubKeyHash,
-                    withdrawalRequests[_requestId].walletPubKeyHash
-                );
+            );
 
-            if (
-                !tbtc.approveAndCall(
-                    tbtcVault,
-                    tbtcAmount - exitFee,
-                    _tbtcRedemptionData
-                )
-            ) {
-                revert ApproveAndCallFailed();
-            }
+        if (
+            !tbtc.approveAndCall(
+                tbtcVault,
+                tbtcAmount - exitFee,
+                _tbtcRedemptionData
+            )
+        ) {
+            revert ApproveAndCallFailed();
         }
 
         emit WithdrawalRequestCompleted(_requestId);

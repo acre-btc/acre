@@ -22,14 +22,20 @@ contract MidasVaultStub is IVault {
         share = _share;
     }
 
-    function deposit(uint256 assets) external returns (uint256 shares) {
+    function deposit(
+        uint256 assets,
+        address receiver
+    ) external returns (uint256 shares) {
         shares = convertToShares(assets);
 
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
         MidasVaultSharesStub(share).mint(msg.sender, shares);
     }
 
-    function requestRedeem(uint256 shares) external returns (uint256) {
+    function requestRedeem(
+        uint256 shares,
+        address receiver
+    ) external returns (uint256) {
         MidasVaultSharesStub(share).burn(msg.sender, shares);
 
         return ++redeemRequestId;

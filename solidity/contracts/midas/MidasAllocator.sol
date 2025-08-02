@@ -92,7 +92,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
 
         // Deposit tBTC to Midas Vault.
         tbtc.forceApprove(address(vault), idleAmount);
-        uint256 shares = vault.deposit(idleAmount);
+        uint256 shares = vault.deposit(idleAmount, address(this));
 
         // slither-disable-next-line reentrancy-events
         emit DepositAllocated(idleAmount, shares);
