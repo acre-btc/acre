@@ -6,8 +6,8 @@ import { HStack, Text } from "@chakra-ui/react"
 import { TOKEN_AMOUNT_FIELD_NAME } from "../shared/TokenAmountForm/TokenAmountFormBase"
 import TooltipIcon from "../shared/TooltipIcon"
 
-// TODO: Set correct tooltip content
-const TOOLTIP_CONTENT = "Test content"
+const TOOLTIP_CONTENT =
+  "Withdrawals are processed in the order they're requested. Completion can take up to 72 hours, depending on request volume, network conditions, and security checks."
 
 export default function ActionDurationEstimation({
   type,
