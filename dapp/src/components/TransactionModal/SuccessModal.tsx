@@ -67,8 +67,8 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           )}
           {ACTION_FLOW_TYPES.UNSTAKE === type && (
             <Text size="md">
-              Funds will be available for transfer in approximately 72 hours.
-              Track status in your dashboard.
+              Your BTC will appear in your account in 72 hours. Track the status
+              in your dashboard.
             </Text>
           )}
           {ACTION_FLOW_TYPES.STAKE === type && txHash && (
