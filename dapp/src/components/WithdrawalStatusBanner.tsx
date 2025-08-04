@@ -39,7 +39,8 @@ const STATUS: Record<
   },
 }
 // TODO: Set tooltip content
-const PENDING_STATE_TOOLTIP_CONTENT = "TEST"
+const PENDING_STATE_TOOLTIP_CONTENT =
+  "Your withdrawal request has been submitted and is now being processed. The requested funds will be available for withdrawal in approximately 72 hours."
 
 function PendingWithdrawBannerTimeInfo({
   withdrawnAt,
@@ -132,10 +133,11 @@ export default function WithdrawalStatusBanner({
             <Text>{STATUS[status].title}</Text>
             {status === "pending" && (
               <TooltipIcon
-                as="span"
+                as="div"
                 label={PENDING_STATE_TOOLTIP_CONTENT}
                 placement="right"
                 iconColor="brown.40"
+                maxW={220}
               />
             )}
           </Text>
