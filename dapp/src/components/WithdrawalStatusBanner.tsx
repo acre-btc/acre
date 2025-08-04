@@ -38,7 +38,7 @@ const STATUS: Record<
     timeDurationText: "Est. duration",
   },
 }
-// TODO: Set tooltip content
+
 const PENDING_STATE_TOOLTIP_CONTENT =
   "Your withdrawal request has been submitted and is now being processed. The requested funds will be available for withdrawal in approximately 72 hours."
 
