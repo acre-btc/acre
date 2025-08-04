@@ -10,7 +10,7 @@ import {
 } from "#/hooks"
 import { numbersUtils, currencyUtils } from "#/utils"
 import { Alert } from "#/components/shared/Alert"
-import { AlertDescription, AlertIcon } from "@chakra-ui/react"
+import { AlertIcon, Text, AlertDescription } from "@chakra-ui/react"
 import UnstakeDetails from "./UnstakeDetails"
 import ActionDurationEstimation from "../../ActionDurationEstimation"
 
@@ -44,9 +44,11 @@ function UnstakeFormModal({
       <Alert bg="oldPalette.opacity.blue.01" justifyContent="start" mt="10">
         <AlertIcon color="blue.50" w="15px" h="15px" alignSelf="self-start" />
         <AlertDescription>
-          Withdrawal requests can take up to 72h to complete. You&apos;ll be
-          able to track the status in your dashboard after submitting the
-          request.
+          <Text size="sm">
+            Withdrawal requests can take up to 72h to complete. You&apos;ll be
+            able to track the status in your dashboard after submitting the
+            request.
+          </Text>
         </AlertDescription>
       </Alert>
       <FormSubmitButton mt={8}>Request Withdraw</FormSubmitButton>
