@@ -38,7 +38,7 @@ export default function ActionDurationEstimation({
         )}
       </Text>
       {type === "withdraw" && (
-        <TooltipIcon as="span" label={TOOLTIP_CONTENT} placement="right" />
+        <TooltipIcon label={TOOLTIP_CONTENT} maxW={220} placement="right" />
       )}
     </Text>
   )
