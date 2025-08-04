@@ -11,15 +11,20 @@ import {
 } from "@chakra-ui/react"
 import TooltipIcon from "#/components/shared/TooltipIcon"
 import { TablerIcon } from "@tabler/icons-react"
+import Skeleton from "./Skeleton"
 
 export type FeaturedMetricsCardProps = Omit<CardProps, "children"> & {
   label: string
   icon: TablerIcon
   infoContent?: string
   value: [primary: string, secondary?: string]
+  isLoading?: boolean
 }
 
-function FeaturedMetricsCard(props: FeaturedMetricsCardProps) {
+function FeaturedMetricsCard({
+  isLoading,
+  ...props
+}: FeaturedMetricsCardProps) {
   const { label, icon: iconComponent, infoContent, value } = props
   const [primaryValue, secondaryValue] = value
 
@@ -43,12 +48,12 @@ function FeaturedMetricsCard(props: FeaturedMetricsCardProps) {
 
       <CardBody as={Flex} flexDirection="column" gap={1}>
         <Text size="2xl" fontWeight="semibold">
-          {primaryValue}
+          {isLoading ? <Skeleton height="1em" /> : primaryValue}
         </Text>
 
         {secondaryValue && (
           <Text fontSize="sm" color="neutral.60">
-            {secondaryValue}
+            {isLoading ? <Skeleton height="1em" /> : secondaryValue}
           </Text>
         )}
       </CardBody>
