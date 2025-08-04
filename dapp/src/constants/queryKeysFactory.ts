@@ -5,6 +5,7 @@ const userKeys = {
   activities: () => [...userKeys.all, "activities"] as const,
   pointsData: () => [...userKeys.all, "points-data"] as const,
   estimateFee: () => [...userKeys.all, "estimateFee"] as const,
+  positionStats: () => [...userKeys.all, "position-stats"] as const,
 }
 
 const acreKeys = {
