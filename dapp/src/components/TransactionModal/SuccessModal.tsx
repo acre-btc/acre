@@ -39,7 +39,7 @@ export default function SuccessModal({ type }: SuccessModalProps) {
   return (
     <>
       <ModalCloseButton />
-      <ModalHeader textAlign="center" pt={{ sm: 16 }} pb="10">
+      <ModalHeader textAlign="center" pt={{ sm: 16 }} pb={10}>
         {ACTION_FLOW_TYPES.UNSTAKE === type
           ? "Withdrawal requested submitted!"
           : "Deposit received!"}

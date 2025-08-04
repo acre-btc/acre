@@ -30,7 +30,12 @@ export default function ActionDurationEstimation({
     >
       <Text>Estimated duration</Text>
       <Text size="md" color="text.primary">
-        ~{activitiesUtils.getEstimatedDuration(amount, type)}
+        ~
+        {activitiesUtils.getEstimatedDuration(
+          amount,
+          type,
+          type === "withdraw",
+        )}
       </Text>
       {type === "withdraw" && (
         <TooltipIcon as="span" label={TOOLTIP_CONTENT} placement="right" />
