@@ -1,8 +1,9 @@
 import React from "react"
 import { featureFlags } from "#/constants"
-import { useTriggerConnectWalletModal } from "#/hooks"
+import { useTriggerConnectWalletModal, useWallet } from "#/hooks"
 import { Card, Grid } from "@chakra-ui/react"
 import Vaults from "#/components/Vaults"
+import usePositionStats from "#/hooks/usePositionStats"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
@@ -23,6 +24,8 @@ const grid = {
 
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
+  const { data, isLoading } = usePositionStats()
+  const { isConnected } = useWallet()
 
   return (
     <Grid
@@ -36,10 +39,21 @@ export default function DashboardPage() {
       ) : (
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
-
-      <BTCDepositedCard gridColumn={grid.stats} />
-      <RewardsEarnedCard gridColumn={grid.stats} />
-      <EstimatedAPRCard gridColumn={grid.stats} />
+      {isConnected && (
+        <>
+          <BTCDepositedCard
+            gridColumn={grid.stats}
+            isLoading={isLoading}
+            btcAmount={data?.deposited}
+          />
+          <RewardsEarnedCard
+            gridColumn={grid.stats}
+            isLoading={isLoading}
+            btcAmount={data?.earned}
+          />
+          <EstimatedAPRCard gridColumn={grid.stats} />
+        </>
+      )}
 
       <Vaults gridColumn={grid.vaults} />
 
