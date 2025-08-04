@@ -9,7 +9,7 @@ import {
   useMinWithdrawAmount,
 } from "#/hooks"
 import { numbersUtils, currencyUtils } from "#/utils"
-import Alert from "#/components/shared/Alert"
+import { Alert } from "#/components/shared/Alert"
 import { AlertDescription, AlertIcon } from "@chakra-ui/react"
 import UnstakeDetails from "./UnstakeDetails"
 import ActionDurationEstimation from "../../ActionDurationEstimation"
