@@ -15,8 +15,7 @@ function EstimatedAPRCard(props: EstimatedAPRCardProps) {
       icon={IconTrendingUp}
       label="APR (Est.)"
       infoContent="Estimated annual percentage rate for your deposits"
-      // TODO: Do we want to display `Last 7 days...` APR?
-      value={["9.0%", "Last 7 days 9%"]}
+      value={["9.0%"]}
       {...props}
     />
   )
