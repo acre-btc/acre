@@ -1,21 +1,20 @@
 import React from "react"
-import FeaturedMetricsCard, {
-  FeaturedMetricsCardProps,
-} from "#/components/shared/FeaturedMetricsCard"
 import { IconGift } from "@tabler/icons-react"
+import BitcoinAmountFeaturedMetricsCard, {
+  BitcoinAmountFeaturedMetricsCardProps,
+} from "#/components/shared/BitcoinAmountFeaturedMetricsCard"
 
 type RewardsEarnedCardProps = Omit<
-  FeaturedMetricsCardProps,
-  "label" | "icon" | "value" | "infoContent"
+  BitcoinAmountFeaturedMetricsCardProps,
+  "label" | "icon" | "infoContent"
 >
 
 function RewardsEarnedCard(props: RewardsEarnedCardProps) {
   return (
-    <FeaturedMetricsCard
+    <BitcoinAmountFeaturedMetricsCard
       icon={IconGift}
       label="Rewards Earned"
       infoContent="Total rewards earned in Acre"
-      value={["0.0002 BTC", "$482.90"]}
       {...props}
     />
   )
