@@ -13,7 +13,7 @@ function BTCDepositedCard(props: BTCDepositedCardProps) {
   return (
     <BitcoinAmountFeaturedMetricsCard
       icon={IconCurrencyBitcoin}
-      label="BTC Deposited"
+      label="Current Balance"
       infoContent="Total BTC deposited in Acre"
       {...props}
     />
