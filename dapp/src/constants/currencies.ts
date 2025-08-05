@@ -12,9 +12,10 @@ const BITCOIN: Currency = {
 }
 
 const STBTC: Currency = {
-  ...BITCOIN,
   name: "stBTC",
   symbol: "stBTC",
+  decimals: 18,
+  desiredDecimals: 4,
 }
 
 const USD: Currency = {
