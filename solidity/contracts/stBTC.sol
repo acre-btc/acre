@@ -136,6 +136,9 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         uint256 needed
     );
 
+    /// @notice Emitted when the assets are insufficient.
+    error InsufficientAssets();
+
     /// @notice Emitted when the debt of the debtor is insufficient - the debtor
     ///         tries to repay more than they borrowed.
     /// @dev Used in the debt repayment function.
@@ -439,7 +442,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         // withdrawal fees then pull the assets from the dispatcher.
         uint256 assetsWithFees = assets + _feeOnRaw(assets, exitFeeBasisPoints);
         if (assetsWithFees > currentAssetsBalance) {
-            dispatcher.withdraw(assetsWithFees - currentAssetsBalance);
+            revert InsufficientAssets();
         }
 
         return super.withdraw(assets, receiver, owner);
@@ -459,10 +462,14 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         uint256 assets = convertToAssets(shares);
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
         if (assets > currentAssetsBalance) {
-            dispatcher.withdraw(assets - currentAssetsBalance);
+            revert InsufficientAssets();
         }
 
         return super.redeem(shares, receiver, owner);
+    }
+
+    function burn(uint256 shares) public {
+        _burn(msg.sender, shares);
     }
 
     /// @notice Returns the total amount of assets held by the vault across all
