@@ -1,20 +1,21 @@
 import React from "react"
 import { Chain, ExplorerDataType } from "#/types"
-import { Link, LinkProps } from "@chakra-ui/react"
 import { chainUtils } from "#/utils"
+import LinkButton, { LinkButtonProps } from "./LinkButton"
 
 type BlockExplorerLinkProps = {
   id: string
   type: ExplorerDataType
   chain?: Chain
-} & Omit<LinkProps, "isExternal">
+  text?: string
+} & Omit<LinkButtonProps, "href" | "isExternal" | "children">
 
-function BlockExplorerLink({
+export default function BlockExplorerLink({
   id,
   type,
+  text,
   chain = "bitcoin",
-  children,
-  ...restProps
+  ...props
 }: BlockExplorerLinkProps) {
   const { link, title } = chainUtils.createLinkToBlockExplorerForChain(
     chain,
@@ -22,12 +23,9 @@ function BlockExplorerLink({
     type,
   )
 
-  // TODO: Update when ButtonLink is ready
   return (
-    <Link href={link} isExternal {...restProps}>
-      {children ?? title}
-    </Link>
+    <LinkButton href={link} isExternal {...props}>
+      {text ?? title}
+    </LinkButton>
   )
 }
-
-export default BlockExplorerLink

@@ -24,16 +24,7 @@ function ClaimableBalanceLabel() {
   if (claimableBalance <= 0) return null
 
   return (
-    <Button
-      mt={5}
-      onClick={debouncedClaimPoints}
-      w="full"
-      colorScheme="oldPalette.green"
-      bgColor="green.50"
-      color="ivoire.10"
-      fontWeight="semibold"
-      size="lg"
-    >
+    <Button mt={5} onClick={debouncedClaimPoints} w="full" size="lg">
       Claim {formattedClaimablePointsAmount} PTS
     </Button>
   )

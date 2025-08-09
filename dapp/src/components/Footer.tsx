@@ -5,14 +5,11 @@ import {
   List,
   ListItem,
   LinkProps,
-  Link,
-  Button,
-  Icon,
 } from "@chakra-ui/react"
 import { externalHref } from "#/constants"
 import { AcreSignIcon } from "#/assets/icons"
 import { useMobileMode } from "#/hooks"
-import { IconArrowUpRight } from "@tabler/icons-react"
+import LinkButton from "./shared/LinkButton"
 
 type FooterListItem = Pick<LinkProps, "href" | "children">
 
@@ -61,14 +58,7 @@ const getItemsList = (
   <List __css={styles.list}>
     {items.map((link) => (
       <ListItem key={link.href}>
-        <Button
-          as={Link}
-          __css={styles.link}
-          iconSpacing={0}
-          rightIcon={<Icon as={IconArrowUpRight} />}
-          {...link}
-          isExternal
-        />
+        <LinkButton isExternal {...link} />
       </ListItem>
     ))}
   </List>

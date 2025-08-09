@@ -1,7 +1,5 @@
 import React from "react"
 import {
-  HStack,
-  Icon,
   ModalBody,
   ModalCloseButton,
   ModalFooter,
@@ -13,7 +11,6 @@ import { LoadingSpinnerSuccessIcon } from "#/assets/icons"
 import { useActionFlowTokenAmount, useActionFlowTxHash } from "#/hooks"
 import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
 import { ACTION_FLOW_TYPES, ActionFlowType } from "#/types"
-import { IconArrowUpRight } from "@tabler/icons-react"
 import { activitiesUtils } from "#/utils"
 import { Alert, AlertIcon, AlertDescription } from "#/components/shared/Alert"
 import BlockExplorerLink from "../shared/BlockExplorerLink"
@@ -65,15 +62,12 @@ export default function SuccessModal({ type }: SuccessModalProps) {
             </Text>
           )}
           {ACTION_FLOW_TYPES.STAKE === type && txHash && (
-            /* TODO: Update styles */
-            <BlockExplorerLink id={txHash} type="transaction" chain="bitcoin">
-              <HStack gap={1}>
-                <Text size="sm" color="text.primary" fontWeight="semibold">
-                  View on Mempool
-                </Text>
-                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
-              </HStack>
-            </BlockExplorerLink>
+            <BlockExplorerLink
+              id={txHash}
+              type="transaction"
+              chain="bitcoin"
+              text="View on Mempool"
+            />
           )}
         </VStack>
       </ModalBody>

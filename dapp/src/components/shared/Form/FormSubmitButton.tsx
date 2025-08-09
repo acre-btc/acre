@@ -1,21 +1,22 @@
 import React from "react"
 import { useFormikContext } from "formik"
-import { ButtonProps } from "@chakra-ui/react"
-import LoadingButton from "../LoadingButton"
+import { Button, ButtonProps } from "@chakra-ui/react"
+import Spinner from "../Spinner"
 
 export default function FormSubmitButton({ children, ...props }: ButtonProps) {
   const { isSubmitting, isValid } = useFormikContext()
 
   return (
-    <LoadingButton
+    <Button
       type="submit"
       size="lg"
       width="100%"
       isLoading={isSubmitting}
       isDisabled={!isValid}
+      spinner={<Spinner />}
       {...props}
     >
       {children}
-    </LoadingButton>
+    </Button>
   )
 }

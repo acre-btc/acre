@@ -175,12 +175,7 @@ function AcrePointsClaimModalBase({
         </VStack>
       </MotionBox>
 
-      <Button
-        opacity={0}
-        onClick={closeModal}
-        data-close-button
-        variant="outline"
-      >
+      <Button onClick={closeModal} data-close-button variant="outline">
         Yay!
       </Button>
 

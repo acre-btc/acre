@@ -7,8 +7,15 @@ const bodyStyle = defineStyle((props: StyleFunctionProps) => ({
   color: mode("text.primary", "text.primary")(props),
 }))
 
+// To set the correct spacing between button elements,
+// we need to reset the margin for the icon
+const buttonIconStyle = defineStyle({
+  margin: "0px !important",
+})
+
 const globalStyle = (props: StyleFunctionProps) => ({
   body: bodyStyle(props),
+  ".chakra-button__icon": buttonIconStyle,
 })
 
 export default {

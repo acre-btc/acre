@@ -4,7 +4,6 @@ import {
   Flex,
   HStack,
   Icon,
-  Link,
   ModalBody,
   ModalCloseButton,
   ModalFooter,
@@ -19,6 +18,7 @@ import {
   IconReload,
   IconServerBolt,
 } from "@tabler/icons-react"
+import LinkButton from "#/components/shared/LinkButton"
 // import TooltipIcon from "#/components/shared/TooltipIcon"
 
 export default function ServerErrorModal({
@@ -42,8 +42,7 @@ export default function ServerErrorModal({
           Your deposit didn&apos;t go through but no worries, your funds are
           safe.
         </Text>
-        <Button
-          as={Link}
+        <LinkButton
           size="lg"
           width="100%"
           variant="outline"
@@ -52,7 +51,7 @@ export default function ServerErrorModal({
           isExternal
         >
           Get help on Discord
-        </Button>
+        </LinkButton>
       </ModalBody>
       <ModalFooter
         py={6}
@@ -75,7 +74,6 @@ export default function ServerErrorModal({
           </Text>
         </Flex>
         <Button
-          // TODO: Use a loading button
           isLoading={isLoading}
           leftIcon={<Icon as={IconReload} boxSize={5} color="acre.50" />}
           variant="outline"

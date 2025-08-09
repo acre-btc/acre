@@ -190,7 +190,7 @@ export default function ConnectWallet() {
                   closeOnClick={false}
                 >
                   <IconButton
-                    variant="ghost"
+                    variant="unstyled"
                     aria-label={option.id}
                     icon={<Icon as={option.icon} boxSize={5} />}
                     px={2}

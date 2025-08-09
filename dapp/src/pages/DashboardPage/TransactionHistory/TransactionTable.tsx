@@ -1,5 +1,5 @@
 import React from "react"
-import { HStack, Card, CardBody, Box, Flex, Icon, Text } from "@chakra-ui/react"
+import { HStack, Card, CardBody, Box, Flex, Text } from "@chakra-ui/react"
 import {
   Pagination,
   PaginationButton,
@@ -11,7 +11,6 @@ import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import { timeUtils, activitiesUtils } from "#/utils"
 import { Activity } from "#/types"
 import BlockExplorerLink from "#/components/shared/BlockExplorerLink"
-import { IconArrowUpRight } from "@tabler/icons-react"
 import { useActivities, useMobileMode } from "#/hooks"
 import { semanticTokens } from "#/theme/utils"
 import EstimatedDuration from "./EstimatedDuration"
@@ -67,22 +66,9 @@ export default function TransactionTable() {
                         id={activity.txHash}
                         chain="bitcoin"
                         type="transaction"
-                        color="text.primary"
-                        _groupHover={{
-                          color: "acre.50",
-                          textDecoration: "none",
-                        }}
+                        text="Details"
                         minW={BLOCK_EXPLORER_CELL_MIN_WIDTH}
-                      >
-                        <HStack spacing={1}>
-                          <Text size="sm">Details</Text>
-                          <Icon
-                            as={IconArrowUpRight}
-                            color="acre.50"
-                            boxSize={4}
-                          />
-                        </HStack>
-                      </BlockExplorerLink>
+                      />
                     ) : (
                       <Box minW={BLOCK_EXPLORER_CELL_MIN_WIDTH} />
                     )}
