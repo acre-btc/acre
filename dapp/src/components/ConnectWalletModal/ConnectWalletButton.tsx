@@ -223,7 +223,7 @@ export default function ConnectWalletButton({
               !isLoading ? (
                 <Icon as={IconArrowNarrowRight} boxSize={6} ml="auto" />
               ) : (
-                <Spinner boxSize={6} variant="filled" />
+                <Spinner />
               )
             }
             iconSpacing={4}

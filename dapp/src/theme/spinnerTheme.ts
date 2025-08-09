@@ -1,39 +1,59 @@
 import { defineStyle, defineStyleConfig } from "@chakra-ui/react"
 
-const baseStyle = defineStyle({
+const variantBicolor = defineStyle({
   color: "acre.50",
-  borderWidth: 2,
-  borderBottomColor: "acre.50",
-})
-
-const variantFilled = defineStyle({
-  borderWidth: 3,
   borderTopColor: "brown.20",
   borderBottomColor: "brown.20",
   borderLeftColor: "brown.20",
 })
 
-const variants = {
-  filled: variantFilled,
-}
-
-const sizeXl = defineStyle({
-  width: 16,
-  height: 16,
+const variantUnicolor = defineStyle({
+  color: "acre.50",
+  borderBottomColor: "acre.50",
 })
 
-const size2Xl = defineStyle({
+const variants = {
+  bicolor: variantBicolor,
+  unicolor: variantUnicolor,
+}
+
+// TODO:  Confirm with the design
+const sizeXl = defineStyle({
+  borderWidth: 3,
   width: 20,
   height: 20,
 })
 
+const sizeLg = defineStyle({
+  borderWidth: 3,
+  width: 14,
+  height: 14,
+})
+
+const sizeMd = defineStyle({
+  borderWidth: 2,
+  width: 6,
+  height: 6,
+})
+
+// TODO:  Confirm with the design
+const sizeSm = defineStyle({
+  borderWidth: 2,
+  width: 4,
+  height: 4,
+})
+
 const sizes = {
   xl: sizeXl,
-  "2xl": size2Xl,
+  lg: sizeLg,
+  md: sizeMd,
+  sm: sizeSm,
 }
 
 export default defineStyleConfig({
-  baseStyle,
+  defaultProps: {
+    variant: "bicolor",
+  },
   sizes,
   variants,
 })

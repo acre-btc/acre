@@ -26,7 +26,7 @@ const statusToLabelProps: Record<Status, { color: string }> = {
 const boxSize = 5
 const statusToIcon: Record<Status, React.ReactNode> = {
   idle: <Box boxSize={boxSize} />,
-  pending: <Spinner boxSize={boxSize} />,
+  pending: <Spinner boxSize={boxSize} variant="unicolor" />,
   error: <Icon as={IconCircleX} boxSize={boxSize} color="text.tertiary" />,
   success: <Icon as={IconCircleCheck} boxSize={boxSize} color="green.50" />,
 }

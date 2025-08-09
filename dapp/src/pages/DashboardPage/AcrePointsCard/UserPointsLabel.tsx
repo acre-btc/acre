@@ -50,7 +50,7 @@ function CalculationInProgressLabel() {
         </Text>
       )}
       <HStack spacing={0}>
-        <Spinner mr={3} size="sm" />
+        <Spinner mr={3} variant="unicolor" />
         <Text size="md">Your drop is being prepared.</Text>
         <TooltipIcon
           label={`
