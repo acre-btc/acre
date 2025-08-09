@@ -16,9 +16,10 @@ ChakraTooltip.defaultProps = { ...ChakraTooltip.defaultProps, hasArrow: true }
 const $arrowBg = cssVar("popper-arrow-bg")
 
 const baseStyle = defineStyle({
-  color: "surface.2",
+  fontWeight: "normal",
+  color: "ivoire.10",
   bg: "brown.100",
-  [$arrowBg.variable]: "brown.100",
+  [$arrowBg.variable]: "colors.brown.100",
 })
 
 const sizeXs = defineStyle({
