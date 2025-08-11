@@ -146,7 +146,7 @@ contract WithdrawalQueue is Maintainable {
             );
             midasShares -= exitFee;
         }
-
+        vaultSharesToken.approve(address(vault), midasShares);
         uint256 requestId = vault.requestRedeem(midasShares, _receiver);
     }
 
@@ -162,6 +162,7 @@ contract WithdrawalQueue is Maintainable {
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
         stbtc.burn(_shares);
+        vaultSharesToken.approve(address(vault), midasShares);
         uint256 requestId = vault.requestRedeem(midasShares, address(this));
         withdrawalRequests[count] = WithdrawalRequest({
             redeemer: msg.sender,
