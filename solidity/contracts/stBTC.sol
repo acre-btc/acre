@@ -572,7 +572,9 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      assets deposited to the vault, which excludes the shares that were
     ///      minted as debt.
     /// @param depositOwner The address of the owner of the deposit to migrate.
-    function migrateDeposit(address depositOwner) external onlyOwner {
+    function migrateDeposit(
+        address depositOwner
+    ) external onlyOwner returns (uint256) {
         if (migrateTo == address(0)) {
             revert ZeroAddress();
         }
@@ -593,7 +595,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         }
 
         if (shares == 0) {
-            return;
+            return 0;
         }
 
         // Adjust the withdrawable shares to exclude the shares that are being
@@ -607,7 +609,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         IERC20(asset()).forceApprove(migrateTo, assets);
 
         // Deposit the assets to the new contract.
-        IERC4626(migrateTo).deposit(assets, depositOwner);
+        return IERC4626(migrateTo).deposit(assets, depositOwner);
     }
 
     /// @notice Returns the number of assets that corresponds to the amount of
