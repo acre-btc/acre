@@ -565,14 +565,14 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         MezoAllocator(address(dispatcher)).releaseDeposit();
     }
 
-    /// @notice Migrates the deposit of the owner to the new contract.
-    /// @dev This function is called by the owner to migrate the deposit of the
-    ///      depositors without their approval.
+    /// @notice Migrates a depositor's funds to the new contract.
+    /// @dev This function is called by the contract owner to migrate the deposit
+    ///      of the depositors without their approval.
     ///      The deposits that are being migrated have to be covered by the
     ///      assets deposited to the vault, which excludes the shares that were
     ///      minted as debt.
-    /// @param owner The address of the owner of the deposit to migrate.
-    function migrateDeposit(address owner) external onlyOwner {
+    /// @param depositOwner The address of the owner of the deposit to migrate.
+    function migrateDeposit(address depositOwner) external onlyOwner {
         if (migrateTo == address(0)) {
             revert ZeroAddress();
         }
@@ -583,13 +583,13 @@ contract stBTC is ERC4626Fees, PausableOwnable {
             revert MigrationNotStarted();
         }
 
-        uint256 shares = balanceOf(owner);
+        uint256 shares = balanceOf(depositOwner);
         uint256 assets = convertToAssets(shares);
 
         // We need to ensure the shares were not minted as debt, so they
         // are covered by the assets deposited to the vault.
-        if (withdrawableShares[owner] < shares) {
-            shares = withdrawableShares[owner];
+        if (withdrawableShares[depositOwner] < shares) {
+            shares = withdrawableShares[depositOwner];
         }
 
         if (shares == 0) {
@@ -598,16 +598,16 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
         // Adjust the withdrawable shares to exclude the shares that are being
         // migrated and keep the rest of shares associated with debt.
-        withdrawableShares[owner] = 0;
+        withdrawableShares[depositOwner] = 0;
 
         // Burn the shares that are being migrated.
-        _burn(owner, shares);
+        _burn(depositOwner, shares);
 
         // Approve the assets to be transferred to the new contract.
         IERC20(asset()).forceApprove(migrateTo, assets);
 
         // Deposit the assets to the new contract.
-        IERC4626(migrateTo).deposit(assets, owner);
+        IERC4626(migrateTo).deposit(assets, depositOwner);
     }
 
     /// @notice Returns the number of assets that corresponds to the amount of
