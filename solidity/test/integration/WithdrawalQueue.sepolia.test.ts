@@ -7,7 +7,7 @@ import { ContractTransactionResponse } from "ethers"
 import { beforeAfterSnapshotWrapper } from "../helpers"
 
 import {
-    StBTC as stBTC,
+    AcreBTC,
     MidasAllocator,
     TBTCVaultStub,
     WithdrawalQueue,
@@ -37,15 +37,15 @@ async function sepoliaIntegrationFixture() {
     const TBTCVaultStub = await ethers.getContractFactory("TBTCVaultStub")
     const tbtcVault = await TBTCVaultStub.deploy(SEPOLIA_USDC_ADDRESS, deployer.address) as TBTCVaultStub
 
-    // Deploy real stBTC contract
-    const stBTCFactory = await ethers.getContractFactory("stBTC", deployer)
-    const stbtc = await upgrades.deployProxy(
-        stBTCFactory,
+    // Deploy real acreBTC contract
+    const acreBTCFactory = await ethers.getContractFactory("acreBTC", deployer)
+    const acreBTC = await upgrades.deployProxy(
+        acreBTCFactory,
         [SEPOLIA_USDC_ADDRESS, treasury.address],
         {
             kind: "transparent",
         }
-    ) as unknown as stBTC
+    ) as unknown as AcreBTC
 
     // Deploy real MidasAllocator
     const MidasAllocatorFactory = await ethers.getContractFactory("MidasAllocator", deployer)
@@ -53,7 +53,7 @@ async function sepoliaIntegrationFixture() {
         MidasAllocatorFactory,
         [
             SEPOLIA_USDC_ADDRESS,
-            await stbtc.getAddress(),
+            await acreBTC.getAddress(),
             SEPOLIA_MIDAS_VAULT_ADDRESS,
         ],
         {
@@ -70,7 +70,7 @@ async function sepoliaIntegrationFixture() {
             SEPOLIA_MIDAS_VAULT_ADDRESS,
             await midasAllocator.getAddress(),
             await tbtcVault.getAddress(),
-            await stbtc.getAddress(),
+            await acreBTC.getAddress(),
         ],
         {
             kind: "transparent",
@@ -88,19 +88,19 @@ async function sepoliaIntegrationFixture() {
     const vaultSharesToken = await ethers.getContractAt("IERC20", await midasVault.share())
 
     // Set stBTC as dispatcher for testing (before transferring ownership)
-    await stbtc.connect(deployer).updateDispatcher(await midasAllocator.getAddress())
+    await acreBTC.connect(deployer).updateDispatcher(await midasAllocator.getAddress())
 
     // Set fees for testing - use default exit fee (25 bps = 0.25%) (before transferring ownership)
-    await stbtc.connect(deployer).updateEntryFeeBasisPoints(0) // No entry fees for simpler testing
-    await stbtc.connect(deployer).updateExitFeeBasisPoints(25) // 0.25% exit fee
+    await acreBTC.connect(deployer).updateEntryFeeBasisPoints(0) // No entry fees for simpler testing
+    await acreBTC.connect(deployer).updateExitFeeBasisPoints(25) // 0.25% exit fee
 
     // Update minimum deposit amount for 6 decimal token (0.001 USDC = 1000 units) (before transferring ownership)
-    await stbtc.connect(deployer).updateMinimumDepositAmount(to1e6(0.001))
+    await acreBTC.connect(deployer).updateMinimumDepositAmount(to1e6(0.001))
 
     // Transfer ownership to governance (after all setup is done)
     await withdrawalQueue.connect(deployer).transferOwnership(governance.address)
     await midasAllocator.connect(deployer).transferOwnership(governance.address)
-    await stbtc.connect(deployer).transferOwnership(governance.address)
+    await acreBTC.connect(deployer).transferOwnership(governance.address)
 
     // Setup depositors with USDC from whale
     const [depositor, depositor2] = await helpers.signers.getUnnamedSigners()
@@ -116,15 +116,15 @@ async function sepoliaIntegrationFixture() {
     await usdc.connect(whale).transfer(depositor2.address, initialDeposit)
 
     // Depositors approve and deposit to stBTC
-    await usdc.connect(depositor).approve(await stbtc.getAddress(), initialDeposit)
-    await usdc.connect(depositor2).approve(await stbtc.getAddress(), initialDeposit)
+    await usdc.connect(depositor).approve(await acreBTC.getAddress(), initialDeposit)
+    await usdc.connect(depositor2).approve(await acreBTC.getAddress(), initialDeposit)
 
-    await stbtc.connect(depositor).deposit(initialDeposit, depositor.address)
-    await stbtc.connect(depositor2).deposit(initialDeposit, depositor2.address)
+    await acreBTC.connect(depositor).deposit(initialDeposit, depositor.address)
+    await acreBTC.connect(depositor2).deposit(initialDeposit, depositor2.address)
 
     // Approve WithdrawalQueue to spend stBTC for both depositors
-    await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), initialDeposit)
-    await stbtc.connect(depositor2).approve(await withdrawalQueue.getAddress(), initialDeposit)
+    await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), initialDeposit)
+    await acreBTC.connect(depositor2).approve(await withdrawalQueue.getAddress(), initialDeposit)
 
     // Allocate funds to Midas to have shares available for withdrawals
     await midasAllocator.connect(maintainer).allocate()
@@ -133,7 +133,7 @@ async function sepoliaIntegrationFixture() {
     return {
         // Contracts
         usdc,
-        stbtc,
+        acreBTC,
         midasAllocator,
         midasVault,
         tbtcVault,
@@ -152,7 +152,7 @@ async function sepoliaIntegrationFixture() {
 
 describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
     let usdc: any
-    let stbtc: stBTC
+    let acreBTC: AcreBTC
     let midasAllocator: MidasAllocator
     let midasVault: IVault
     let tbtcVault: TBTCVaultStub
@@ -169,7 +169,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
     beforeEach(async () => {
         ; ({
             usdc,
-            stbtc,
+            acreBTC,
             midasAllocator,
             midasVault,
             tbtcVault,
@@ -193,20 +193,20 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
             it("should handle simple redeem request without creating withdrawal request record", async () => {
                 const sharesToRedeem = to1e6(1) // 1 stBTC (assuming 1:1 for test)
 
-                const initialStBTCBalance = await stbtc.balanceOf(depositor.address)
+                const initialStBTCBalance = await acreBTC.balanceOf(depositor.address)
 
                 // Get vault shares token for checking balances
                 const vaultSharesToken = await ethers.getContractAt("IERC20", await midasVault.share())
                 const initialTreasuryShares = await vaultSharesToken.balanceOf(treasury.address)
                 // Calculate expected exit fee based on Midas shares (25 bps = 0.25%)
-                const tbtcAmount = await stbtc.convertToAssets(sharesToRedeem)
+                const tbtcAmount = await acreBTC.convertToAssets(sharesToRedeem)
                 const midasShares = await midasVault.convertToShares(tbtcAmount)
                 const expectedExitFee = (midasShares * BigInt(25)) / BigInt(10000)
                 // requestRedeem doesn't emit WithdrawalRequestCreated (only requestRedeemAndBridge does)
                 await withdrawalQueue.connect(depositor).requestRedeem(sharesToRedeem, depositor.address)
 
                 // Verify stBTC was burned
-                const finalStBTCBalance = await stbtc.balanceOf(depositor.address)
+                const finalStBTCBalance = await acreBTC.balanceOf(depositor.address)
                 expect(finalStBTCBalance).to.be.lt(initialStBTCBalance)
 
                 // Verify exit fee was transferred to treasury (in Midas vault shares)
@@ -222,27 +222,27 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
             it("should revert when depositor has insufficient allowance", async () => {
                 // Reset allowance to 0
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), 0)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), 0)
 
                 const sharesToRedeem = to1e6(1)
 
                 await expect(
                     withdrawalQueue.connect(depositor).requestRedeem(sharesToRedeem, depositor.address)
-                ).to.be.revertedWithCustomError(stbtc, "ERC20InsufficientAllowance")
+                ).to.be.revertedWithCustomError(acreBTC, "ERC20InsufficientAllowance")
 
                 // Restore allowance for other tests
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), to1e6(100))
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), to1e6(100))
             })
         })
 
         describe("Bridge Request Tracking (requestRedeemAndBridge)", () => {
             it("should handle complete withdrawal - event amount should match original deposit", async () => {
                 const depositAmount = to1e6(100) // 100 USDC original deposit
-                const userShares = await stbtc.balanceOf(depositor.address) // Get all user's shares
+                const userShares = await acreBTC.balanceOf(depositor.address) // Get all user's shares
                 const walletPubKeyHash = "0x1111111111111111111111111111111111111111"
 
                 // Calculate expected tBTC amount from shares
-                const expectedTbtcAmount = await stbtc.convertToAssets(userShares)
+                const expectedTbtcAmount = await acreBTC.convertToAssets(userShares)
 
                 const tx = await withdrawalQueue.connect(depositor).requestRedeemAndBridge(
                     userShares,
@@ -269,7 +269,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
                 }
 
 
-                expect(await stbtc.balanceOf(depositor.address)).to.equal(0)
+                expect(await acreBTC.balanceOf(depositor.address)).to.equal(0)
             })
             it("should create and track withdrawal request with proper data", async () => {
                 const sharesToRedeem = to1e6(2)
@@ -339,9 +339,9 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
                 const vaultSharesToken = await ethers.getContractAt("IERC20", await midasVault.share())
 
                 const initialTreasuryShares = await vaultSharesToken.balanceOf(treasury.address)
-                const exitFeeBasisPoints = await stbtc.exitFeeBasisPoints()
+                const exitFeeBasisPoints = await acreBTC.exitFeeBasisPoints()
                 // Calculate expected fee based on Midas shares equivalent
-                const tbtcAmount = await stbtc.convertToAssets(sharesToRedeem)
+                const tbtcAmount = await acreBTC.convertToAssets(sharesToRedeem)
                 const midasShares = await midasVault.convertToShares(tbtcAmount)
                 const expectedFee = (midasShares * exitFeeBasisPoints) / BigInt(10000)
                 await withdrawalQueue.connect(depositor).requestRedeem(sharesToRedeem, depositor.address)
@@ -357,7 +357,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
             it.skip("should handle zero exit fees when fee is set to 0", async () => {
                 // SKIPPED: There's an ownership issue with this test - governance account may not be set up correctly
                 // Set exit fee to 0 using governance (since ownership was transferred)
-                await stbtc.connect(governance).updateExitFeeBasisPoints(0)
+                await acreBTC.connect(governance).updateExitFeeBasisPoints(0)
 
                 const sharesToRedeem = to1e6(1)
                 const vaultSharesToken = await ethers.getContractAt("IERC20", await midasVault.share())
@@ -372,7 +372,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
                 expect(finalTreasuryShares).to.equal(initialTreasuryShares)
 
                 // Restore exit fee for other tests
-                await stbtc.connect(governance).updateExitFeeBasisPoints(25)
+                await acreBTC.connect(governance).updateExitFeeBasisPoints(25)
             })
         })
 
@@ -419,7 +419,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
                 const walletPubKeyHash = "0x9999999999999999999999999999999999999999"
 
                 const initialCount = await withdrawalQueue.count()
-                const initialStBTCSupply = await stbtc.totalSupply()
+                const initialStBTCSupply = await acreBTC.totalSupply()
 
                 // Mix of simple and bridge requests
                 await withdrawalQueue.connect(depositor).requestRedeem(simpleShares, depositor.address)
@@ -429,7 +429,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
                 expect(await withdrawalQueue.count()).to.equal(initialCount + BigInt(1))
 
                 // Verify total stBTC supply decreased by both redemptions
-                const finalStBTCSupply = await stbtc.totalSupply()
+                const finalStBTCSupply = await acreBTC.totalSupply()
                 expect(finalStBTCSupply).to.equal(initialStBTCSupply - simpleShares - bridgeShares)
 
                 // Verify bridge request data integrity

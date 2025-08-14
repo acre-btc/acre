@@ -7,7 +7,7 @@ import {Maintainable} from "../utils/Maintainable.sol";
 import {IVault} from "./IVault.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
 import {ITBTCToken} from "../bridge/ITBTCToken.sol";
-import {stBTC} from "../stBTC.sol";
+import {acreBTC} from "../acreBTC.sol";
 import {MidasAllocator} from "./MidasAllocator.sol";
 
 contract WithdrawalQueue is Maintainable {
@@ -48,8 +48,8 @@ contract WithdrawalQueue is Maintainable {
     /// @notice TBTC Vault contract.
     address public tbtcVault;
 
-    /// @notice stBTC contract.
-    stBTC public stbtc;
+    /// @notice acreBTC contract.
+    acreBTC public acrebtc;
 
     /// @notice Not Midas Allocator.
     error NotMidasAllocator();
@@ -92,12 +92,15 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Initializes the WithdrawalQueue contract.
     /// @param _tbtc Address of the tBTC token contract.
     /// @param _vault Address of the Midas Vault contract.
+    /// @param _midasAllocator Address of the Midas Allocator contract.
+    /// @param _tbtcVault Address of the tBTC Vault contract.
+    /// @param _acreBTC Address of the acreBTC contract.
     function initialize(
         address _tbtc,
         address _vault,
         address _midasAllocator,
         address _tbtcVault,
-        address _stbtc
+        address _acreBTC
     ) public initializer {
         __MaintainableOwnable_init(msg.sender);
 
@@ -110,14 +113,14 @@ contract WithdrawalQueue is Maintainable {
         if (_tbtcVault == address(0)) {
             revert ZeroAddress();
         }
-        if (_stbtc == address(0)) {
+        if (_acreBTC == address(0)) {
             revert ZeroAddress();
         }
 
         tbtc = ITBTCToken(_tbtc);
         vault = IVault(_vault);
         tbtcVault = _tbtcVault;
-        stbtc = stBTC(_stbtc);
+        acrebtc = acreBTC(_acreBTC);
 
         vaultSharesToken = IERC20(vault.share());
         if (address(vaultSharesToken) == address(0)) {
@@ -132,16 +135,16 @@ contract WithdrawalQueue is Maintainable {
     }
 
     function requestRedeem(uint256 _shares, address _receiver) external {
-        stbtc.transferFrom(msg.sender, address(this), _shares);
-        uint256 tbtcAmount = stbtc.convertToAssets(_shares);
+        acrebtc.transferFrom(msg.sender, address(this), _shares);
+        uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
-        stbtc.burn(_shares);
-        uint256 exitFee = (midasShares * stbtc.exitFeeBasisPoints()) /
+        acrebtc.burn(_shares);
+        uint256 exitFee = (midasShares * acrebtc.exitFeeBasisPoints()) /
             BASIS_POINT_SCALE;
         if (exitFee > 0) {
             IERC20(address(vaultSharesToken)).transfer(
-                stbtc.treasury(),
+                acrebtc.treasury(),
                 exitFee
             );
             midasShares -= exitFee;
@@ -157,11 +160,11 @@ contract WithdrawalQueue is Maintainable {
         uint256 _shares,
         bytes20 _walletPubKeyHash
     ) external {
-        stbtc.transferFrom(msg.sender, address(this), _shares);
-        uint256 tbtcAmount = stbtc.convertToAssets(_shares);
+        acrebtc.transferFrom(msg.sender, address(this), _shares);
+        uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
-        stbtc.burn(_shares);
+        acrebtc.burn(_shares);
         vaultSharesToken.approve(address(vault), midasShares);
         uint256 requestId = vault.requestRedeem(midasShares, address(this));
         withdrawalRequests[count] = WithdrawalRequest({
@@ -239,9 +242,11 @@ contract WithdrawalQueue is Maintainable {
         request.completedAt = block.timestamp;
         request.isCompleted = true;
         tbtcAmount = request.tbtcAmount; // cache the tbtc amount
-        exitFee = (tbtcAmount * stbtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE;
+        exitFee =
+            (tbtcAmount * acrebtc.exitFeeBasisPoints()) /
+            BASIS_POINT_SCALE;
         if (exitFee > 0) {
-            IERC20(address(tbtc)).transfer(stbtc.treasury(), exitFee);
+            IERC20(address(tbtc)).transfer(acrebtc.treasury(), exitFee);
         }
     }
 }

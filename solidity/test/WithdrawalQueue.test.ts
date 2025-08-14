@@ -12,7 +12,7 @@ import { ContractTransactionResponse } from "ethers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
 import {
-    StBTC as stBTC,
+    AcreBTC,
     TestTBTC,
     MidasAllocator,
     MidasVaultStub,
@@ -40,9 +40,46 @@ function createRedemptionData(
 }
 
 async function fixture() {
-    const { tbtc, stbtc, midasAllocator, midasVault, tbtcVault } = await deployment()
+    const { tbtc, midasVault, tbtcVault } = await deployment()
     const { governance, maintainer } = await getNamedSigners()
     const [depositor, depositor2, thirdParty, deployer] = await getUnnamedSigners()
+
+    // Deploy acreBTC contract directly for testing
+    const AcreBTCFactory = await ethers.getContractFactory("acreBTC", deployer)
+    const acreBTC = await upgrades.deployProxy(
+        AcreBTCFactory,
+        [await tbtc.getAddress(), deployer.address], // Use deployer as initial treasury
+        {
+            kind: "transparent",
+        }
+    ) as unknown as AcreBTC
+
+    await acreBTC.connect(deployer).transferOwnership(governance.address)
+    await acreBTC.connect(governance).acceptOwnership()
+
+    // Deploy a new MidasAllocator configured with our acreBTC
+    const MidasAllocatorFactory = await ethers.getContractFactory("MidasAllocator", deployer)
+    const midasAllocator = await upgrades.deployProxy(
+        MidasAllocatorFactory,
+        [
+            await tbtc.getAddress(),
+            await acreBTC.getAddress(),
+            await midasVault.getAddress(),
+        ],
+        {
+            kind: "transparent",
+        }
+    ) as unknown as MidasAllocator
+
+    // Transfer ownership to governance
+    await midasAllocator.connect(deployer).transferOwnership(governance.address)
+    await midasAllocator.connect(governance).acceptOwnership()
+
+    // Add maintainer to MidasAllocator
+    await midasAllocator.connect(governance).addMaintainer(maintainer.address)
+
+    // Set up acreBTC dispatcher to midasAllocator so totalAssets works
+    await acreBTC.connect(governance).updateDispatcher(await midasAllocator.getAddress())
 
     // Deploy WithdrawalQueue
     const WithdrawalQueueFactory = await ethers.getContractFactory("WithdrawalQueue", deployer)
@@ -53,7 +90,7 @@ async function fixture() {
             await midasVault.getAddress(),
             await midasAllocator.getAddress(),
             await tbtcVault.getAddress(),
-            await stbtc.getAddress(),
+            await acreBTC.getAddress(),
         ],
         {
             kind: "transparent",
@@ -77,7 +114,7 @@ async function fixture() {
         maintainer,
         deployer,
         tbtc,
-        stbtc,
+        acreBTC,
         midasAllocator,
         midasVault,
         tbtcVault,
@@ -87,7 +124,7 @@ async function fixture() {
 
 describe("WithdrawalQueue", () => {
     let tbtc: TestTBTC
-    let stbtc: stBTC
+    let acreBTC: AcreBTC
     let midasAllocator: MidasAllocator
     let midasVault: MidasVaultStub
     let tbtcVault: TBTCVaultStub
@@ -110,7 +147,7 @@ describe("WithdrawalQueue", () => {
             depositor2,
             deployer,
             tbtc,
-            stbtc,
+            acreBTC,
             midasAllocator,
             midasVault,
             tbtcVault,
@@ -118,8 +155,8 @@ describe("WithdrawalQueue", () => {
         } = await loadFixture(fixture))
 
         // Set fees to 0 for simpler testing
-        await stbtc.connect(governance).updateEntryFeeBasisPoints(0)
-        await stbtc.connect(governance).updateExitFeeBasisPoints(0)
+        await acreBTC.connect(governance).updateEntryFeeBasisPoints(0)
+        await acreBTC.connect(governance).updateExitFeeBasisPoints(0)
 
         // Impersonate tBTC Vault to test tBTC token ownership checks
         await impersonateAccount(await tbtcVault.getAddress())
@@ -139,7 +176,7 @@ describe("WithdrawalQueue", () => {
             expect(await withdrawalQueue.vault()).to.equal(await midasVault.getAddress())
             expect(await withdrawalQueue.midasAllocator()).to.equal(await midasAllocator.getAddress())
             expect(await withdrawalQueue.tbtcVault()).to.equal(await tbtcVault.getAddress())
-            expect(await withdrawalQueue.stbtc()).to.equal(await stbtc.getAddress())
+            expect(await withdrawalQueue.acrebtc()).to.equal(await acreBTC.getAddress())
             expect(await withdrawalQueue.count()).to.equal(0)
         })
 
@@ -153,7 +190,7 @@ describe("WithdrawalQueue", () => {
                         await midasVault.getAddress(),
                         await midasAllocator.getAddress(),
                         await tbtcVault.getAddress(),
-                        await stbtc.getAddress(),
+                        await acreBTC.getAddress(),
                     ],
                     {
                         kind: "transparent",
@@ -172,7 +209,7 @@ describe("WithdrawalQueue", () => {
                         ethers.ZeroAddress,
                         await midasAllocator.getAddress(),
                         await tbtcVault.getAddress(),
-                        await stbtc.getAddress(),
+                        await acreBTC.getAddress(),
                     ],
                     {
                         kind: "transparent",
@@ -191,7 +228,7 @@ describe("WithdrawalQueue", () => {
                         await midasVault.getAddress(),
                         ethers.ZeroAddress,
                         await tbtcVault.getAddress(),
-                        await stbtc.getAddress(),
+                        await acreBTC.getAddress(),
                     ],
                     {
                         kind: "transparent",
@@ -210,7 +247,7 @@ describe("WithdrawalQueue", () => {
                         await midasVault.getAddress(),
                         await midasAllocator.getAddress(),
                         ethers.ZeroAddress,
-                        await stbtc.getAddress(),
+                        await acreBTC.getAddress(),
                     ],
                     {
                         kind: "transparent",
@@ -219,7 +256,7 @@ describe("WithdrawalQueue", () => {
             ).to.be.revertedWithCustomError(withdrawalQueue, "ZeroAddress")
         })
 
-        it("should revert if stbtc address is zero", async () => {
+        it("should revert if acreBTC address is zero", async () => {
             const WithdrawalQueueFactory = await ethers.getContractFactory("WithdrawalQueue")
             await expect(
                 upgrades.deployProxy(
@@ -252,35 +289,35 @@ describe("WithdrawalQueue", () => {
                 // Setup: Give depositor generous amount of tBTC and let them deposit to get stBTC
                 const generousAmount = to1e18(100) // Much larger amount
                 await tbtc.mint(depositor.address, generousAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), generousAmount)
-                await stbtc.connect(depositor).deposit(generousAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), generousAmount)
+                await acreBTC.connect(depositor).deposit(generousAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), generousAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), generousAmount)
 
                 // Allocate funds to Midas to have shares available
                 await midasAllocator.connect(maintainer).allocate()
             })
 
             it("should redeem successfully for direct EVM withdrawal", async () => {
-                const balanceBefore = await stbtc.balanceOf(depositor.address)
+                const balanceBefore = await acreBTC.balanceOf(depositor.address)
 
                 await withdrawalQueue
                     .connect(depositor)
                     .requestRedeem(withdrawalAmount, depositor.address)
 
-                const balanceAfter = await stbtc.balanceOf(depositor.address)
+                const balanceAfter = await acreBTC.balanceOf(depositor.address)
                 expect(balanceBefore - balanceAfter).to.equal(withdrawalAmount)
             })
 
             it("should burn stBTC from depositor", async () => {
-                const balanceBefore = await stbtc.balanceOf(depositor.address)
+                const balanceBefore = await acreBTC.balanceOf(depositor.address)
 
                 await withdrawalQueue
                     .connect(depositor)
                     .requestRedeem(withdrawalAmount, depositor.address)
 
-                const balanceAfter = await stbtc.balanceOf(depositor.address)
+                const balanceAfter = await acreBTC.balanceOf(depositor.address)
                 expect(balanceBefore - balanceAfter).to.equal(withdrawalAmount)
             })
 
@@ -299,21 +336,21 @@ describe("WithdrawalQueue", () => {
 
                 before(async () => {
                     // Set 1% exit fee
-                    await stbtc.connect(governance).updateExitFeeBasisPoints(100)
+                    await acreBTC.connect(governance).updateExitFeeBasisPoints(100)
 
                     // Setup treasury
-                    await stbtc.connect(governance).updateTreasury(governance.address)
+                    await acreBTC.connect(governance).updateTreasury(governance.address)
                 })
 
                 it("should deduct exit fee during redemption", async () => {
-                    const balanceBefore = await stbtc.balanceOf(depositor.address)
+                    const balanceBefore = await acreBTC.balanceOf(depositor.address)
                     const treasuryBalanceBefore = await tbtc.balanceOf(governance.address)
 
                     await withdrawalQueue
                         .connect(depositor)
                         .requestRedeem(withdrawalAmount, depositor.address)
 
-                    const balanceAfter = await stbtc.balanceOf(depositor.address)
+                    const balanceAfter = await acreBTC.balanceOf(depositor.address)
                     expect(balanceBefore - balanceAfter).to.equal(withdrawalAmount)
 
                     // Treasury should receive exit fee in vault shares, not tBTC for direct redemption
@@ -349,18 +386,18 @@ describe("WithdrawalQueue", () => {
                 // Setup: Give depositor generous amount of tBTC and let them deposit to get stBTC
                 const generousAmount = to1e18(100) // Much larger amount
                 await tbtc.mint(depositor.address, generousAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), generousAmount)
-                await stbtc.connect(depositor).deposit(generousAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), generousAmount)
+                await acreBTC.connect(depositor).deposit(generousAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), generousAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), generousAmount)
 
                 // Allocate funds to Midas to have shares available
                 await midasAllocator.connect(maintainer).allocate()
             })
 
             it("should create bridge withdrawal request successfully", async () => {
-                const tbtcAmount = await stbtc.convertToAssets(withdrawalAmount)
+                const tbtcAmount = await acreBTC.convertToAssets(withdrawalAmount)
                 const midasVaultShares = await midasVault.convertToShares(tbtcAmount)
 
                 const tx = await withdrawalQueue
@@ -389,13 +426,13 @@ describe("WithdrawalQueue", () => {
             })
 
             it("should burn stBTC from depositor", async () => {
-                const balanceBefore = await stbtc.balanceOf(depositor.address)
+                const balanceBefore = await acreBTC.balanceOf(depositor.address)
 
                 await withdrawalQueue
                     .connect(depositor)
                     .requestRedeemAndBridge(withdrawalAmount, walletPubKeyHash)
 
-                const balanceAfter = await stbtc.balanceOf(depositor.address)
+                const balanceAfter = await acreBTC.balanceOf(depositor.address)
                 expect(balanceBefore - balanceAfter).to.equal(withdrawalAmount)
             })
 
@@ -433,10 +470,10 @@ describe("WithdrawalQueue", () => {
             before(async () => {
                 // Give depositor2 some stBTC but don't set approval
                 await tbtc.mint(depositor2.address, depositAmount)
-                await tbtc.connect(depositor2).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor2).deposit(depositAmount, depositor2.address)
+                await tbtc.connect(depositor2).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor2).deposit(depositAmount, depositor2.address)
                 // Reset approval
-                await stbtc.connect(depositor2).approve(await withdrawalQueue.getAddress(), 0)
+                await acreBTC.connect(depositor2).approve(await withdrawalQueue.getAddress(), 0)
             })
 
             it("should revert", async () => {
@@ -462,11 +499,11 @@ describe("WithdrawalQueue", () => {
             before(async () => {
                 // Setup withdrawal request
                 await tbtc.mint(depositor.address, depositAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -490,11 +527,11 @@ describe("WithdrawalQueue", () => {
             before(async () => {
                 // Setup withdrawal request
                 await tbtc.mint(depositor.address, depositAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -521,11 +558,11 @@ describe("WithdrawalQueue", () => {
             before(async () => {
                 // Setup and complete a withdrawal request
                 await tbtc.mint(depositor.address, depositAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -567,11 +604,11 @@ describe("WithdrawalQueue", () => {
             it("should call tbtcVault.requestRedemption with correct data", async () => {
                 // Setup withdrawal request for Bitcoin delivery
                 await tbtc.mint(depositor.address, depositAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -598,11 +635,11 @@ describe("WithdrawalQueue", () => {
             it("should mark request as completed", async () => {
                 // Setup withdrawal request
                 await tbtc.mint(depositor.address, depositAmount)
-                await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-                await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+                await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+                await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
+                await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), withdrawalAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -631,10 +668,10 @@ describe("WithdrawalQueue", () => {
 
                 before(async () => {
                     // Set 1% exit fee
-                    await stbtc.connect(governance).updateExitFeeBasisPoints(100)
+                    await acreBTC.connect(governance).updateExitFeeBasisPoints(100)
 
                     // Setup treasury
-                    await stbtc.connect(governance).updateTreasury(governance.address)
+                    await acreBTC.connect(governance).updateTreasury(governance.address)
                 })
 
                 it("should deduct exit fee and send to treasury during completion", async () => {
@@ -642,11 +679,11 @@ describe("WithdrawalQueue", () => {
                     const testDepositor = thirdParty
                     const testDepositAmount = to1e18(30) // Large amount to ensure sufficient balance
                     await tbtc.mint(testDepositor.address, testDepositAmount)
-                    await tbtc.connect(testDepositor).approve(await stbtc.getAddress(), testDepositAmount)
-                    await stbtc.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
+                    await tbtc.connect(testDepositor).approve(await acreBTC.getAddress(), testDepositAmount)
+                    await acreBTC.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
 
                     // Approve WithdrawalQueue to spend stBTC
-                    await stbtc.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+                    await acreBTC.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
                     await midasAllocator.connect(maintainer).allocate()
 
@@ -658,7 +695,7 @@ describe("WithdrawalQueue", () => {
                         .requestRedeemAndBridge(safeWithdrawalAmount, walletPubKeyHash)
 
                     const request = await withdrawalQueue.withdrawalRequests(currentCount)
-                    const exitFeeBasisPoints = await stbtc.exitFeeBasisPoints()
+                    const exitFeeBasisPoints = await acreBTC.exitFeeBasisPoints()
                     const expectedFee = (request.tbtcAmount * exitFeeBasisPoints) / 10000n
                     const expectedBridgeAmount = request.tbtcAmount - expectedFee
 
@@ -684,11 +721,11 @@ describe("WithdrawalQueue", () => {
                 const testDepositor = deployer // Use deployer account which should have fresh balance
                 const testDepositAmount = to1e18(30) // Large amount to ensure sufficient balance
                 await tbtc.mint(testDepositor.address, testDepositAmount)
-                await tbtc.connect(testDepositor).approve(await stbtc.getAddress(), testDepositAmount)
-                await stbtc.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
+                await tbtc.connect(testDepositor).approve(await acreBTC.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -712,11 +749,11 @@ describe("WithdrawalQueue", () => {
                 const testDepositor = governance
                 const testDepositAmount = to1e18(30) // Large amount to ensure sufficient balance
                 await tbtc.mint(testDepositor.address, testDepositAmount)
-                await tbtc.connect(testDepositor).approve(await stbtc.getAddress(), testDepositAmount)
-                await stbtc.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
+                await tbtc.connect(testDepositor).approve(await acreBTC.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -743,13 +780,13 @@ describe("WithdrawalQueue", () => {
                 const testDepositor = depositor2
                 const testDepositAmount = to1e18(30) // Large amount to ensure sufficient balance
                 await tbtc.mint(testDepositor.address, testDepositAmount)
-                await tbtc.connect(testDepositor).approve(await stbtc.getAddress(), testDepositAmount)
-                await stbtc.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
+                await tbtc.connect(testDepositor).approve(await acreBTC.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).deposit(testDepositAmount, testDepositor.address)
 
                 await tbtc.mint(await withdrawalQueue.getAddress(), to1e18(10))
 
                 // Approve WithdrawalQueue to spend stBTC
-                await stbtc.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+                await acreBTC.connect(testDepositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
                 await midasAllocator.connect(maintainer).allocate()
 
@@ -801,11 +838,11 @@ describe("WithdrawalQueue", () => {
             const initialCount = await withdrawalQueue.count()
 
             await tbtc.mint(depositor.address, depositAmount)
-            await tbtc.connect(depositor).approve(await stbtc.getAddress(), depositAmount)
-            await stbtc.connect(depositor).deposit(depositAmount, depositor.address)
+            await tbtc.connect(depositor).approve(await acreBTC.getAddress(), depositAmount)
+            await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
 
             // Approve WithdrawalQueue to spend stBTC
-            await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), depositAmount)
+            await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), depositAmount)
 
             await midasAllocator.connect(maintainer).allocate()
 
@@ -838,11 +875,11 @@ describe("WithdrawalQueue", () => {
             // Use fresh depositor with more generous balance for this test
             const testDepositAmount = to1e18(100) // Much larger amount to ensure sufficient balance
             await tbtc.mint(depositor.address, testDepositAmount)
-            await tbtc.connect(depositor).approve(await stbtc.getAddress(), testDepositAmount)
-            await stbtc.connect(depositor).deposit(testDepositAmount, depositor.address)
+            await tbtc.connect(depositor).approve(await acreBTC.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor).deposit(testDepositAmount, depositor.address)
 
             // Approve WithdrawalQueue to spend stBTC
-            await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
             await midasAllocator.connect(maintainer).allocate()
 
@@ -878,17 +915,17 @@ describe("WithdrawalQueue", () => {
 
             // Setup for depositor
             await tbtc.mint(depositor.address, testDepositAmount)
-            await tbtc.connect(depositor).approve(await stbtc.getAddress(), testDepositAmount)
-            await stbtc.connect(depositor).deposit(testDepositAmount, depositor.address)
+            await tbtc.connect(depositor).approve(await acreBTC.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor).deposit(testDepositAmount, depositor.address)
 
             // Setup for depositor2
             await tbtc.mint(depositor2.address, testDepositAmount)
-            await tbtc.connect(depositor2).approve(await stbtc.getAddress(), testDepositAmount)
-            await stbtc.connect(depositor2).deposit(testDepositAmount, depositor2.address)
+            await tbtc.connect(depositor2).approve(await acreBTC.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor2).deposit(testDepositAmount, depositor2.address)
 
             // Approve WithdrawalQueue to spend stBTC for both depositors
-            await stbtc.connect(depositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
-            await stbtc.connect(depositor2).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor).approve(await withdrawalQueue.getAddress(), testDepositAmount)
+            await acreBTC.connect(depositor2).approve(await withdrawalQueue.getAddress(), testDepositAmount)
 
             await midasAllocator.connect(maintainer).allocate()
 

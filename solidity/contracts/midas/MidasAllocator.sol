@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Maintainable} from "../utils/Maintainable.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
-import "../stBTC.sol";
+import "../acreBTC.sol";
 import "../interfaces/IDispatcher.sol";
 import {IVault} from "./IVault.sol";
 import {WithdrawalQueue} from "./WithdrawalQueue.sol";
@@ -17,8 +17,8 @@ contract MidasAllocator is IDispatcher, Maintainable {
     /// @notice tBTC token contract.
     IERC20 public tbtc;
 
-    /// @notice stBTC token vault contract.
-    stBTC public stbtc;
+    /// @notice acreBTC token vault contract.
+    acreBTC public acrebtc;
 
     /// @notice Address of the Vault contract.
     IVault public vault;
@@ -42,11 +42,11 @@ contract MidasAllocator is IDispatcher, Maintainable {
 
     /// @notice Initializes the MidasAllocator contract.
     /// @param _tbtc Address of the tBTC token contract.
-    /// @param _stbtc Address of the stBTC vault contract.
+    /// @param _acreBTC Address of the acreBTC vault contract.
     /// @param _vault Address of the Midas Vault contract.
     function initialize(
         address _tbtc,
-        address _stbtc,
+        address _acreBTC,
         address _vault
     ) public initializer {
         __MaintainableOwnable_init(msg.sender);
@@ -54,7 +54,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
         if (_tbtc == address(0)) {
             revert ZeroAddress();
         }
-        if (address(_stbtc) == address(0)) {
+        if (address(_acreBTC) == address(0)) {
             revert ZeroAddress();
         }
         if (address(_vault) == address(0)) {
@@ -62,7 +62,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
         }
 
         tbtc = IERC20(_tbtc);
-        stbtc = stBTC(_stbtc);
+        acrebtc = acreBTC(_acreBTC);
         vault = IVault(_vault);
 
         vaultSharesToken = IERC20(vault.share());
@@ -78,17 +78,17 @@ contract MidasAllocator is IDispatcher, Maintainable {
     ///         is created and the previous deposit id is no longer in use.
     /// @dev This function can be invoked periodically by a maintainer.
     function allocate() external onlyMaintainer {
-        // Fetch unallocated tBTC from stBTC contract.
+        // Fetch unallocated tBTC from acreBTC contract.
         // slither-disable-next-line arbitrary-send-erc20
         tbtc.safeTransferFrom(
-            address(stbtc),
+            address(acrebtc),
             address(this),
-            tbtc.balanceOf(address(stbtc))
+            tbtc.balanceOf(address(acrebtc))
         );
 
         // TODO: Revisit when working on queued withdrawals as part of the balance
         // may be held to satisfy the withdrawal requests.
-        uint256 idleAmount = uint96(tbtc.balanceOf(address(this)));
+        uint256 idleAmount = tbtc.balanceOf(address(this));
 
         // Deposit tBTC to Midas Vault.
         tbtc.forceApprove(address(vault), idleAmount);
@@ -114,11 +114,13 @@ contract MidasAllocator is IDispatcher, Maintainable {
     }
 
     /// @notice Releases deposit in full from Midas Vault and transfers it to the
-    ///         stBTC contract.
+    ///         acreBTC contract.
     /// @dev This is a special function that can be used to migrate funds during
     ///      allocator upgrade or in case of emergencies.
     function emergencyWithdraw() external onlyOwner {
-        revert("not implemented");
+        uint256 shares = vaultSharesToken.balanceOf(address(this));
+        vaultSharesToken.approve(address(vault), shares);
+        vault.requestRedeem(shares, address(acrebtc));
     }
 
     function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {

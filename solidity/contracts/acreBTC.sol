@@ -299,6 +299,12 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         return super.redeem(shares, receiver, owner);
     }
 
+    /// @notice Burns shares from the caller.
+    /// @param shares Amount of shares to burn.
+    function burn(uint256 shares) public {
+        _burn(msg.sender, shares);
+    }
+
     /// @notice Returns the total amount of assets held by the vault across all
     ///         allocations and this contract.
     function totalAssets() public view override returns (uint256) {
