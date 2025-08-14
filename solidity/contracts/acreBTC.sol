@@ -9,6 +9,7 @@ import "./PausableOwnable.sol";
 import "./lib/ERC4626Fees.sol";
 import "./interfaces/IDispatcher.sol";
 import {ZeroAddress} from "./utils/Errors.sol";
+import "./midas/WithdrawalQueue.sol";
 
 /// @title acreBTC
 /// @notice This contract implements the ERC-4626 tokenized vault standard. By
@@ -44,6 +45,9 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// Exit fee basis points applied to exit fee calculation.
     uint256 public exitFeeBasisPoints;
 
+    /// WithdrawalQueue contract address for handling withdrawals
+    address public withdrawalQueue;
+
     /// Emitted when the treasury wallet address is updated.
     /// @param oldTreasury Address of the old treasury wallet.
     /// @param newTreasury Address of the new treasury wallet.
@@ -65,6 +69,14 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// Emitted when the exit fee basis points are updated.
     /// @param exitFeeBasisPoints New value of the fee basis points.
     event ExitFeeBasisPointsUpdated(uint256 exitFeeBasisPoints);
+
+    /// Emitted when the withdrawal queue contract is updated.
+    /// @param oldWithdrawalQueue Address of the old withdrawal queue.
+    /// @param newWithdrawalQueue Address of the new withdrawal queue.
+    event WithdrawalQueueUpdated(
+        address oldWithdrawalQueue,
+        address newWithdrawalQueue
+    );
 
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
@@ -183,6 +195,18 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         emit ExitFeeBasisPointsUpdated(newExitFeeBasisPoints);
     }
 
+    /// @notice Updates the withdrawal queue contract address.
+    /// @param newWithdrawalQueue Address of the new withdrawal queue contract.
+    function updateWithdrawalQueue(
+        address newWithdrawalQueue
+    ) external onlyOwner {
+        // newWithdrawalQueue can be zero to disable the withdrawal queue
+        address oldWithdrawalQueue = withdrawalQueue;
+        withdrawalQueue = newWithdrawalQueue;
+
+        emit WithdrawalQueueUpdated(oldWithdrawalQueue, newWithdrawalQueue);
+    }
+
     /// @notice Calls `receiveApproval` function on spender previously approving
     ///         the spender to withdraw from the caller multiple times, up to
     ///         the `value` amount. If this function is called again, it
@@ -258,8 +282,8 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
 
     /// @notice Withdraws assets from the vault and transfers them to the
     ///         receiver.
-    /// @dev Withdraw unallocated assets first and and if not enough, then pull
-    ///      the assets from the dispatcher.
+    /// @dev Withdraw unallocated assets first and if not enough, route through
+    ///      withdrawal queue.
     /// @param assets Amount of assets to withdraw.
     /// @param receiver The address to which the assets will be transferred.
     /// @param owner The address of the owner of the shares.
@@ -269,19 +293,27 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         address owner
     ) public override returns (uint256) {
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
-        // If there is not enough assets in the vault to cover user withdrawals and
-        // withdrawal fees then pull the assets from the dispatcher.
-        uint256 assetsWithFees = assets + _feeOnRaw(assets, exitFeeBasisPoints);
-        if (assetsWithFees > currentAssetsBalance) {
-            dispatcher.withdraw(assetsWithFees - currentAssetsBalance);
+
+        if (assets > currentAssetsBalance && withdrawalQueue != address(0)) {
+            uint256 shares = previewWithdraw(assets);
+
+            if (msg.sender != owner) {
+                _spendAllowance(owner, msg.sender, shares);
+            }
+
+            _transfer(owner, withdrawalQueue, shares);
+
+            WithdrawalQueue(withdrawalQueue).requestRedeem(shares, receiver);
+
+            return shares;
         }
 
         return super.withdraw(assets, receiver, owner);
     }
 
     /// @notice Redeems shares for assets and transfers them to the receiver.
-    /// @dev Redeem unallocated assets first and and if not enough, then pull
-    ///      the assets from the dispatcher.
+    /// @dev Redeem unallocated assets first and if not enough, route through
+    ///      withdrawal queue.
     /// @param shares Amount of shares to redeem.
     /// @param receiver The address to which the assets will be transferred.
     /// @param owner The address of the owner of the shares.
@@ -292,8 +324,20 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     ) public override returns (uint256) {
         uint256 assets = convertToAssets(shares);
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
-        if (assets > currentAssetsBalance) {
-            dispatcher.withdraw(assets - currentAssetsBalance);
+
+        if (assets > currentAssetsBalance && withdrawalQueue != address(0)) {
+            // Check allowance if caller is not the owner
+            if (msg.sender != owner) {
+                _spendAllowance(owner, msg.sender, shares);
+            }
+
+            // Transfer shares to withdrawal queue using internal _transfer
+            _transfer(owner, withdrawalQueue, shares);
+
+            // Process redemption through queue
+            WithdrawalQueue(withdrawalQueue).requestRedeem(shares, receiver);
+
+            return assets;
         }
 
         return super.redeem(shares, receiver, owner);
@@ -303,6 +347,29 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @param shares Amount of shares to burn.
     function burn(uint256 shares) public {
         _burn(msg.sender, shares);
+    }
+
+    /// @notice Redeems shares for Bitcoin bridge withdrawal.
+    /// @dev This function routes through the withdrawal queue for bridge redemptions.
+    /// @param shares Amount of shares to redeem.
+    /// @param walletPubKeyHash Bitcoin wallet public key hash for the redemption.
+    /// @return requestId The ID of the withdrawal request in the queue.
+    function redeemAndBridge(
+        uint256 shares,
+        bytes20 walletPubKeyHash
+    ) external returns (uint256 requestId) {
+        require(withdrawalQueue != address(0), "Withdrawal queue not set");
+
+        // Transfer shares to withdrawal queue using internal _transfer
+        _transfer(msg.sender, withdrawalQueue, shares);
+
+        // Process bridge redemption through queue, passing the redeemer address
+        return
+            WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
+                shares,
+                walletPubKeyHash,
+                msg.sender
+            );
     }
 
     /// @notice Returns the total amount of assets held by the vault across all

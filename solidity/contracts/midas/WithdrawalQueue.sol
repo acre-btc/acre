@@ -54,6 +54,9 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Not Midas Allocator.
     error NotMidasAllocator();
 
+    /// @notice Not acreBTC.
+    error NotAcreBTC();
+
     /// @notice Unexpected tBTC token owner.
     error UnexpectedTbtcTokenOwner();
 
@@ -87,6 +90,13 @@ contract WithdrawalQueue is Maintainable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
+    }
+
+    modifier onlyAcreBTC() {
+        if (msg.sender != address(acrebtc)) {
+            revert NotAcreBTC();
+        }
+        _;
     }
 
     /// @notice Initializes the WithdrawalQueue contract.
@@ -134,8 +144,10 @@ contract WithdrawalQueue is Maintainable {
         midasAllocator = MidasAllocator(_midasAllocator);
     }
 
-    function requestRedeem(uint256 _shares, address _receiver) external {
-        acrebtc.transferFrom(msg.sender, address(this), _shares);
+    function requestRedeem(
+        uint256 _shares,
+        address _receiver
+    ) external onlyAcreBTC {
         uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
@@ -150,41 +162,48 @@ contract WithdrawalQueue is Maintainable {
             midasShares -= exitFee;
         }
         vaultSharesToken.approve(address(vault), midasShares);
-        uint256 requestId = vault.requestRedeem(midasShares, _receiver);
+        vault.requestRedeem(midasShares, _receiver);
     }
 
     /// @notice Requests a redemption with extra bridge data
     /// @param _shares Amount of shares to withdraw.
     /// @param _walletPubKeyHash Wallet public key hash.
+    /// @param _redeemer The original redeemer address.
+    /// @return requestId The ID of the withdrawal request.
     function requestRedeemAndBridge(
         uint256 _shares,
-        bytes20 _walletPubKeyHash
-    ) external {
-        acrebtc.transferFrom(msg.sender, address(this), _shares);
+        bytes20 _walletPubKeyHash,
+        address _redeemer
+    ) external onlyAcreBTC returns (uint256 requestId) {
         uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
         acrebtc.burn(_shares);
         vaultSharesToken.approve(address(vault), midasShares);
-        uint256 requestId = vault.requestRedeem(midasShares, address(this));
-        withdrawalRequests[count] = WithdrawalRequest({
-            redeemer: msg.sender,
+        uint256 midasRequestId = vault.requestRedeem(
+            midasShares,
+            address(this)
+        );
+
+        requestId = count;
+        withdrawalRequests[requestId] = WithdrawalRequest({
+            redeemer: _redeemer,
             shares: midasShares,
             tbtcAmount: tbtcAmount,
             createdAt: block.timestamp,
             completedAt: 0,
             isCompleted: false,
             walletPubKeyHash: _walletPubKeyHash,
-            midasRequestId: requestId
+            midasRequestId: midasRequestId
         });
 
         emit WithdrawalRequestCreated(
-            count,
-            msg.sender,
+            requestId,
+            _redeemer,
             midasShares,
             tbtcAmount,
             _walletPubKeyHash,
-            requestId
+            midasRequestId
         );
         count++;
     }
