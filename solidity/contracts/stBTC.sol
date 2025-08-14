@@ -10,6 +10,9 @@ import "./lib/ERC4626Fees.sol";
 import "./interfaces/IDispatcher.sol";
 import {ZeroAddress} from "./utils/Errors.sol";
 
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {MezoAllocator} from "./MezoAllocator.sol";
+
 /// @title stBTC
 /// @notice This contract implements the ERC-4626 tokenized vault standard. By
 ///         staking tBTC, users acquire a liquid staking token called stBTC,
@@ -56,6 +59,12 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      without the coverage in deposited assets. The value is used to
     ///      adjust the total assets held by the vault.
     uint256 public totalDebt;
+
+    /// @notice Address of ERC-4626 contract to migrate to.
+    address public migrateTo;
+
+    /// @notice Whether the migration has started.
+    bool public migrationStarted;
 
     /// Emitted when the treasury wallet address is updated.
     /// @param oldTreasury Address of the old treasury wallet.
@@ -108,6 +117,10 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         uint256 shares
     );
 
+    /// @notice Emitted when the migration has started.
+    /// @param migrateTo Address of the ERC-4626 contract to migrate to.
+    event MigrationStarted(address migrateTo);
+
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
     /// @param min Minimum amount to check 'amount' against.
@@ -146,6 +159,12 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @param debt Current debt of the debtor.
     /// @param needed Requested amount of assets repaying the debt.
     error ExcessiveDebtRepayment(address debtor, uint256 debt, uint256 needed);
+
+    /// @notice Reverts if the migration has already started.
+    error MigrationAlreadyStarted();
+
+    /// @notice Reverts if the migration has not started.
+    error MigrationNotStarted();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -489,7 +508,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      deposited into the Vault for the receiver, through a deposit call.
     ///      If the Vault is paused, returns 0.
     function maxDeposit(address) public view override returns (uint256) {
-        if (paused()) {
+        if (paused() || migrationStarted) {
             return 0;
         }
         return type(uint256).max;
@@ -499,7 +518,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      for the receiver, through a mint call.
     ///      If the Vault is paused, returns 0.
     function maxMint(address) public view override returns (uint256) {
-        if (paused()) {
+        if (paused() || migrationStarted) {
             return 0;
         }
         return type(uint256).max;
@@ -523,6 +542,81 @@ contract stBTC is ERC4626Fees, PausableOwnable {
             return 0;
         }
         return super.maxRedeem(owner);
+    }
+
+    /// @notice Starts the migration to the new contract.
+    /// @dev This function is called by the owner to start the migration.
+    ///      The migration can be started only once.
+    /// @param _migrateTo Address of the ERC-4626 contract to migrate to.
+    function startMigration(address _migrateTo) external onlyOwner {
+        if (address(_migrateTo) == address(0)) {
+            revert ZeroAddress();
+        }
+        if (migrationStarted) {
+            revert MigrationAlreadyStarted();
+        }
+
+        // Set the new contract address.
+        migrateTo = _migrateTo;
+
+        emit MigrationStarted(_migrateTo);
+
+        // Mark the migration as started.
+        migrationStarted = true;
+
+        // Revoke approval for the dispatcher contract so it can't pull assets
+        // from the vault.
+        IERC20(asset()).forceApprove(address(dispatcher), 0);
+
+        // Release the deposit from the MezoAllocator contract.
+        MezoAllocator(address(dispatcher)).releaseDeposit();
+    }
+
+    /// @notice Migrates a depositor's funds to the new contract.
+    /// @dev This function is called by the contract owner to migrate the deposit
+    ///      of the depositors without their approval.
+    ///      The deposits that are being migrated have to be covered by the
+    ///      assets deposited to the vault, which excludes the shares that were
+    ///      minted as debt.
+    /// @param depositOwner The address of the owner of the deposit to migrate.
+    function migrateDeposit(
+        address depositOwner
+    ) external onlyOwner returns (uint256) {
+        if (migrateTo == address(0)) {
+            revert ZeroAddress();
+        }
+        if (paused()) {
+            revert EnforcedPause();
+        }
+        if (!migrationStarted) {
+            revert MigrationNotStarted();
+        }
+
+        uint256 shares = balanceOf(depositOwner);
+        uint256 assets = convertToAssets(shares);
+
+        // We need to ensure the shares were not minted as debt, so they
+        // are covered by the assets deposited to the vault.
+        if (withdrawableShares[depositOwner] < shares) {
+            shares = withdrawableShares[depositOwner];
+        }
+
+        if (shares == 0) {
+            return 0;
+        }
+
+        // Adjust the withdrawable shares to exclude the shares that are being
+        // migrated and keep the rest of shares associated with debt.
+        withdrawableShares[depositOwner] = 0;
+
+        // Burn the shares that are being migrated.
+        _burn(depositOwner, shares);
+
+        // Approve the assets to be transferred to the new contract.
+        IERC20(asset()).forceApprove(migrateTo, assets);
+
+        // Deposit the assets to the new contract.
+        return IERC4626(migrateTo).deposit(assets, depositOwner);
     }
 
     /// @notice Returns the number of assets that corresponds to the amount of
