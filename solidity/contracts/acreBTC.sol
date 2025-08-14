@@ -95,6 +95,9 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// Reverts if the dispatcher address is the same.
     error SameDispatcher();
 
+    /// Reverts if the withdrawal queue is not set.
+    error WithdrawalQueueNotSet();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -358,7 +361,9 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         uint256 shares,
         bytes20 walletPubKeyHash
     ) external returns (uint256 requestId) {
-        require(withdrawalQueue != address(0), "Withdrawal queue not set");
+        if (withdrawalQueue == address(0)) {
+            revert WithdrawalQueueNotSet();
+        }
 
         // Transfer shares to withdrawal queue using internal _transfer
         _transfer(msg.sender, withdrawalQueue, shares);
