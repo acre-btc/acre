@@ -296,9 +296,14 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         address owner
     ) public override returns (uint256) {
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
+        uint256 fee = _feeOnRaw(assets, _exitFeeBasisPoints());
+        uint256 assetsWithFees = assets + fee;
 
-        if (assets > currentAssetsBalance && withdrawalQueue != address(0)) {
-            uint256 shares = previewWithdraw(assets);
+        if (
+            assetsWithFees > currentAssetsBalance &&
+            withdrawalQueue != address(0)
+        ) {
+            uint256 shares = convertToShares(assetsWithFees);
 
             if (msg.sender != owner) {
                 _spendAllowance(owner, msg.sender, shares);
@@ -306,7 +311,11 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
 
             _transfer(owner, withdrawalQueue, shares);
 
-            WithdrawalQueue(withdrawalQueue).requestRedeem(shares, receiver);
+            WithdrawalQueue(withdrawalQueue).requestRedeem(
+                shares,
+                receiver,
+                fee
+            );
 
             return shares;
         }
@@ -334,11 +343,17 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
                 _spendAllowance(owner, msg.sender, shares);
             }
 
+            uint256 fee = _feeOnRaw(assets, _exitFeeBasisPoints());
+
             // Transfer shares to withdrawal queue using internal _transfer
             _transfer(owner, withdrawalQueue, shares);
 
             // Process redemption through queue
-            WithdrawalQueue(withdrawalQueue).requestRedeem(shares, receiver);
+            WithdrawalQueue(withdrawalQueue).requestRedeem(
+                shares,
+                receiver,
+                fee
+            );
 
             return assets;
         }

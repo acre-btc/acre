@@ -146,22 +146,19 @@ contract WithdrawalQueue is Maintainable {
 
     function requestRedeem(
         uint256 _shares,
-        address _receiver
+        address _receiver,
+        uint256 _exitFeeInAssets
     ) external onlyAcreBTC {
         uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
         uint256 midasShares = vault.convertToShares(tbtcAmount);
         midasAllocator.withdraw(midasShares);
-        acrebtc.burn(_shares);
-        uint256 exitFee = (midasShares * acrebtc.exitFeeBasisPoints()) /
-            BASIS_POINT_SCALE;
-        if (exitFee > 0) {
-            IERC20(address(vaultSharesToken)).transfer(
-                acrebtc.treasury(),
-                exitFee
-            );
-            midasShares -= exitFee;
-        }
         vaultSharesToken.approve(address(vault), midasShares);
+        acrebtc.burn(_shares);
+        if (_exitFeeInAssets > 0) {
+            uint256 exitFeeShares = vault.convertToShares(_exitFeeInAssets);
+            vault.requestRedeem(exitFeeShares, acrebtc.treasury());
+            midasShares -= exitFeeShares;
+        }
         vault.requestRedeem(midasShares, _receiver);
     }
 
