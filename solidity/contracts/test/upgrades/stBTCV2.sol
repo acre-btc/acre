@@ -57,6 +57,12 @@ contract stBTCV2 is ERC4626Fees, PausableOwnable {
     ///      adjust the total assets held by the vault.
     uint256 public totalDebt;
 
+    /// @notice Address of ERC-4626 contract to migrate to.
+    address public migrateTo;
+
+    /// @notice Whether the migration has started.
+    bool public migrationStarted;
+
     // TEST: New variable.
     uint256 public newVariable;
 
