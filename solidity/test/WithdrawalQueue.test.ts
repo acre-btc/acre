@@ -624,6 +624,9 @@ describe("WithdrawalQueue", () => {
                 await midasAllocator.connect(maintainer).allocate()
 
                 const currentCount = await withdrawalQueue.count()
+                const tbtcAmountRaw = await acreBTC.convertToAssets(withdrawalAmount)
+                const tbtcAmountWithFee = await acreBTC.previewRedeem(withdrawalAmount)
+                const fee = tbtcAmountRaw - tbtcAmountWithFee
                 await acreBTC
                     .connect(depositor)
                     .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
@@ -640,7 +643,7 @@ describe("WithdrawalQueue", () => {
                     .connect(maintainer)
                     .completeWithdrawalRequest(currentCount, redemptionData)
 
-                await expect(tx).to.emit(withdrawalQueue, "WithdrawalRequestCompleted").withArgs(currentCount)
+                await expect(tx).to.emit(withdrawalQueue, "WithdrawalRequestCompleted").withArgs(currentCount, tbtcAmountRaw, fee)
             })
 
             it("should mark request as completed", async () => {
@@ -697,14 +700,16 @@ describe("WithdrawalQueue", () => {
                     const currentCount = await withdrawalQueue.count()
                     // Use an even smaller withdrawal amount to avoid balance issues
                     const safeWithdrawalAmount = to1e18(2)
+                    const expectedReceivedAssets = await acreBTC.previewRedeem(safeWithdrawalAmount)
                     await acreBTC
                         .connect(testDepositor)
                         .redeemAndBridge(safeWithdrawalAmount, walletPubKeyHash)
 
                     const request = await withdrawalQueue.withdrawalRequests(currentCount)
                     const exitFeeBasisPoints = await acreBTC.exitFeeBasisPoints()
-                    const expectedFee = (request.tbtcAmount * exitFeeBasisPoints) / 10000n
-                    const expectedBridgeAmount = request.tbtcAmount - expectedFee
+                    const expectedFee = (request.tbtcAmount * exitFeeBasisPoints) / (exitFeeBasisPoints + 10000n) + 1n
+
+
 
                     // Give withdrawal queue enough tBTC to cover withdrawal and fee
                     await tbtc.mint(await withdrawalQueue.getAddress(), request.tbtcAmount * 2n)
@@ -716,10 +721,36 @@ describe("WithdrawalQueue", () => {
                     // Mock approveAndCall to return true
                     await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(true)
 
-                    await withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, redemptionData)
+
+                    const tx = await withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, redemptionData)
+                    const receipt = await tx.wait()
+                    // check the logs for WithdrawalRequestCompleted
+                    if (receipt) {
+                        const withdrawalQueueAddress = await withdrawalQueue.getAddress()
+                        const withdrawalQueueLogs = receipt.logs.filter((log: any) => log.address.toLowerCase() === withdrawalQueueAddress.toLowerCase())
+                        const withdrawalRequestCompletedLog = withdrawalQueueLogs.find((log: any) => {
+                            try {
+                                const parsed = withdrawalQueue.interface.parseLog({ topics: log.topics as any, data: log.data })
+                                return parsed?.name === "WithdrawalRequestCompleted"
+                            } catch {
+                                return false
+                            }
+                        })
+                        expect(withdrawalRequestCompletedLog).to.not.be.undefined
+                        if (withdrawalRequestCompletedLog) {
+                            const decodedLog = withdrawalQueue.interface.parseLog({ topics: withdrawalRequestCompletedLog.topics as any, data: withdrawalRequestCompletedLog.data })
+
+                            if (decodedLog) {
+                                expect(decodedLog.args.requestId).to.equal(currentCount)
+                                expect(decodedLog.args.tbtcAmount).to.equal(expectedReceivedAssets)
+                                expect(decodedLog.args.exitFee).to.equal(expectedFee)
+                            }
+                        }
+                    }
 
                     const treasuryBalanceAfter = await tbtc.balanceOf(governance.address)
                     expect(treasuryBalanceAfter - treasuryBalanceBefore).to.equal(expectedFee)
+
                 })
             })
 

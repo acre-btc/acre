@@ -343,7 +343,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
                 _spendAllowance(owner, msg.sender, shares);
             }
 
-            uint256 fee = _feeOnRaw(assets, _exitFeeBasisPoints());
+            uint256 fee = _feeOnTotal(assets, _exitFeeBasisPoints());
 
             // Transfer shares to withdrawal queue using internal _transfer
             _transfer(owner, withdrawalQueue, shares);

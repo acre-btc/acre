@@ -9,9 +9,11 @@ import {ZeroAddress} from "../utils/Errors.sol";
 import {ITBTCToken} from "../bridge/ITBTCToken.sol";
 import {acreBTC} from "../acreBTC.sol";
 import {MidasAllocator} from "./MidasAllocator.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract WithdrawalQueue is Maintainable {
     using SafeERC20 for IERC20;
+    using Math for uint256;
 
     struct WithdrawalRequest {
         address redeemer;
@@ -85,7 +87,14 @@ contract WithdrawalQueue is Maintainable {
     );
 
     /// @notice Emitted when a withdrawal request is completed.
-    event WithdrawalRequestCompleted(uint256 indexed requestId);
+    event WithdrawalRequestCompleted(
+        uint256 indexed requestId,
+        uint256 tbtcAmount,
+        uint256 exitFee
+    );
+
+    /// @notice Emitted when the tBTC vault is updated.
+    event TbtcVaultUpdated(address indexed tbtcVault);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -248,7 +257,16 @@ contract WithdrawalQueue is Maintainable {
             revert ApproveAndCallFailed();
         }
 
-        emit WithdrawalRequestCompleted(_requestId);
+        emit WithdrawalRequestCompleted(
+            _requestId,
+            tbtcAmount - exitFee,
+            exitFee
+        );
+    }
+
+    function updateTbtcVault(address _tbtcVault) external onlyMaintainer {
+        tbtcVault = _tbtcVault;
+        emit TbtcVaultUpdated(_tbtcVault);
     }
 
     function _finalizeRequestandTakeExitFee(
@@ -258,9 +276,12 @@ contract WithdrawalQueue is Maintainable {
         request.completedAt = block.timestamp;
         request.isCompleted = true;
         tbtcAmount = request.tbtcAmount; // cache the tbtc amount
-        exitFee =
-            (tbtcAmount * acrebtc.exitFeeBasisPoints()) /
-            BASIS_POINT_SCALE;
+        uint256 exitFeeBasisPoints = acrebtc.exitFeeBasisPoints();
+        exitFee = tbtcAmount.mulDiv(
+            exitFeeBasisPoints,
+            exitFeeBasisPoints + BASIS_POINT_SCALE,
+            Math.Rounding.Ceil
+        );
         if (exitFee > 0) {
             IERC20(address(tbtc)).transfer(acrebtc.treasury(), exitFee);
         }
