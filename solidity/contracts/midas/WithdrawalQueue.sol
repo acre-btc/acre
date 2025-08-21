@@ -21,8 +21,7 @@ contract WithdrawalQueue is Maintainable {
         uint256 tbtcAmount;
         uint256 createdAt;
         uint256 completedAt;
-        bool isCompleted;
-        bytes20 walletPubKeyHash;
+        bytes redeemerOutputScript;
         uint256 midasRequestId;
     }
 
@@ -72,8 +71,8 @@ contract WithdrawalQueue is Maintainable {
     error InvalidRedemptionData(
         address redeemer,
         address expectedRedeemer,
-        bytes20 walletPubKeyHash,
-        bytes20 expectedWalletPubKeyHash
+        bytes redeemerOutputScript,
+        bytes expectedRedeemerOutputScript
     );
 
     /// @notice Emitted when a withdrawal request is created.
@@ -82,7 +81,7 @@ contract WithdrawalQueue is Maintainable {
         address indexed redeemer,
         uint256 shares,
         uint256 tbtcAmount,
-        bytes20 walletPubKeyHash,
+        bytes redeemerOutputScript,
         uint256 midasRequestId
     );
 
@@ -126,7 +125,7 @@ contract WithdrawalQueue is Maintainable {
         if (_tbtc == address(0)) {
             revert ZeroAddress();
         }
-        if (address(_vault) == address(0)) {
+        if (_vault == address(0)) {
             revert ZeroAddress();
         }
         if (_tbtcVault == address(0)) {
@@ -173,12 +172,12 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Requests a redemption with extra bridge data
     /// @param _shares Amount of shares to withdraw.
-    /// @param _walletPubKeyHash Wallet public key hash.
+    /// @param _redeemerOutputScript Redeemer output script.
     /// @param _redeemer The original redeemer address.
     /// @return requestId The ID of the withdrawal request.
     function requestRedeemAndBridge(
         uint256 _shares,
-        bytes20 _walletPubKeyHash,
+        bytes calldata _redeemerOutputScript,
         address _redeemer
     ) external onlyAcreBTC returns (uint256 requestId) {
         uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
@@ -191,15 +190,14 @@ contract WithdrawalQueue is Maintainable {
             address(this)
         );
 
-        requestId = count;
+        requestId = count++;
         withdrawalRequests[requestId] = WithdrawalRequest({
             redeemer: _redeemer,
             shares: midasShares,
             tbtcAmount: tbtcAmount,
             createdAt: block.timestamp,
             completedAt: 0,
-            isCompleted: false,
-            walletPubKeyHash: _walletPubKeyHash,
+            redeemerOutputScript: _redeemerOutputScript,
             midasRequestId: midasRequestId
         });
 
@@ -208,10 +206,9 @@ contract WithdrawalQueue is Maintainable {
             _redeemer,
             midasShares,
             tbtcAmount,
-            _walletPubKeyHash,
+            _redeemerOutputScript,
             midasRequestId
         );
-        count++;
     }
 
     /// @notice Completes a withdrawal request.
@@ -219,32 +216,33 @@ contract WithdrawalQueue is Maintainable {
     /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
     ///        See `redemptionData` parameter description of `Bridge.requestRedemption`
     ///        function.
-    function completeWithdrawalRequest(
+    function finalizeRedeemAndBridge(
         uint256 _requestId,
         bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
         // TBTC Token contract owner resolves to the TBTCVault contract.
         if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
-        if (withdrawalRequests[_requestId].isCompleted)
-            revert WithdrawalRequestAlreadyCompleted();
+        WithdrawalRequest memory request = withdrawalRequests[_requestId];
+        if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
         (uint256 tbtcAmount, uint256 exitFee) = _finalizeRequestandTakeExitFee(
             _requestId
         );
 
-        (address redeemer, bytes20 walletPubKeyHash, , , , ) = abi.decode(
-            _tbtcRedemptionData,
-            (address, bytes20, bytes32, uint32, uint64, bytes)
-        );
+        (address redeemer, , , , , bytes memory redeemerOutputScript) = abi
+            .decode(
+                _tbtcRedemptionData,
+                (address, bytes20, bytes32, uint32, uint64, bytes)
+            );
         if (
-            redeemer != withdrawalRequests[_requestId].redeemer ||
-            walletPubKeyHash != withdrawalRequests[_requestId].walletPubKeyHash
+            redeemer != request.redeemer ||
+            !_equal(redeemerOutputScript, request.redeemerOutputScript)
         )
             revert InvalidRedemptionData(
                 redeemer,
-                withdrawalRequests[_requestId].redeemer,
-                walletPubKeyHash,
-                withdrawalRequests[_requestId].walletPubKeyHash
+                request.redeemer,
+                redeemerOutputScript,
+                request.redeemerOutputScript
             );
 
         if (
@@ -274,7 +272,6 @@ contract WithdrawalQueue is Maintainable {
     ) internal returns (uint256 tbtcAmount, uint256 exitFee) {
         WithdrawalRequest storage request = withdrawalRequests[_requestId];
         request.completedAt = block.timestamp;
-        request.isCompleted = true;
         tbtcAmount = request.tbtcAmount; // cache the tbtc amount
         uint256 exitFeeBasisPoints = acrebtc.exitFeeBasisPoints();
         exitFee = tbtcAmount.mulDiv(
@@ -285,5 +282,12 @@ contract WithdrawalQueue is Maintainable {
         if (exitFee > 0) {
             IERC20(address(tbtc)).transfer(acrebtc.treasury(), exitFee);
         }
+    }
+
+    function _equal(
+        bytes memory a,
+        bytes memory b
+    ) internal pure returns (bool) {
+        return a.length == b.length && keccak256(a) == keccak256(b);
     }
 }

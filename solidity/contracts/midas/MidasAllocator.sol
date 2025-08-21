@@ -54,10 +54,10 @@ contract MidasAllocator is IDispatcher, Maintainable {
         if (_tbtc == address(0)) {
             revert ZeroAddress();
         }
-        if (address(_acreBTC) == address(0)) {
+        if (_acreBTC == address(0)) {
             revert ZeroAddress();
         }
-        if (address(_vault) == address(0)) {
+        if (_vault == address(0)) {
             revert ZeroAddress();
         }
 
@@ -71,11 +71,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
         }
     }
 
-    /// @notice Allocate tBTC to MezoPortal. Each allocation creates a new "rolling"
-    ///         deposit meaning that the previous Acre's deposit is fully withdrawn
-    ///         before a new deposit with added amount is created. This mimics a
-    ///         "top up" functionality with the difference that a new deposit id
-    ///         is created and the previous deposit id is no longer in use.
+    /// @notice Allocate tBTC to Midas Vault.
     /// @dev This function can be invoked periodically by a maintainer.
     function allocate() external onlyMaintainer {
         // Fetch unallocated tBTC from acreBTC contract.
@@ -86,8 +82,6 @@ contract MidasAllocator is IDispatcher, Maintainable {
             tbtc.balanceOf(address(acrebtc))
         );
 
-        // TODO: Revisit when working on queued withdrawals as part of the balance
-        // may be held to satisfy the withdrawal requests.
         uint256 idleAmount = tbtc.balanceOf(address(this));
 
         // Deposit tBTC to Midas Vault.
@@ -98,6 +92,9 @@ contract MidasAllocator is IDispatcher, Maintainable {
         emit DepositAllocated(idleAmount, shares);
     }
 
+    /// @notice Withdraw shares from Midas Vault.
+    /// @dev This function can be invoked by the withdrawal queue.
+    /// @param amount Amount of shares to withdraw.
     function withdraw(uint256 amount) external {
         if (msg.sender != address(withdrawalQueue)) {
             revert NotWithdrawalQueue();
@@ -123,8 +120,10 @@ contract MidasAllocator is IDispatcher, Maintainable {
         vault.requestRedeem(shares, address(acrebtc));
     }
 
+    /// @notice Sets the withdrawal queue address.
+    /// @param _withdrawalQueue Address of the withdrawal queue.
     function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {
-        if (address(_withdrawalQueue) == address(0)) {
+        if (_withdrawalQueue == address(0)) {
             revert ZeroAddress();
         }
         withdrawalQueue = WithdrawalQueue(_withdrawalQueue);

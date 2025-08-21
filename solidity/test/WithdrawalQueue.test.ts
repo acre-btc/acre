@@ -29,13 +29,13 @@ function createRedemptionData(
     redeemer: string,
     walletPubKeyHash: string,
     mainUtxo: string = "0x0000000000000000000000000000000000000000000000000000000000000000",
-    redeemerOutputScript: number = 0,
+    redeemerOutputScriptValue: number = 0,
     requestedAmount: bigint = to1e18(1),
-    extraData: string = "0x"
+    redeemerOutputScript: string = "0x1234"
 ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
-        [redeemer, walletPubKeyHash, mainUtxo, redeemerOutputScript, requestedAmount, extraData]
+        [redeemer, walletPubKeyHash, mainUtxo, redeemerOutputScriptValue, requestedAmount, redeemerOutputScript]
     )
 }
 
@@ -412,7 +412,7 @@ describe("WithdrawalQueue", () => {
     describe("requestRedeemAndBridge", () => {
         beforeAfterSnapshotWrapper()
 
-        const walletPubKeyHash = "0x" + "12".repeat(20) // 20 bytes
+        const redeemerOutputScript = "0x1234" // bytes
         const depositAmount = to1e18(10)
         const withdrawalAmount = to1e18(5)
 
@@ -437,7 +437,7 @@ describe("WithdrawalQueue", () => {
 
                 const tx = await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 const requestId = await tx.wait().then((receipt: any) => {
                     // Get the request ID from the return value
@@ -449,8 +449,8 @@ describe("WithdrawalQueue", () => {
                 expect(request.redeemer).to.equal(depositor.address)
                 expect(request.shares).to.equal(midasVaultShares)
                 expect(request.tbtcAmount).to.equal(tbtcAmount)
-                expect(request.isCompleted).to.be.false
-                expect(request.walletPubKeyHash).to.equal(walletPubKeyHash)
+                expect(request.completedAt).to.equal(0n)
+                expect(request.redeemerOutputScript).to.equal(redeemerOutputScript)
                 expect(request.midasRequestId).to.equal(1) // First request
 
                 await expect(tx)
@@ -460,7 +460,7 @@ describe("WithdrawalQueue", () => {
                         depositor.address,
                         midasVaultShares,
                         tbtcAmount,
-                        walletPubKeyHash,
+                        redeemerOutputScript,
                         1
                     )
             })
@@ -470,7 +470,7 @@ describe("WithdrawalQueue", () => {
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 const balanceAfter = await acreBTC.balanceOf(depositor.address)
                 expect(balanceBefore - balanceAfter).to.equal(withdrawalAmount)
@@ -481,13 +481,13 @@ describe("WithdrawalQueue", () => {
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 expect(await withdrawalQueue.count()).to.equal(initialCount + 1n)
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 expect(await withdrawalQueue.count()).to.equal(initialCount + 2n)
             })
@@ -499,7 +499,7 @@ describe("WithdrawalQueue", () => {
                 await expect(
                     acreBTC
                         .connect(depositor)
-                        .redeemAndBridge(largeAmount, walletPubKeyHash)
+                        .redeemAndBridge(largeAmount, redeemerOutputScript)
                 ).to.be.reverted // ERC20 transfer will fail
             })
         })
@@ -507,10 +507,11 @@ describe("WithdrawalQueue", () => {
 
     })
 
-    describe("completeWithdrawalRequest", () => {
+    describe("finalizeRedeemAndBridge", () => {
         beforeAfterSnapshotWrapper()
 
         const walletPubKeyHash = "0x" + "12".repeat(20)
+        const redeemerOutputScript = "0x1234"
         const depositAmount = to1e18(10)
         const withdrawalAmount = to1e18(5)
 
@@ -527,14 +528,14 @@ describe("WithdrawalQueue", () => {
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
             })
 
             it("should revert", async () => {
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 await expect(
-                    withdrawalQueue.connect(thirdParty).completeWithdrawalRequest(0, redemptionData)
+                    withdrawalQueue.connect(thirdParty).finalizeRedeemAndBridge(0, redemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "CallerNotMaintainer")
             })
         })
@@ -552,17 +553,17 @@ describe("WithdrawalQueue", () => {
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
             })
 
             it("should revert", async () => {
                 // Set tBTC owner to something other than tbtcVault
                 await tbtc.setOwner(thirdParty.address)
 
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(0, redemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(0, redemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "UnexpectedTbtcTokenOwner")
             })
         })
@@ -580,7 +581,7 @@ describe("WithdrawalQueue", () => {
 
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 // Set tBTC owner to tbtcVault
                 await tbtc.setOwner(await tbtcVault.getAddress())
@@ -588,19 +589,19 @@ describe("WithdrawalQueue", () => {
                 // Give withdrawal queue some tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), withdrawalAmount)
 
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 // Mock approveAndCall to return true
                 await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(true)
 
                 // Complete the request
-                await withdrawalQueue.connect(maintainer).completeWithdrawalRequest(0, redemptionData)
+                await withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(0, redemptionData)
             })
 
             it("should revert", async () => {
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(0, redemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(0, redemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "WithdrawalRequestAlreadyCompleted")
             })
         })
@@ -629,19 +630,19 @@ describe("WithdrawalQueue", () => {
                 const fee = tbtcAmountRaw - tbtcAmountWithFee
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 // Give withdrawal queue generous tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), withdrawalAmount * 2n)
 
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 // Mock approveAndCall to return true
                 await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(true)
 
                 const tx = await withdrawalQueue
                     .connect(maintainer)
-                    .completeWithdrawalRequest(currentCount, redemptionData)
+                    .finalizeRedeemAndBridge(currentCount, redemptionData)
 
                 await expect(tx).to.emit(withdrawalQueue, "WithdrawalRequestCompleted").withArgs(currentCount, tbtcAmountRaw, fee)
             })
@@ -658,20 +659,20 @@ describe("WithdrawalQueue", () => {
                 const currentCount = await withdrawalQueue.count()
                 await acreBTC
                     .connect(depositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 // Give withdrawal queue generous tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), withdrawalAmount * 2n)
 
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 // Mock approveAndCall to return true
                 await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(true)
 
-                await withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, redemptionData)
+                await withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(currentCount, redemptionData)
 
                 const request = await withdrawalQueue.withdrawalRequests(currentCount)
-                expect(request.isCompleted).to.be.true
+
                 expect(request.completedAt).to.be.greaterThan(0)
             })
 
@@ -703,7 +704,7 @@ describe("WithdrawalQueue", () => {
                     const expectedReceivedAssets = await acreBTC.previewRedeem(safeWithdrawalAmount)
                     await acreBTC
                         .connect(testDepositor)
-                        .redeemAndBridge(safeWithdrawalAmount, walletPubKeyHash)
+                        .redeemAndBridge(safeWithdrawalAmount, redeemerOutputScript)
 
                     const request = await withdrawalQueue.withdrawalRequests(currentCount)
                     const exitFeeBasisPoints = await acreBTC.exitFeeBasisPoints()
@@ -716,13 +717,13 @@ describe("WithdrawalQueue", () => {
 
                     const treasuryBalanceBefore = await tbtc.balanceOf(governance.address)
 
-                    const redemptionData = createRedemptionData(testDepositor.address, walletPubKeyHash)
+                    const redemptionData = createRedemptionData(testDepositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                     // Mock approveAndCall to return true
                     await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(true)
 
 
-                    const tx = await withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, redemptionData)
+                    const tx = await withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(currentCount, redemptionData)
                     const receipt = await tx.wait()
                     // check the logs for WithdrawalRequestCompleted
                     if (receipt) {
@@ -769,15 +770,15 @@ describe("WithdrawalQueue", () => {
                 const currentCount = await withdrawalQueue.count()
                 await acreBTC
                     .connect(testDepositor)
-                    .redeemAndBridge(withdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(withdrawalAmount, redeemerOutputScript)
 
                 // Give withdrawal queue generous tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), withdrawalAmount * 2n)
 
-                const wrongRedemptionData = createRedemptionData(thirdParty.address, walletPubKeyHash)
+                const wrongRedemptionData = createRedemptionData(thirdParty.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, wrongRedemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(currentCount, wrongRedemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "InvalidRedemptionData")
             })
 
@@ -797,16 +798,16 @@ describe("WithdrawalQueue", () => {
                 const safeWithdrawalAmount = to1e18(3) // Reduce from 5 to 3 tBTC
                 await acreBTC
                     .connect(testDepositor)
-                    .redeemAndBridge(safeWithdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(safeWithdrawalAmount, redeemerOutputScript)
 
                 // Give withdrawal queue generous tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), safeWithdrawalAmount * 2n)
 
-                const wrongWalletPubKeyHash = "0x" + "34".repeat(20)
-                const wrongRedemptionData = createRedemptionData(testDepositor.address, wrongWalletPubKeyHash)
+                const wrongRedeemerOutputScript = "0x5678"
+                const wrongRedemptionData = createRedemptionData(testDepositor.address, walletPubKeyHash, undefined, undefined, undefined, wrongRedeemerOutputScript)
 
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, wrongRedemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(currentCount, wrongRedemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "InvalidRedemptionData")
             })
 
@@ -828,18 +829,18 @@ describe("WithdrawalQueue", () => {
                 const safeWithdrawalAmount = to1e18(3) // Reduce from 5 to 3 tBTC
                 await acreBTC
                     .connect(testDepositor)
-                    .redeemAndBridge(safeWithdrawalAmount, walletPubKeyHash)
+                    .redeemAndBridge(safeWithdrawalAmount, redeemerOutputScript)
 
                 // Give withdrawal queue generous tBTC to complete the request
                 await tbtc.mint(await withdrawalQueue.getAddress(), safeWithdrawalAmount * 2n)
 
-                const redemptionData = createRedemptionData(testDepositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(testDepositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 // Mock approveAndCall to return false
                 await tbtc.connect(tbtcVaultFakeSigner).setApproveAndCallResult(false)
 
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(currentCount, redemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(currentCount, redemptionData)
                 ).to.be.revertedWithCustomError(withdrawalQueue, "ApproveAndCallFailed")
             })
         })
@@ -850,12 +851,12 @@ describe("WithdrawalQueue", () => {
                 // The function should still work but will process a zero-value request
                 await tbtc.setOwner(await tbtcVault.getAddress())
 
-                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash)
+                const redemptionData = createRedemptionData(depositor.address, walletPubKeyHash, undefined, undefined, undefined, redeemerOutputScript)
 
                 // This might revert due to insufficient tBTC balance or other reasons
                 // depending on the implementation details
                 await expect(
-                    withdrawalQueue.connect(maintainer).completeWithdrawalRequest(999, redemptionData)
+                    withdrawalQueue.connect(maintainer).finalizeRedeemAndBridge(999, redemptionData)
                 ).to.be.reverted
             })
         })
@@ -864,7 +865,7 @@ describe("WithdrawalQueue", () => {
     describe("edge cases and integration", () => {
         beforeAfterSnapshotWrapper()
 
-        const walletPubKeyHash = "0x" + "12".repeat(20)
+        const redeemerOutputScript = "0x1234"
         const depositAmount = to1e18(10)
 
         it("should handle multiple bridge requests from same user", async () => {
@@ -881,11 +882,11 @@ describe("WithdrawalQueue", () => {
 
             await acreBTC
                 .connect(depositor)
-                .redeemAndBridge(amount1, walletPubKeyHash)
+                .redeemAndBridge(amount1, redeemerOutputScript)
 
             await acreBTC
                 .connect(depositor)
-                .redeemAndBridge(amount2, walletPubKeyHash)
+                .redeemAndBridge(amount2, redeemerOutputScript)
 
             expect(await withdrawalQueue.count()).to.equal(initialCount + 2n)
 
@@ -934,7 +935,7 @@ describe("WithdrawalQueue", () => {
             // Bridge redemption - should increment counter
             await acreBTC
                 .connect(depositor)
-                .redeemAndBridge(amount2, walletPubKeyHash)
+                .redeemAndBridge(amount2, redeemerOutputScript)
 
             expect(await withdrawalQueue.count()).to.equal(initialCount + 1n)
 
@@ -964,16 +965,16 @@ describe("WithdrawalQueue", () => {
             await midasAllocator.connect(maintainer).allocate()
 
             const amount = to1e18(3)
-            const wallet1 = "0x" + "11".repeat(20)
-            const wallet2 = "0x" + "22".repeat(20)
+            const outputScript1 = "0x1111"
+            const outputScript2 = "0x2222"
 
             await acreBTC
                 .connect(depositor)
-                .redeemAndBridge(amount, wallet1)
+                .redeemAndBridge(amount, outputScript1)
 
             await acreBTC
                 .connect(depositor2)
-                .redeemAndBridge(amount, wallet2)
+                .redeemAndBridge(amount, outputScript2)
 
             expect(await withdrawalQueue.count()).to.equal(initialCount + 2n)
 
@@ -981,10 +982,10 @@ describe("WithdrawalQueue", () => {
             const request2 = await withdrawalQueue.withdrawalRequests(initialCount + 1n)
 
             expect(request1.redeemer).to.equal(depositor.address)
-            expect(request1.walletPubKeyHash).to.equal(wallet1)
+            expect(request1.redeemerOutputScript).to.equal(outputScript1)
 
             expect(request2.redeemer).to.equal(depositor2.address)
-            expect(request2.walletPubKeyHash).to.equal(wallet2)
+            expect(request2.redeemerOutputScript).to.equal(outputScript2)
         })
     })
 }) 

@@ -98,6 +98,9 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// Reverts if the withdrawal queue is not set.
     error WithdrawalQueueNotSet();
 
+    /// Reverts if the caller is not the withdrawal queue.
+    error OnlyWithdrawalQueue();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -364,17 +367,21 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @notice Burns shares from the caller.
     /// @param shares Amount of shares to burn.
     function burn(uint256 shares) public {
+        if (msg.sender != address(withdrawalQueue)) {
+            revert OnlyWithdrawalQueue();
+        }
+
         _burn(msg.sender, shares);
     }
 
     /// @notice Redeems shares for Bitcoin bridge withdrawal.
     /// @dev This function routes through the withdrawal queue for bridge redemptions.
     /// @param shares Amount of shares to redeem.
-    /// @param walletPubKeyHash Bitcoin wallet public key hash for the redemption.
+    /// @param redeemerOutputScript Redeemer output script.
     /// @return requestId The ID of the withdrawal request in the queue.
     function redeemAndBridge(
         uint256 shares,
-        bytes20 walletPubKeyHash
+        bytes calldata redeemerOutputScript
     ) external returns (uint256 requestId) {
         if (withdrawalQueue == address(0)) {
             revert WithdrawalQueueNotSet();
@@ -387,7 +394,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         return
             WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
                 shares,
-                walletPubKeyHash,
+                redeemerOutputScript,
                 msg.sender
             );
     }
