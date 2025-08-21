@@ -157,11 +157,10 @@ contract WithdrawalQueue is Maintainable {
         address _receiver,
         uint256 _exitFeeInAssets
     ) external onlyAcreBTC {
-        uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
-        uint256 midasShares = vault.convertToShares(tbtcAmount);
-        midasAllocator.withdraw(midasShares);
-        vaultSharesToken.approve(address(vault), midasShares);
-        acrebtc.burn(_shares);
+        (
+            uint256 midasShares,
+            uint256 tbtcAmount
+        ) = _calculateMidasSharesAndBurnAcreBtc(_shares);
         if (_exitFeeInAssets > 0) {
             uint256 exitFeeShares = vault.convertToShares(_exitFeeInAssets);
             vault.requestRedeem(exitFeeShares, acrebtc.treasury());
@@ -180,11 +179,11 @@ contract WithdrawalQueue is Maintainable {
         bytes calldata _redeemerOutputScript,
         address _redeemer
     ) external onlyAcreBTC returns (uint256 requestId) {
-        uint256 tbtcAmount = acrebtc.convertToAssets(_shares);
-        uint256 midasShares = vault.convertToShares(tbtcAmount);
-        midasAllocator.withdraw(midasShares);
-        acrebtc.burn(_shares);
-        vaultSharesToken.approve(address(vault), midasShares);
+        (
+            uint256 midasShares,
+            uint256 tbtcAmount
+        ) = _calculateMidasSharesAndBurnAcreBtc(_shares);
+
         uint256 midasRequestId = vault.requestRedeem(
             midasShares,
             address(this)
@@ -225,7 +224,7 @@ contract WithdrawalQueue is Maintainable {
         WithdrawalRequest memory request = withdrawalRequests[_requestId];
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
-        (uint256 tbtcAmount, uint256 exitFee) = _finalizeRequestandTakeExitFee(
+        (uint256 tbtcAmount, uint256 exitFee) = _finalizeRequestAndTakeExitFee(
             _requestId
         );
 
@@ -267,7 +266,7 @@ contract WithdrawalQueue is Maintainable {
         emit TbtcVaultUpdated(_tbtcVault);
     }
 
-    function _finalizeRequestandTakeExitFee(
+    function _finalizeRequestAndTakeExitFee(
         uint256 _requestId
     ) internal returns (uint256 tbtcAmount, uint256 exitFee) {
         WithdrawalRequest storage request = withdrawalRequests[_requestId];
@@ -282,6 +281,16 @@ contract WithdrawalQueue is Maintainable {
         if (exitFee > 0) {
             IERC20(address(tbtc)).transfer(acrebtc.treasury(), exitFee);
         }
+    }
+
+    function _calculateMidasSharesAndBurnAcreBtc(
+        uint256 _shares
+    ) internal returns (uint256 midasShares, uint256 tbtcAmount) {
+        tbtcAmount = acrebtc.convertToAssets(_shares);
+        midasShares = vault.convertToShares(tbtcAmount);
+        midasAllocator.withdraw(midasShares);
+        acrebtc.burn(_shares);
+        vaultSharesToken.approve(address(vault), midasShares);
     }
 
     function _equal(
