@@ -2,7 +2,7 @@ import { AcreContracts } from "../contracts"
 import { EthereumContractRunner } from "./contract"
 import { EthereumBitcoinDepositor } from "./bitcoin-depositor"
 import { EthereumNetwork } from "./network"
-import { EthereumStBTC } from "./stbtc"
+import { EthereumAcreBTC } from "./acrebtc"
 import EthereumBitcoinRedeemer from "./bitcoin-redeemer"
 import TbtcBridge from "./tbtc-bridge"
 import TbtcVault from "./tbtc-vault"
@@ -36,7 +36,7 @@ async function getEthereumContracts(
   network: EthereumNetwork,
 ): Promise<AcreContracts> {
   const bitcoinDepositor = new EthereumBitcoinDepositor({ runner }, network)
-  const stBTC = new EthereumStBTC({ runner }, network)
+  const acreBTC = new EthereumAcreBTC({ runner }, network)
   const bitcoinRedeemer = new EthereumBitcoinRedeemer({ runner }, network)
 
   const tbtcContracts = await initializeTbtcContracts(runner, bitcoinDepositor)
@@ -44,7 +44,7 @@ async function getEthereumContracts(
   bitcoinDepositor.setTbtcContracts(tbtcContracts)
   bitcoinRedeemer.setTbtcContracts(tbtcContracts)
 
-  return { bitcoinDepositor, stBTC, bitcoinRedeemer }
+  return { bitcoinDepositor, acreBTC, bitcoinRedeemer }
 }
 
 export { getEthereumContracts, EthereumNetwork, EthereumBitcoinRedeemer }

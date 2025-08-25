@@ -1,6 +1,6 @@
 import ethers, { Contract } from "ethers"
 import stBTC from "@acre-btc/contracts/deployments/sepolia/stBTC.json"
-import { EthereumStBTC } from "../../../src/lib/ethereum/stbtc"
+import { EthereumStBTC } from "./acrebtc"
 import { Hex } from "../../../src/lib/utils"
 import {
   EthereumAddress,

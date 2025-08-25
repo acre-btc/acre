@@ -20,8 +20,8 @@ type DepositDataResponse = {
        */
       bitcoinTransactionId: string
       /**
-       * Amount of tBTC tokens deposited to stBTC vault - it's equal to
-       * `bridgedAmount - depositorFee` (without the stBTC deposit fee).
+       * Amount of tBTC tokens deposited to acreBTC vault - it's equal to
+       * `bridgedAmount - depositorFee` (without the acreBTC deposit fee).
        */
       amountToDeposit: string
       /**
@@ -55,8 +55,8 @@ type Deposit = {
    */
   initialAmount: bigint
   /**
-   * Amount of tBTC tokens deposited to stBTC vault - it's equal to
-   * `bridgedAmount - depositorFee` (without the stBTC deposit fee).
+   * Amount of tBTC tokens deposited to acreBTC vault - it's equal to
+   * `bridgedAmount - depositorFee` (without the acreBTC deposit fee).
    */
   amountToDeposit: bigint
   /**
