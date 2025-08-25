@@ -142,7 +142,7 @@ class EthereumAcreBTC
 
   /**
    * Calculates the fee when it's included in the amount.
-   * One is added to the result if there is a remainder to match the stBTC
+   * One is added to the result if there is a remainder to match the acreBTC
    * contract calculations rounding.
    * @param amount Amount in tBTC
    * @param feeBasisPoints Fee basis points applied to calculate the fee.
