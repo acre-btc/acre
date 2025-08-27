@@ -64,11 +64,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
         }
     }
 
-    /// @notice Allocate tBTC to MezoPortal. Each allocation creates a new "rolling"
-    ///         deposit meaning that the previous Acre's deposit is fully withdrawn
-    ///         before a new deposit with added amount is created. This mimics a
-    ///         "top up" functionality with the difference that a new deposit id
-    ///         is created and the previous deposit id is no longer in use.
+    /// @notice Allocate tBTC to the Midas Vault.
     /// @dev This function can be invoked periodically by a maintainer.
     function allocate() external onlyMaintainer {
         // Fetch unallocated tBTC from stBTC contract.
@@ -95,8 +91,8 @@ contract MidasAllocator is IDispatcher, Maintainable {
         revert("not implemented");
     }
 
-    /// @notice Returns the total amount of tBTC allocated to MezoPortal including
-    ///         the amount that is currently hold by this contract.
+    /// @notice Returns the total amount of tBTC allocated to Midas Vault including
+    ///         the amount that is currently held by this contract.
     function totalAssets() external view returns (uint256) {
         return
             tbtc.balanceOf(address(this)) +
