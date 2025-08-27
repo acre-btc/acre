@@ -163,6 +163,9 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @notice Reverts if the migration has not started.
     error MigrationNotStarted();
 
+    /// @notice Reverts if the migrateTo address is not set.
+    error MigrateToNotSet();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -576,7 +579,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         address depositOwner
     ) external onlyOwner returns (uint256) {
         if (migrateTo == address(0)) {
-            revert ZeroAddress();
+            revert MigrateToNotSet();
         }
         if (paused()) {
             revert EnforcedPause();
