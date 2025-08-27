@@ -12,7 +12,12 @@ import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
 import { to1e18 } from "./utils"
 
-import { StBTC as stBTC, TestERC20, MezoAllocator } from "../typechain"
+import {
+  StBTC as stBTC,
+  AcreBTC as acreBTC,
+  TestERC20,
+  MezoAllocator,
+} from "../typechain"
 
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
