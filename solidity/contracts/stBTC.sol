@@ -563,9 +563,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         // Revoke approval for the dispatcher contract so it can't pull assets
         // from the vault.
         IERC20(asset()).forceApprove(address(dispatcher), 0);
-
-        // Release the deposit from the MezoAllocator contract.
-        MezoAllocator(address(dispatcher)).releaseDeposit();
     }
 
     /// @notice Migrates a depositor's funds to the new contract.
