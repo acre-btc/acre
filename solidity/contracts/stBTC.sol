@@ -624,6 +624,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         // Deposit the assets to the new contract.
         uint256 newShares = IERC4626(migrateTo).deposit(assets, depositOwner);
 
+        // slither-disable-next-line reentrancy-events
         emit DepositMigrated(depositOwner, assets, shares, newShares);
 
         return newShares;
