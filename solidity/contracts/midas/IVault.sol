@@ -29,11 +29,13 @@ interface IVault {
      * @notice Emitted when a redeem request is made.
      * @param requestId The request ID.
      * @param sender The address that made the request.
+     * @param receiver The address that will received the assets.
      * @param shares The amount of shares that would be redeemed.
      */
     event RedeemRequest(
         uint256 indexed requestId,
         address indexed sender,
+        address indexed receiver,
         uint256 shares
     );
 
@@ -93,13 +95,16 @@ interface IVault {
     ) external view returns (uint256 assets);
 
     /**
-     * @dev Mints shares Vault shares to receiver by depositing exactly amount of underlying tokens.
+     * @dev Mints Vault shares to receiver by depositing exactly amount of underlying tokens.
      *
      * - MUST emit the Deposit event.
      *
      * NOTE: Implementation requires pre-approval of the Vault with the Vault’s underlying asset token.
      */
-    function deposit(uint256 assets) external returns (uint256 shares);
+    function deposit(
+        uint256 assets,
+        address receiver
+    ) external returns (uint256 shares);
 
     /**
      * @dev Assumes control of shares from sender into the Vault and submits a Request for asynchronous redeem.
@@ -107,9 +112,13 @@ interface IVault {
      * - MUST emit the RedeemRequest event.
      * - Once a request is finalized MUST emit the RedeemFinalize event.
      *
-     * @param shares the amount of shares to be redeemed
+     * @param shares The amount of shares to be redeemed.
+     * @param receiver The address that will receive assets on request finalization.
      *
      * NOTE: Implementations requires pre-approval of the Vault with the Vault's share token.
      */
-    function requestRedeem(uint256 shares) external returns (uint256 requestId);
+    function requestRedeem(
+        uint256 shares,
+        address receiver
+    ) external returns (uint256 requestId);
 }
