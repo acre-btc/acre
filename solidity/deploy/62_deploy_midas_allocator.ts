@@ -8,7 +8,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await helpers.signers.getNamedSigners()
   const { log } = deployments
 
-  const stbtc = await deployments.get("stBTC")
+  const acreBtc = await deployments.get("acreBTC")
   const tbtc = await deployments.get("TBTC")
   const midasVault = await deployments.get("MidasVault")
 
@@ -20,7 +20,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       factoryOpts: {
         signer: deployer,
       },
-      initializerArgs: [tbtc.address, stbtc.address, midasVault.address],
+      initializerArgs: [tbtc.address, acreBtc.address, midasVault.address],
       proxyOpts: {
         kind: "transparent",
         initialOwner: governance,
@@ -39,4 +39,4 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["MidasAllocator"]
-func.dependencies = ["TBTC", "stBTC", "MidasVault"]
+func.dependencies = ["TBTC", "acreBTC", "MidasVault"]
