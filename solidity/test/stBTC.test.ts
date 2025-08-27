@@ -3874,10 +3874,8 @@ describe("stBTC", () => {
         beforeAfterSnapshotWrapper()
 
         let newVault: string
-        let stbtcAddress: string
 
         before(async () => {
-          stbtcAddress = await stbtc.getAddress()
           newVault = await acreBtc.getAddress()
           await stbtc.connect(governance).startMigration(newVault)
         })
