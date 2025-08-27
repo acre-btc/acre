@@ -121,6 +121,18 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @param migrateTo Address of the ERC-4626 contract to migrate to.
     event MigrationStarted(address migrateTo);
 
+    /// Emitted when a deposit is migrated.
+    /// @param depositOwner Address of the owner of the deposit.
+    /// @param assets Amount of assets migrated.
+    /// @param oldShares Amount of shares migrated.
+    /// @param newShares Amount of shares migrated to the new vault.
+    event DepositMigrated(
+        address indexed depositOwner,
+        uint256 assets,
+        uint256 oldShares,
+        uint256 newShares
+    );
+
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
     /// @param min Minimum amount to check 'amount' against.
@@ -610,7 +622,11 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         IERC20(asset()).forceApprove(migrateTo, assets);
 
         // Deposit the assets to the new contract.
-        return IERC4626(migrateTo).deposit(assets, depositOwner);
+        uint256 newShares = IERC4626(migrateTo).deposit(assets, depositOwner);
+
+        emit DepositMigrated(depositOwner, assets, shares, newShares);
+
+        return newShares;
     }
 
     /// @notice Returns the number of assets that corresponds to the amount of
