@@ -586,7 +586,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         }
 
         uint256 shares = balanceOf(depositOwner);
-        uint256 assets = convertToAssets(shares);
 
         // We need to ensure the shares were not minted as debt, so they
         // are covered by the assets deposited to the vault.
@@ -597,6 +596,8 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         if (shares == 0) {
             return 0;
         }
+
+        uint256 assets = convertToAssets(shares);
 
         // Adjust the withdrawable shares to exclude the shares that are being
         // migrated and keep the rest of shares associated with debt.
