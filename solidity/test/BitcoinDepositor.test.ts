@@ -1245,6 +1245,62 @@ describe("BitcoinDepositor", () => {
     })
   })
 
+  describe("updateAcreVault", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not owner", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateAcreVault(thirdParty.address),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is owner", () => {
+      describe("when new vault address is zero address", () => {
+        it("should revert", async () => {
+          await expect(
+            bitcoinDepositor.connect(governance).updateAcreVault(ZeroAddress),
+          ).to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "AcreVaultZeroAddress",
+          )
+        })
+      })
+
+      describe("when new vault address is non-zero address", () => {
+        const newVaultAddress = "0x1234567890123456789012345678901234567890"
+
+        let tx: ContractTransactionResponse
+
+        before(async () => {
+          tx = await bitcoinDepositor
+            .connect(governance)
+            .updateAcreVault(newVaultAddress)
+        })
+
+        it("should emit AcreVaultUpdated event", async () => {
+          await expect(tx)
+            .to.emit(bitcoinDepositor, "AcreVaultUpdated")
+            .withArgs(newVaultAddress)
+        })
+
+        it("should update acre vault address", async () => {
+          expect(await bitcoinDepositor.acreVault()).to.be.equal(
+            newVaultAddress,
+          )
+        })
+      })
+    })
+  })
+
   async function initializeDeposit() {
     await bitcoinDepositor
       .connect(thirdParty)

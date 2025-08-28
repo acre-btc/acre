@@ -163,6 +163,10 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         uint256 bridgeFeesReimbursementThreshold
     );
 
+    /// @notice Emitted when a acre vault is updated.
+    /// @param newAcreVault New value of the acre vault.
+    event AcreVaultUpdated(address newAcreVault);
+
     /// Reverts if the tBTC Token address is zero.
     error TbtcTokenZeroAddress();
 
@@ -426,6 +430,8 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         if (address(newAcreVault) == address(0)) {
             revert AcreVaultZeroAddress();
         }
+
+        emit AcreVaultUpdated(newAcreVault);
 
         acreVault = IAcreVault(newAcreVault);
     }
