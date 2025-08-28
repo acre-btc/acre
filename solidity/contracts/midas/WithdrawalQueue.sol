@@ -58,6 +58,9 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Not acreBTC.
     error NotAcreBTC();
 
+    /// @notice Not tBTC token owner.
+    error NotTbtcTokenOwner();
+
     /// @notice Unexpected tBTC token owner.
     error UnexpectedTbtcTokenOwner();
 
@@ -93,7 +96,7 @@ contract WithdrawalQueue is Maintainable {
     );
 
     /// @notice Emitted when the tBTC vault is updated.
-    event TbtcVaultUpdated(address indexed tbtcVault);
+    event TbtcVaultUpdated(address oldTbtcVault, address newTbtcVault);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -261,9 +264,20 @@ contract WithdrawalQueue is Maintainable {
         );
     }
 
-    function updateTbtcVault(address _tbtcVault) external onlyMaintainer {
-        tbtcVault = _tbtcVault;
-        emit TbtcVaultUpdated(_tbtcVault);
+    /// @notice Updates TBTCVault contract address.
+    /// @param newTbtcVault New TBTCVault contract address.
+    function updateTbtcVault(address newTbtcVault) external onlyOwner {
+        if (newTbtcVault == address(0)) {
+            revert ZeroAddress();
+        }
+
+        if (newTbtcVault != tbtc.owner()) {
+            revert NotTbtcTokenOwner();
+        }
+
+        emit TbtcVaultUpdated(tbtcVault, newTbtcVault);
+
+        tbtcVault = newTbtcVault;
     }
 
     function _finalizeRequestAndTakeExitFee(
