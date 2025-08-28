@@ -91,7 +91,7 @@ interface IVault {
     ) external view returns (uint256 assets);
 
     /**
-     * @dev Mints shares Vault shares to owner by depositing exactly amount of underlying tokens.
+     * @dev Mints Vault shares to receiver by depositing exactly amount of underlying tokens.
      *
      * - MUST emit the Deposit event.
      *

@@ -5,7 +5,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Maintainable} from "../utils/Maintainable.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
-import "../acreBTC.sol";
 import "../interfaces/IDispatcher.sol";
 import {IVault} from "./IVault.sol";
 import {WithdrawalQueue} from "./WithdrawalQueue.sol";
@@ -17,11 +16,11 @@ contract MidasAllocator is IDispatcher, Maintainable {
     /// @notice tBTC token contract.
     IERC20 public tbtc;
 
-    /// @notice acreBTC token vault contract.
-    acreBTC public acrebtc;
+    /// @notice Acre Vault contract (acreBTC).
+    address public acreVault;
 
-    /// @notice Address of the Vault contract.
-    IVault public vault;
+    /// @notice Address of the Midas Vault contract.
+    IVault public midasVault;
 
     /// @notice Address of the VaultReceiptToken contract.
     IERC20 public vaultSharesToken;
@@ -42,51 +41,51 @@ contract MidasAllocator is IDispatcher, Maintainable {
 
     /// @notice Initializes the MidasAllocator contract.
     /// @param _tbtc Address of the tBTC token contract.
-    /// @param _acreBTC Address of the acreBTC vault contract.
-    /// @param _vault Address of the Midas Vault contract.
+    /// @param _acreVault Address of the Acre Vault contract (acreBTC).
+    /// @param _midasVault Address of the Midas Vault contract.
     function initialize(
         address _tbtc,
-        address _acreBTC,
-        address _vault
+        address _acreVault,
+        address _midasVault
     ) public initializer {
         __MaintainableOwnable_init(msg.sender);
 
         if (_tbtc == address(0)) {
             revert ZeroAddress();
         }
-        if (_acreBTC == address(0)) {
+        if (address(_acreVault) == address(0)) {
             revert ZeroAddress();
         }
-        if (_vault == address(0)) {
+        if (address(_midasVault) == address(0)) {
             revert ZeroAddress();
         }
 
         tbtc = IERC20(_tbtc);
-        acrebtc = acreBTC(_acreBTC);
-        vault = IVault(_vault);
+        acreVault = _acreVault;
+        midasVault = IVault(_midasVault);
 
-        vaultSharesToken = IERC20(vault.share());
+        vaultSharesToken = IERC20(midasVault.share());
         if (address(vaultSharesToken) == address(0)) {
             revert ZeroAddress();
         }
     }
 
-    /// @notice Allocate tBTC to Midas Vault.
+    /// @notice Allocate tBTC to the Midas Vault.
     /// @dev This function can be invoked periodically by a maintainer.
     function allocate() external onlyMaintainer {
-        // Fetch unallocated tBTC from acreBTC contract.
+        // Fetch unallocated tBTC from Acre Vault contract.
         // slither-disable-next-line arbitrary-send-erc20
         tbtc.safeTransferFrom(
-            address(acrebtc),
+            address(acreVault),
             address(this),
-            tbtc.balanceOf(address(acrebtc))
+            tbtc.balanceOf(address(acreVault))
         );
 
         uint256 idleAmount = tbtc.balanceOf(address(this));
 
         // Deposit tBTC to Midas Vault.
-        tbtc.forceApprove(address(vault), idleAmount);
-        uint256 shares = vault.deposit(idleAmount, address(this));
+        tbtc.forceApprove(address(midasVault), idleAmount);
+        uint256 shares = midasVault.deposit(idleAmount, address(this));
 
         // slither-disable-next-line reentrancy-events
         emit DepositAllocated(idleAmount, shares);
@@ -102,16 +101,18 @@ contract MidasAllocator is IDispatcher, Maintainable {
         vaultSharesToken.transfer(address(withdrawalQueue), amount);
     }
 
-    /// @notice Returns the total amount of tBTC allocated to MezoPortal including
-    ///         the amount that is currently hold by this contract.
+    /// @notice Returns the total amount of tBTC allocated to Midas Vault including
+    ///         the amount that is currently held by this contract.
     function totalAssets() external view returns (uint256) {
         return
             tbtc.balanceOf(address(this)) +
-            vault.convertToAssets(vaultSharesToken.balanceOf(address(this)));
+            midasVault.convertToAssets(
+                vaultSharesToken.balanceOf(address(this))
+            );
     }
 
     /// @notice Releases deposit in full from Midas Vault and transfers it to the
-    ///         acreBTC contract.
+    ///         Acre Vault contract.
     /// @dev This is a special function that can be used to migrate funds during
     ///      allocator upgrade or in case of emergencies.
     function emergencyWithdraw() external onlyOwner {

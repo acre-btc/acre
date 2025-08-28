@@ -4,23 +4,22 @@ import { waitForTransaction } from "../helpers/deployment"
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { getNamedAccounts, deployments, helpers } = hre
-  const { governance } = await getNamedAccounts()
-  const { deployer } = await helpers.signers.getNamedSigners()
+  const { treasury, governance } = await getNamedAccounts()
+  const { deployer: deployerSigner } = await helpers.signers.getNamedSigners()
   const { log } = deployments
 
-  const acreBtc = await deployments.get("acreBTC")
   const tbtc = await deployments.get("TBTC")
-  const midasVault = await deployments.get("MidasVault")
 
-  let deployment = await deployments.getOrNull("MidasAllocator")
+  let deployment = await deployments.getOrNull("acreBTC")
   if (deployment && helpers.address.isValid(deployment.address)) {
-    log(`using MidasAllocator at ${deployment.address}`)
+    log(`using acreBTC at ${deployment.address}`)
   } else {
-    ;[, deployment] = await helpers.upgrades.deployProxy("MidasAllocator", {
+    ;[, deployment] = await helpers.upgrades.deployProxy("acreBTC", {
+      contractName: "acreBTC",
+      initializerArgs: [tbtc.address, treasury],
       factoryOpts: {
-        signer: deployer,
+        signer: deployerSigner,
       },
-      initializerArgs: [tbtc.address, acreBtc.address, midasVault.address],
       proxyOpts: {
         kind: "transparent",
         initialOwner: governance,
@@ -38,5 +37,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 export default func
 
-func.tags = ["MidasAllocator"]
-func.dependencies = ["TBTC", "acreBTC", "MidasVault"]
+func.tags = ["acreBTC"]
+func.dependencies = ["TBTC"]

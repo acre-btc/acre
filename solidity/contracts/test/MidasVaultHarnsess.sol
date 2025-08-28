@@ -29,7 +29,7 @@ contract MidasVaultStub is IVault {
         shares = convertToShares(assets);
 
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
-        MidasVaultSharesStub(share).mint(msg.sender, shares);
+        MidasVaultSharesStub(share).mint(receiver, shares);
     }
 
     function requestRedeem(

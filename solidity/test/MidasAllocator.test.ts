@@ -12,7 +12,7 @@ import { ContractTransactionResponse } from "ethers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
 import {
-  StBTC as stBTC,
+  AcreBTC as acreBTC,
   TestERC20,
   MidasAllocator,
   MidasVaultStub,
@@ -23,7 +23,7 @@ import { to1e18 } from "./utils"
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
 async function fixture() {
-  const { tbtc, stbtc, midasAllocator, midasVault } = await deployment()
+  const { tbtc, acreBtc, midasAllocator, midasVault } = await deployment()
   const { governance, maintainer } = await getNamedSigners()
   const [depositor, depositor2, thirdParty] = await getUnnamedSigners()
 
@@ -34,7 +34,7 @@ async function fixture() {
     depositor2,
     maintainer,
     tbtc,
-    stbtc,
+    acreBtc,
     midasAllocator,
     midasVault,
   }
@@ -42,14 +42,14 @@ async function fixture() {
 
 describe("MidasAllocator", () => {
   let tbtc: TestERC20
-  let stbtc: stBTC
+  let acreBtc: acreBTC
   let midasAllocator: MidasAllocator
   let midasVault: MidasVaultStub
 
   let thirdParty: HardhatEthersSigner
   let maintainer: HardhatEthersSigner
   let governance: HardhatEthersSigner
-  let stbtcFakeSigner: HardhatEthersSigner
+  let acreBtcFakeSigner: HardhatEthersSigner
 
   before(async () => {
     ;({
@@ -57,22 +57,22 @@ describe("MidasAllocator", () => {
       maintainer,
       governance,
       tbtc,
-      stbtc,
+      acreBtc,
       midasAllocator,
       midasVault,
     } = await loadFixture(fixture))
 
-    await stbtc.connect(governance).updateEntryFeeBasisPoints(0)
-    await stbtc.connect(governance).updateExitFeeBasisPoints(0)
+    await acreBtc.connect(governance).updateEntryFeeBasisPoints(0)
+    await acreBtc.connect(governance).updateExitFeeBasisPoints(0)
 
-    // Impersonate stBTC contract to be able to fake msg.sender.
-    await impersonateAccount(await stbtc.getAddress())
-    stbtcFakeSigner = await ethers.getSigner(await stbtc.getAddress())
-    await setBalance(stbtcFakeSigner.address, to1e18(1))
+    // Impersonate acreBTC contract to be able to fake msg.sender.
+    await impersonateAccount(await acreBtc.getAddress())
+    acreBtcFakeSigner = await ethers.getSigner(await acreBtc.getAddress())
+    await setBalance(acreBtcFakeSigner.address, to1e18(1))
   })
 
   after(async () => {
-    await stopImpersonatingAccount(await stbtc.getAddress())
+    await stopImpersonatingAccount(await acreBtc.getAddress())
   })
 
   describe("allocate", () => {
@@ -94,7 +94,7 @@ describe("MidasAllocator", () => {
           let tx: ContractTransactionResponse
 
           before(async () => {
-            await tbtc.mint(await stbtc.getAddress(), to1e18(6))
+            await tbtc.mint(await acreBtc.getAddress(), to1e18(6))
             tx = await midasAllocator.connect(maintainer).allocate()
           })
 
@@ -123,7 +123,7 @@ describe("MidasAllocator", () => {
           let tx: ContractTransactionResponse
 
           before(async () => {
-            await tbtc.mint(await stbtc.getAddress(), to1e18(5))
+            await tbtc.mint(await acreBtc.getAddress(), to1e18(5))
 
             tx = await midasAllocator.connect(maintainer).allocate()
           })
@@ -146,8 +146,8 @@ describe("MidasAllocator", () => {
             ).to.equal(0)
           })
 
-          it("should not store any tBTC in stBTC", async () => {
-            expect(await tbtc.balanceOf(await stbtc.getAddress())).to.equal(0)
+          it("should not store any tBTC in acreBTC", async () => {
+            expect(await tbtc.balanceOf(await acreBtc.getAddress())).to.equal(0)
           })
         })
       })
@@ -168,7 +168,7 @@ describe("MidasAllocator", () => {
       beforeAfterSnapshotWrapper()
 
       before(async () => {
-        await tbtc.mint(await stbtc.getAddress(), to1e18(5))
+        await tbtc.mint(await acreBtc.getAddress(), to1e18(5))
         await midasAllocator.connect(maintainer).allocate()
       })
 
@@ -184,7 +184,7 @@ describe("MidasAllocator", () => {
         beforeAfterSnapshotWrapper()
 
         before(async () => {
-          await tbtc.mint(await stbtc.getAddress(), to1e18(5))
+          await tbtc.mint(await acreBtc.getAddress(), to1e18(5))
           await midasAllocator.connect(maintainer).allocate()
           // donation
           await tbtc.mint(await midasAllocator.getAddress(), to1e18(1))
@@ -201,7 +201,7 @@ describe("MidasAllocator", () => {
       beforeAfterSnapshotWrapper()
 
       before(async () => {
-        await tbtc.mint(await stbtc.getAddress(), to1e18(5))
+        await tbtc.mint(await acreBtc.getAddress(), to1e18(5))
         await midasAllocator.connect(maintainer).allocate()
         // donation
         await tbtc.mint(await midasVault.getAddress(), to1e18(1))

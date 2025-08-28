@@ -8,7 +8,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const dispatcher = await deployments.get("MidasAllocator")
 
   await deployments.execute(
-    "stBTC",
+    "acreBTC",
     { from: deployer, log: true, waitConfirmations: 1 },
     "updateDispatcher",
     dispatcher.address,
@@ -17,7 +17,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 export default func
 
-func.tags = ["stBTCUpdateDispatcher"]
-func.dependencies = ["stBTC", "MidasAllocator"]
+func.tags = ["acreBTCUpdateDispatcher"]
+func.dependencies = ["acreBTC", "MidasAllocator"]
 func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
   Promise.resolve(hre.network.name === "integration")

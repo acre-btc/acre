@@ -121,6 +121,18 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @param migrateTo Address of the ERC-4626 contract to migrate to.
     event MigrationStarted(address migrateTo);
 
+    /// Emitted when a deposit is migrated.
+    /// @param depositOwner Address of the owner of the deposit.
+    /// @param assets Amount of assets migrated.
+    /// @param oldShares Amount of shares migrated.
+    /// @param newShares Amount of shares migrated to the new vault.
+    event DepositMigrated(
+        address indexed depositOwner,
+        uint256 assets,
+        uint256 oldShares,
+        uint256 newShares
+    );
+
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
     /// @param min Minimum amount to check 'amount' against.
@@ -162,6 +174,9 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
     /// @notice Reverts if the migration has not started.
     error MigrationNotStarted();
+
+    /// @notice Reverts if the migrateTo address is not set.
+    error MigrateToNotSet();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -560,9 +575,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         // Revoke approval for the dispatcher contract so it can't pull assets
         // from the vault.
         IERC20(asset()).forceApprove(address(dispatcher), 0);
-
-        // Release the deposit from the MezoAllocator contract.
-        MezoAllocator(address(dispatcher)).releaseDeposit();
     }
 
     /// @notice Migrates a depositor's funds to the new contract.
@@ -576,7 +588,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         address depositOwner
     ) external onlyOwner returns (uint256) {
         if (migrateTo == address(0)) {
-            revert ZeroAddress();
+            revert MigrateToNotSet();
         }
         if (paused()) {
             revert EnforcedPause();
@@ -586,7 +598,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         }
 
         uint256 shares = balanceOf(depositOwner);
-        uint256 assets = convertToAssets(shares);
 
         // We need to ensure the shares were not minted as debt, so they
         // are covered by the assets deposited to the vault.
@@ -597,6 +608,8 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         if (shares == 0) {
             return 0;
         }
+
+        uint256 assets = convertToAssets(shares);
 
         // Adjust the withdrawable shares to exclude the shares that are being
         // migrated and keep the rest of shares associated with debt.
@@ -609,7 +622,12 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         IERC20(asset()).forceApprove(migrateTo, assets);
 
         // Deposit the assets to the new contract.
-        return IERC4626(migrateTo).deposit(assets, depositOwner);
+        uint256 newShares = IERC4626(migrateTo).deposit(assets, depositOwner);
+
+        // slither-disable-next-line reentrancy-events
+        emit DepositMigrated(depositOwner, assets, shares, newShares);
+
+        return newShares;
     }
 
     /// @notice Returns the number of assets that corresponds to the amount of

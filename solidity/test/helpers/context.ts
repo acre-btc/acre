@@ -3,6 +3,7 @@ import { getDeployedContract } from "./contract"
 
 import type {
   StBTC as stBTC,
+  AcreBTC as acreBTC,
   BridgeStub,
   TBTCVaultStub,
   MezoAllocator,
@@ -40,6 +41,8 @@ export async function deployment() {
     await getDeployedContract("MezoAllocator")
   const mezoPortal: MezoPortalStub = await getDeployedContract("MezoPortal")
 
+  const acreBtc: acreBTC = await getDeployedContract("acreBTC")
+
   const midasAllocator: MidasAllocator =
     await getDeployedContract("MidasAllocator")
   const midasVault: MidasVaultStub = await getDeployedContract("MidasVault")
@@ -55,6 +58,7 @@ export async function deployment() {
     tbtcVault,
     mezoAllocator,
     mezoPortal,
+    acreBtc,
     midasAllocator,
     midasVault,
   }
