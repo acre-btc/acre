@@ -117,8 +117,8 @@ contract MidasAllocator is IDispatcher, Maintainable {
     ///      allocator upgrade or in case of emergencies.
     function emergencyWithdraw() external onlyOwner {
         uint256 shares = vaultSharesToken.balanceOf(address(this));
-        vaultSharesToken.approve(address(vault), shares);
-        vault.requestRedeem(shares, address(acrebtc));
+        vaultSharesToken.approve(address(midasVault), shares);
+        midasVault.requestRedeem(shares, address(acreVault));
     }
 
     /// @notice Sets the withdrawal queue address.
