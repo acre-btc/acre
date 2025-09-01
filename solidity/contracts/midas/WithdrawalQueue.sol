@@ -20,7 +20,6 @@ contract WithdrawalQueue is Maintainable {
         uint256 midasShares;
         uint256 tbtcAmount;
         uint256 exitFeeInTbtc;
-        uint256 createdAt;
         uint256 completedAt;
         bytes redeemerOutputScript;
         uint256 midasRequestId;
