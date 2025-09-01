@@ -17,8 +17,9 @@ contract WithdrawalQueue is Maintainable {
 
     struct WithdrawalRequest {
         address redeemer;
-        uint256 shares;
+        uint256 midasShares;
         uint256 tbtcAmount;
+        uint256 exitFeeInTbtc;
         uint256 createdAt;
         uint256 completedAt;
         bytes redeemerOutputScript;
@@ -168,11 +169,21 @@ contract WithdrawalQueue is Maintainable {
         );
 
         if (_exitFeeInAssets > 0) {
-            uint256 exitFeeShares = vault.convertToShares(_exitFeeInAssets);
-            vault.requestRedeem(exitFeeShares, acrebtc.treasury());
-            midasShares -= exitFeeShares;
+            uint256 exitFeeInMidasShares = vault.convertToShares(
+                _exitFeeInAssets
+            );
+
+            // TODO: Consider accumulating the exit fees and redeeming them in a
+            // single request to optimize the number of requests and reduce gas fees.
+            uint256 feeMidasRequestId = vault.requestRedeem(
+                exitFeeInMidasShares,
+                acrebtc.treasury()
+            );
+
+            midasShares -= exitFeeInMidasShares;
         }
-        vault.requestRedeem(midasShares, _receiver);
+
+        uint256 midasRequestId = vault.requestRedeem(midasShares, _receiver);
     }
 
     /// @notice Requests a redemption with extra bridge data
@@ -201,7 +212,7 @@ contract WithdrawalQueue is Maintainable {
 
         withdrawalRequests[requestId] = WithdrawalRequest({
             redeemer: _redeemer,
-            shares: midasShares,
+            midasShares: midasShares,
             tbtcAmount: tbtcAmount,
             exitFeeInTbtc: exitFeeInTbtc,
             redeemerOutputScript: _redeemerOutputScript,
