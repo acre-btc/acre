@@ -399,9 +399,9 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         return
             WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
                 shares,
+                owner,
                 redeemerOutputScript,
-            msg.sender,
-            exitFee
+                exitFee
             );
     }
 
