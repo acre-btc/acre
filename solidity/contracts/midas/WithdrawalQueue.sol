@@ -242,7 +242,7 @@ contract WithdrawalQueue is Maintainable {
         bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
         WithdrawalRequest memory request = withdrawalRequests[_requestId];
-        if (request.owner == address(0)) revert WithdrawalRequestNotFound();
+        if (request.redeemer == address(0)) revert WithdrawalRequestNotFound();
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
         // Mark request as completed.
