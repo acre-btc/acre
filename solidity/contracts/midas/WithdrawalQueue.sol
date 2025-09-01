@@ -161,15 +161,15 @@ contract WithdrawalQueue is Maintainable {
     function requestRedeem(
         uint256 _shares,
         address _receiver,
-        uint256 _exitFeeInAssets
+        uint256 _exitFeeInTbtc
     ) external onlyAcreBTC {
         (uint256 midasShares, uint256 tbtcAmount) = _prepareSharesRedemption(
             _shares
         );
 
-        if (_exitFeeInAssets > 0) {
+        if (_exitFeeInTbtc > 0) {
             uint256 exitFeeInMidasShares = vault.convertToShares(
-                _exitFeeInAssets
+                _exitFeeInTbtc
             );
 
             // TODO: Consider accumulating the exit fees and redeeming them in a
@@ -193,7 +193,7 @@ contract WithdrawalQueue is Maintainable {
     function requestRedeemAndBridge(
         uint256 _shares,
         bytes calldata _redeemerOutputScript,
-        uint256 exitFeeInTbtc
+        uint256 _exitFeeInTbtc
     ) external onlyAcreBTC returns (uint256 requestId) {
         (
             uint256 midasShares,
@@ -207,13 +207,13 @@ contract WithdrawalQueue is Maintainable {
 
         requestId = count++;
 
-        uint256 tbtcAmount = tbtcAmountWithFee - exitFeeInTbtc;
+        uint256 tbtcAmount = tbtcAmountWithFee - _exitFeeInTbtc;
 
         withdrawalRequests[requestId] = WithdrawalRequest({
             redeemer: _redeemer,
             midasShares: midasShares,
             tbtcAmount: tbtcAmount,
-            exitFeeInTbtc: exitFeeInTbtc,
+            exitFeeInTbtc: _exitFeeInTbtc,
             redeemerOutputScript: _redeemerOutputScript,
             midasRequestId: midasRequestId
         });
