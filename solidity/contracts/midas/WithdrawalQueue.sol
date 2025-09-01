@@ -95,11 +95,13 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Emitted when a redemption is requested.
     /// @param requestId The withdrawal request ID.
+    /// @param receiver The address to receive the tBTC.
     /// @param midasRequestId The Midas Vault redemption request ID.
     /// @param tbtcAmount The amount of tBTC to be redeemed (after exit fee).
     /// @param midasShares The amount of Midas Vault shares to redeem.
     event RedeemRequested(
         uint256 indexed requestId,
+        address indexed receiver,
         uint256 indexed midasRequestId,
         uint256 tbtcAmount,
         uint256 midasShares
@@ -125,6 +127,7 @@ contract WithdrawalQueue is Maintainable {
     /// @param exitFeeInTbtc The exit fee in tBTC.
     event RedeemAndBridgeRequested(
         uint256 indexed requestId,
+        address indexed redeemer,
         uint256 indexed midasRequestId,
         uint256 tbtcAmount,
         uint256 midasShares,
@@ -249,6 +252,7 @@ contract WithdrawalQueue is Maintainable {
 
         emit RedeemRequested(
             requestId,
+            _receiver,
             midasRequestId,
             tbtcAmountWithFee - _exitFeeInTbtc,
             midasShares
@@ -293,6 +297,7 @@ contract WithdrawalQueue is Maintainable {
 
         emit RedeemAndBridgeRequested(
             requestId,
+            _redeemer,
             midasRequestId,
             tbtcAmount,
             midasShares,
