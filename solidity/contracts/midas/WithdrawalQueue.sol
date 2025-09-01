@@ -165,9 +165,10 @@ contract WithdrawalQueue is Maintainable {
     ) external onlyAcreBTC returns (uint256 requestId) {
         requestId = count++;
 
-        (uint256 midasShares, uint256 tbtcAmount) = _prepareSharesRedemption(
-            _shares
-        );
+        (
+            uint256 midasShares,
+            uint256 tbtcAmountWithFee
+        ) = _prepareSharesRedemption(_shares);
 
         if (_exitFeeInTbtc > 0) {
             uint256 exitFeeInMidasShares = vault.convertToShares(
