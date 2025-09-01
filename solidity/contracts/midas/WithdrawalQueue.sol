@@ -40,7 +40,7 @@ contract WithdrawalQueue is Maintainable {
     ITBTCToken public tbtc;
 
     /// @notice Midas Vault contract.
-    IVault public vault;
+    IVault public midasVault;
 
     /// @notice Midas Vault receipt token (ERC20).
     IERC20 public vaultSharesToken;
@@ -165,13 +165,13 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Initializes the WithdrawalQueue contract.
     /// @param _tbtc Address of the tBTC token contract.
-    /// @param _vault Address of the Midas Vault contract.
+    /// @param _midasVault Address of the Midas Vault contract.
     /// @param _midasAllocator Address of the Midas Allocator contract.
     /// @param _tbtcVault Address of the tBTC Vault contract.
     /// @param _acreBTC Address of the acreBTC contract.
     function initialize(
         address _tbtc,
-        address _vault,
+        address _midasVault,
         address _midasAllocator,
         address _tbtcVault,
         address _acreBTC
@@ -181,7 +181,7 @@ contract WithdrawalQueue is Maintainable {
         if (_tbtc == address(0)) {
             revert ZeroAddress();
         }
-        if (_vault == address(0)) {
+        if (_midasVault == address(0)) {
             revert ZeroAddress();
         }
         if (_tbtcVault == address(0)) {
@@ -192,11 +192,11 @@ contract WithdrawalQueue is Maintainable {
         }
 
         tbtc = ITBTCToken(_tbtc);
-        vault = IVault(_vault);
+        midasVault = IVault(_midasVault);
         tbtcVault = _tbtcVault;
         acrebtc = acreBTC(_acreBTC);
 
-        vaultSharesToken = IERC20(vault.share());
+        vaultSharesToken = IERC20(midasVault.share());
         if (address(vaultSharesToken) == address(0)) {
             revert ZeroAddress();
         }
@@ -227,13 +227,13 @@ contract WithdrawalQueue is Maintainable {
         ) = _prepareSharesRedemption(_shares);
 
         if (_exitFeeInTbtc > 0) {
-            uint256 exitFeeInMidasShares = vault.convertToShares(
+            uint256 exitFeeInMidasShares = midasVault.convertToShares(
                 _exitFeeInTbtc
             );
 
             // TODO: Consider accumulating the exit fees and redeeming them in a
             // single request to optimize the number of requests and reduce gas fees.
-            uint256 feeMidasRequestId = vault.requestRedeem(
+            uint256 feeMidasRequestId = midasVault.requestRedeem(
                 exitFeeInMidasShares,
                 acrebtc.treasury()
             );
@@ -248,7 +248,10 @@ contract WithdrawalQueue is Maintainable {
             midasShares -= exitFeeInMidasShares;
         }
 
-        uint256 midasRequestId = vault.requestRedeem(midasShares, _receiver);
+        uint256 midasRequestId = midasVault.requestRedeem(
+            midasShares,
+            _receiver
+        );
 
         emit RedeemRequested(
             requestId,
@@ -279,7 +282,7 @@ contract WithdrawalQueue is Maintainable {
             uint256 tbtcAmountWithFee
         ) = _prepareSharesRedemption(_shares);
 
-        uint256 midasRequestId = vault.requestRedeem(
+        uint256 midasRequestId = midasVault.requestRedeem(
             midasShares,
             address(this)
         );
@@ -420,7 +423,7 @@ contract WithdrawalQueue is Maintainable {
         tbtcAmount = acrebtc.convertToAssets(_acreShares);
 
         // Calculate the number of midas shares corresponding to the provided tBTC amount.
-        midasShares = vault.convertToShares(tbtcAmount);
+        midasShares = midasVault.convertToShares(tbtcAmount);
 
         // Withdraw the midas shares from the Midas Allocator.
         midasAllocator.withdrawShares(midasShares);
@@ -429,7 +432,7 @@ contract WithdrawalQueue is Maintainable {
         acrebtc.burn(_acreShares);
 
         // Approve the midas shares to the vault to be able to redeem them later.
-        vaultSharesToken.approve(address(vault), midasShares);
+        vaultSharesToken.approve(address(midasVault), midasShares);
     }
 
     /// @notice Compares two byte arrays for equality.
