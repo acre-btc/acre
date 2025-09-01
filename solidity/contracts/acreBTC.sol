@@ -168,7 +168,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @notice Updates the dispatcher contract and gives it an unlimited
     ///         allowance to transfer deposited tBTC.
     /// @param newDispatcher Address of the new dispatcher contract.
-    function updateDispatcher(IDispatcher newDispatcher) external onlyOwner {
+    function updateDispatcher(IDispatcherV2 newDispatcher) external onlyOwner {
         if (address(newDispatcher) == address(0)) {
             revert ZeroAddress();
         }
