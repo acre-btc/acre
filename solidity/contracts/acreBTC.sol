@@ -308,11 +308,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         ) {
             uint256 shares = convertToShares(assetsWithFees);
 
-            if (msg.sender != owner) {
-                _spendAllowance(owner, msg.sender, shares);
-            }
-
-            _transfer(owner, withdrawalQueue, shares);
+            transferFrom(owner, withdrawalQueue, shares);
 
             WithdrawalQueue(withdrawalQueue).requestRedeem(
                 shares,
@@ -341,15 +337,10 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
 
         if (assets > currentAssetsBalance && withdrawalQueue != address(0)) {
-            // Check allowance if caller is not the owner
-            if (msg.sender != owner) {
-                _spendAllowance(owner, msg.sender, shares);
-            }
-
             uint256 fee = _feeOnTotal(assets, _exitFeeBasisPoints());
 
             // Transfer shares to withdrawal queue using internal _transfer
-            _transfer(owner, withdrawalQueue, shares);
+            transferFrom(owner, withdrawalQueue, shares);
 
             // Process redemption through queue
             WithdrawalQueue(withdrawalQueue).requestRedeem(
@@ -381,6 +372,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @return requestId The ID of the withdrawal request in the queue.
     function redeemAndBridge(
         uint256 shares,
+        address owner,
         bytes calldata redeemerOutputScript
     ) external returns (uint256 requestId) {
         if (withdrawalQueue == address(0)) {
@@ -392,8 +384,8 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             _exitFeeBasisPoints()
         );
 
-        // Transfer shares to withdrawal queue using internal _transfer
-        _transfer(msg.sender, withdrawalQueue, shares);
+        // Transfer shares to withdrawal queue
+        transferFrom(owner, withdrawalQueue, shares);
 
         // Process bridge redemption through queue, passing the redeemer address
         return
