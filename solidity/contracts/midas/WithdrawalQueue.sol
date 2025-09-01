@@ -194,6 +194,7 @@ contract WithdrawalQueue is Maintainable {
     /// @return requestId The ID of the withdrawal request.
     function requestRedeemAndBridge(
         uint256 _shares,
+        address _redeemer,
         bytes calldata _redeemerOutputScript,
         uint256 _exitFeeInTbtc
     ) external onlyAcreBTC returns (uint256 requestId) {
