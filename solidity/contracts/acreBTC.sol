@@ -78,6 +78,21 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         address newWithdrawalQueue
     );
 
+    /// Emitted when a redemption is requested.
+    event RedemptionRequested(
+        uint256 indexed requestId,
+        address indexed owner,
+        address indexed receiver,
+        uint256 shares
+    );
+
+    /// Emitted when a redemption to Bitcoin is requested.
+    event RedemptionToBitcoinRequested(
+        uint256 indexed requestId,
+        address indexed owner,
+        uint256 shares
+    );
+
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
     /// @param min Minimum amount to check 'amount' against.
@@ -331,7 +346,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             revert WithdrawalQueueNotSet();
         }
 
-        uint256 fee = _feeOnTotal(
+        uint256 exitFee = _feeOnTotal(
             convertToAssets(shares),
             _exitFeeBasisPoints()
         );
@@ -340,12 +355,13 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         transferFrom(owner, withdrawalQueue, shares);
 
         // Process redemption through queue
-        return
-            WithdrawalQueue(withdrawalQueue).requestRedeem(
-                shares,
-                receiver,
-                fee
-            );
+        requestId = WithdrawalQueue(withdrawalQueue).requestRedeem(
+            shares,
+            receiver,
+            exitFee
+        );
+
+        emit RedemptionRequested(requestId, owner, receiver, shares);
     }
 
     /// @notice Burns shares from the caller.
@@ -363,7 +379,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @param shares Amount of shares to redeem.
     /// @param redeemerOutputScript Redeemer output script.
     /// @return requestId The ID of the withdrawal request in the queue.
-    function redeemAndBridge(
+    function requestRedeemAndBridge(
         uint256 shares,
         address owner,
         bytes calldata redeemerOutputScript
@@ -381,13 +397,14 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         transferFrom(owner, withdrawalQueue, shares);
 
         // Process bridge redemption through queue, passing the redeemer address
-        return
-            WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
-                shares,
-                owner,
-                redeemerOutputScript,
-                exitFee
-            );
+        requestId = WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
+            shares,
+            owner,
+            redeemerOutputScript,
+            exitFee
+        );
+
+        emit RedemptionToBitcoinRequested(requestId, owner, shares);
     }
 
     /// @notice Returns the total amount of assets held by the vault across all
