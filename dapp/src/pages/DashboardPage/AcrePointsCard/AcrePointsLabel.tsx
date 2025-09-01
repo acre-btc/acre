@@ -28,7 +28,6 @@ export function NextDropTimestampLabel() {
         size="md"
         ml={1}
         color="text.primary"
-        units={["hours", "minutes"]}
       />
     </HStack>
   )
