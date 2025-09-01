@@ -81,21 +81,38 @@ contract WithdrawalQueue is Maintainable {
         bytes expectedRedeemerOutputScript
     );
 
-    /// @notice Emitted when a withdrawal request is created.
-    event WithdrawalRequestCreated(
+    /// @notice Emitted when a redemption is requested.
+    event RedeemRequested(
         uint256 indexed requestId,
-        address indexed redeemer,
-        uint256 shares,
+        uint256 indexed midasRequestId,
         uint256 tbtcAmount,
-        bytes redeemerOutputScript,
-        uint256 midasRequestId
+        uint256 midasShares
     );
 
-    /// @notice Emitted when a withdrawal request is completed.
-    event WithdrawalRequestCompleted(
+    /// @notice Emitted when a redemption of shares corresponding to a fee is
+    ///         requested.
+    event RedeemFeeRequested(
         uint256 indexed requestId,
+        uint256 indexed midasRequestId,
+        uint256 exitFeeInTbtc,
+        uint256 exitFeeInMidasShares
+    );
+
+    /// @notice Emitted when a redemption with bridging to Bitcoin is requested.
+    event RedeemAndBridgeRequested(
+        uint256 indexed requestId,
+        uint256 indexed midasRequestId,
         uint256 tbtcAmount,
-        uint256 exitFee
+        uint256 midasShares,
+        uint256 exitFeeInTbtc
+    );
+
+    /// @notice Emitted when RedeemAndBridge request is being completed and bridging
+    ///         to Bitcoin is requested.
+    event RedeemCompletedAndBridgeRequested(
+        uint256 indexed requestId,
+        address indexed redeemer,
+        uint256 tbtcAmount
     );
 
     /// @notice Emitted when the tBTC vault is updated.
@@ -182,10 +199,24 @@ contract WithdrawalQueue is Maintainable {
                 acrebtc.treasury()
             );
 
+            emit RedeemFeeRequested(
+                requestId,
+                feeMidasRequestId,
+                _exitFeeInTbtc,
+                exitFeeInMidasShares
+            );
+
             midasShares -= exitFeeInMidasShares;
         }
 
         uint256 midasRequestId = vault.requestRedeem(midasShares, _receiver);
+
+        emit RedeemRequested(
+            requestId,
+            midasRequestId,
+            tbtcAmountWithFee - _exitFeeInTbtc,
+            midasShares
+        );
     }
 
     /// @notice Requests a redemption with extra bridge data
@@ -222,13 +253,12 @@ contract WithdrawalQueue is Maintainable {
             midasRequestId: midasRequestId
         });
 
-        emit WithdrawalRequestCreated(
+        emit RedeemAndBridgeRequested(
             requestId,
-            _redeemer,
-            midasShares,
+            midasRequestId,
             tbtcAmount,
-            _redeemerOutputScript,
-            midasRequestId
+            midasShares,
+            _exitFeeInTbtc
         );
     }
 
@@ -248,6 +278,12 @@ contract WithdrawalQueue is Maintainable {
         // Mark request as completed.
         request.completedAt = block.timestamp;
 
+        emit RedeemCompletedAndBridgeRequested(
+            _requestId,
+            request.redeemer,
+            request.tbtcAmount
+        );
+
         // Take exit fee.
         if (request.exitFeeInTbtc > 0) {
             IERC20(address(tbtc)).safeTransfer(
@@ -255,12 +291,6 @@ contract WithdrawalQueue is Maintainable {
                 request.exitFeeInTbtc
             );
         }
-
-        emit WithdrawalRequestCompleted(
-            _requestId,
-            request.tbtcAmount,
-            request.exitFeeInTbtc
-        );
 
         _bridgeToBitcoin(request, _tbtcRedemptionData);
     }
