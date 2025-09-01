@@ -227,8 +227,6 @@ contract WithdrawalQueue is Maintainable {
         uint256 _requestId,
         bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
-        // TBTC Token contract owner resolves to the TBTCVault contract.
-        if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
         WithdrawalRequest memory request = withdrawalRequests[_requestId];
         if (request.owner == address(0)) revert WithdrawalRequestNotFound();
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
@@ -244,37 +242,69 @@ contract WithdrawalQueue is Maintainable {
             );
         }
 
+        emit WithdrawalRequestCompleted(
+            _requestId,
+            request.tbtcAmount,
+            request.exitFeeInTbtc
+        );
+
+        _bridgeToBitcoin(request, _tbtcRedemptionData);
+    }
+
+    /// @notice Requests bridging to Bitcoin via tBTC Bridge.
+    /// @dev Redemption data in a format expected from `redemptionData` parameter
+    ///      of Bridge's `receiveBalanceApproval`.
+    ///      It uses tBTC token owner which is the TBTCVault contract as spender
+    ///      of tBTC requested for redemption.
+    /// @dev tBTC Bridge redemption process has a path where request can timeout.
+    ///      It is a scenario that is unlikely to happen with the current Bridge
+    ///      setup. This contract remains upgradable to have flexibility to handle
+    ///      adjustments to tBTC Bridge changes.
+    /// @dev Redemption data should include a `redeemer` address matching the
+    ///      address of the deposit owner who is redeeming the shares. In case anything
+    ///      goes wrong during the tBTC unminting process, the redeemer will be
+    ///      able to claim the tBTC tokens back from the tBTC Bank contract.
+    /// @param _request The withdrawal request.
+    /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
+    ///        See `redemptionData` parameter description of `Bridge.requestRedemption`
+    ///        function.
+    function _bridgeToBitcoin(
+        WithdrawalRequest memory _request,
+        bytes calldata _tbtcRedemptionData
+    ) internal {
+        // TBTC Token contract owner resolves to the TBTCVault contract.
+        if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
+
+        // Decode redemption data.
         (address redeemer, , , , , bytes memory redeemerOutputScript) = abi
             .decode(
                 _tbtcRedemptionData,
                 (address, bytes20, bytes32, uint32, uint64, bytes)
             );
+
+        // Check if redemption data matches the owner (redeemer) and the redeemer
+        // output script passed in the initial redemption request.
         if (
-            redeemer != request.redeemer ||
-            !_equal(redeemerOutputScript, request.redeemerOutputScript)
+            redeemer != _request.redeemer ||
+            !_equal(redeemerOutputScript, _request.redeemerOutputScript)
         )
             revert InvalidRedemptionData(
                 redeemer,
-                request.redeemer,
+                _request.redeemer,
                 redeemerOutputScript,
-                request.redeemerOutputScript
+                _request.redeemerOutputScript
             );
 
+        // Initialize tBTC Bridge redemption process.
         if (
             !tbtc.approveAndCall(
                 tbtcVault,
-                request.tbtcAmount,
+                _request.tbtcAmount,
                 _tbtcRedemptionData
             )
         ) {
             revert ApproveAndCallFailed();
         }
-
-        emit WithdrawalRequestCompleted(
-            _requestId,
-            tbtcAmount - exitFee,
-            exitFee
-        );
     }
 
     /// @notice Updates TBTCVault contract address.
