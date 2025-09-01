@@ -387,6 +387,11 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             revert WithdrawalQueueNotSet();
         }
 
+        uint256 exitFee = _feeOnTotal(
+            convertToAssets(shares),
+            _exitFeeBasisPoints()
+        );
+
         // Transfer shares to withdrawal queue using internal _transfer
         _transfer(msg.sender, withdrawalQueue, shares);
 
@@ -395,7 +400,8 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
                 shares,
                 redeemerOutputScript,
-                msg.sender
+            msg.sender,
+            exitFee
             );
     }
 
