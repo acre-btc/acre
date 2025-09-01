@@ -70,6 +70,9 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Withdrawal request already completed.
     error WithdrawalRequestAlreadyCompleted();
 
+    /// @notice Withdrawal request not found.
+    error WithdrawalRequestNotFound();
+
     /// @notice Invalid redemption data.
     error InvalidRedemptionData(
         address redeemer,
@@ -227,6 +230,7 @@ contract WithdrawalQueue is Maintainable {
         // TBTC Token contract owner resolves to the TBTCVault contract.
         if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
         WithdrawalRequest memory request = withdrawalRequests[_requestId];
+        if (request.owner == address(0)) revert WithdrawalRequestNotFound();
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
         // Mark request as completed.
