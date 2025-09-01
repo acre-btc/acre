@@ -229,6 +229,9 @@ contract WithdrawalQueue is Maintainable {
         WithdrawalRequest memory request = withdrawalRequests[_requestId];
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
+        // Mark request as completed.
+        request.completedAt = block.timestamp;
+
         // Take exit fee.
         if (request.exitFeeInTbtc > 0) {
             IERC20(address(tbtc)).safeTransfer(
