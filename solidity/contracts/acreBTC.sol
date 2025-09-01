@@ -298,33 +298,13 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         address receiver,
         address owner
     ) public override returns (uint256) {
-        uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
-        uint256 fee = _feeOnRaw(assets, _exitFeeBasisPoints());
-        uint256 assetsWithFees = assets + fee;
-
-        if (
-            assetsWithFees > currentAssetsBalance &&
-            withdrawalQueue != address(0)
-        ) {
-            uint256 shares = convertToShares(assetsWithFees);
-
-            transferFrom(owner, withdrawalQueue, shares);
-
-            WithdrawalQueue(withdrawalQueue).requestRedeem(
-                shares,
-                receiver,
-                fee
-            );
-
-            return shares;
-        }
-
         return super.withdraw(assets, receiver, owner);
     }
 
     /// @notice Redeems shares for assets and transfers them to the receiver.
-    /// @dev Redeem unallocated assets first and if not enough, route through
-    ///      withdrawal queue.
+    /// @dev Redeem unallocated assets only. If the assets are not enough, the
+    ///      function will revert and require the user to request a redemption
+    ///      through the withdrawal queue with the `requestRedeem` function.
     /// @param shares Amount of shares to redeem.
     /// @param receiver The address to which the assets will be transferred.
     /// @param owner The address of the owner of the shares.
@@ -333,26 +313,39 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         address receiver,
         address owner
     ) public override returns (uint256) {
-        uint256 assets = convertToAssets(shares);
-        uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
+        return super.redeem(shares, receiver, owner);
+    }
 
-        if (assets > currentAssetsBalance && withdrawalQueue != address(0)) {
-            uint256 fee = _feeOnTotal(assets, _exitFeeBasisPoints());
+    /// @notice Requests a redemption through the withdrawal queue.
+    /// @dev This function routes through the withdrawal queue for redemptions.
+    /// @param shares Amount of shares to redeem.
+    /// @param receiver The address to which the assets will be transferred.
+    /// @param owner The address of the owner of the shares.
+    /// @return requestId The ID of the withdrawal request in the queue.
+    function requestRedeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 requestId) {
+        if (withdrawalQueue == address(0)) {
+            revert WithdrawalQueueNotSet();
+        }
 
-            // Transfer shares to withdrawal queue using internal _transfer
-            transferFrom(owner, withdrawalQueue, shares);
+        uint256 fee = _feeOnTotal(
+            convertToAssets(shares),
+            _exitFeeBasisPoints()
+        );
 
-            // Process redemption through queue
+        // Transfer shares to withdrawal queue using internal _transfer
+        transferFrom(owner, withdrawalQueue, shares);
+
+        // Process redemption through queue
+        return
             WithdrawalQueue(withdrawalQueue).requestRedeem(
                 shares,
                 receiver,
                 fee
             );
-
-            return assets;
-        }
-
-        return super.redeem(shares, receiver, owner);
     }
 
     /// @notice Burns shares from the caller.
