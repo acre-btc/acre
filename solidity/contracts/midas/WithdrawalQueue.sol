@@ -15,7 +15,7 @@ contract WithdrawalQueue is Maintainable {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
-    /// @notice Struct representing a withdrawal request.
+    /// @notice Struct representing a redemption request with bridging to Bitcoin.
     /// @param redeemer The owner of the acreBTC shares to be redeemed.
     /// @param midasShares Amount of Midas Vault shares to redeem.
     /// @param tbtcAmount Amount of tBTC to be redeemed (after exit fee).
@@ -23,7 +23,7 @@ contract WithdrawalQueue is Maintainable {
     /// @param completedAt Timestamp when the request was completed (0 if not completed).
     /// @param redeemerOutputScript Output script for the Bitcoin redeemer.
     /// @param midasRequestId The ID of the underlying Midas Vault redemption request.
-    struct WithdrawalRequest {
+    struct RedeemAndBridgeRequest {
         address redeemer;
         uint256 midasShares;
         uint256 tbtcAmount;
@@ -46,7 +46,7 @@ contract WithdrawalQueue is Maintainable {
     IERC20 public vaultSharesToken;
 
     /// @notice Mapping of withdrawal request IDs to their data.
-    mapping(uint256 => WithdrawalRequest) public withdrawalRequests;
+    mapping(uint256 => RedeemAndBridgeRequest) public redemAndBridgeRequests;
 
     /// @notice Counter for withdrawal requests (auto-incremented).
     uint256 public count;
@@ -289,7 +289,7 @@ contract WithdrawalQueue is Maintainable {
 
         uint256 tbtcAmount = tbtcAmountWithFee - _exitFeeInTbtc;
 
-        withdrawalRequests[requestId] = WithdrawalRequest({
+        redemAndBridgeRequests[requestId] = RedeemAndBridgeRequest({
             redeemer: _redeemer,
             midasShares: midasShares,
             tbtcAmount: tbtcAmount,
@@ -317,7 +317,9 @@ contract WithdrawalQueue is Maintainable {
         uint256 _requestId,
         bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
-        WithdrawalRequest memory request = withdrawalRequests[_requestId];
+        RedeemAndBridgeRequest memory request = redemAndBridgeRequests[
+            _requestId
+        ];
         if (request.redeemer == address(0)) revert WithdrawalRequestNotFound();
         if (request.completedAt > 0) revert WithdrawalRequestAlreadyCompleted();
 
@@ -353,7 +355,7 @@ contract WithdrawalQueue is Maintainable {
     /// @param _request The withdrawal request.
     /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
     function _bridgeToBitcoin(
-        WithdrawalRequest memory _request,
+        RedeemAndBridgeRequest memory _request,
         bytes calldata _tbtcRedemptionData
     ) internal {
         // Ensure the tBTC token owner is the expected TBTCVault contract.
