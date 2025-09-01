@@ -295,7 +295,8 @@ contract WithdrawalQueue is Maintainable {
             tbtcAmount: tbtcAmount,
             exitFeeInTbtc: _exitFeeInTbtc,
             redeemerOutputScript: _redeemerOutputScript,
-            midasRequestId: midasRequestId
+            midasRequestId: midasRequestId,
+            completedAt: 0
         });
 
         emit RedeemAndBridgeRequested(
