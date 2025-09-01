@@ -7,7 +7,7 @@ import "@thesis-co/solidity-contracts/contracts/token/IReceiveApproval.sol";
 
 import "./PausableOwnable.sol";
 import "./lib/ERC4626Fees.sol";
-import "./interfaces/IDispatcher.sol";
+import "./interfaces/IDispatcherV2.sol";
 import {ZeroAddress} from "./utils/Errors.sol";
 import "./midas/WithdrawalQueue.sol";
 
@@ -27,7 +27,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
 
     /// Dispatcher contract that routes tBTC from acreBTC to a given allocation
     /// contract and back.
-    IDispatcher public dispatcher;
+    IDispatcherV2 public dispatcher;
 
     /// Address of the treasury wallet, where fees should be transferred to.
     address public treasury;

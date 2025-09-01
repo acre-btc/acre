@@ -365,7 +365,7 @@ contract WithdrawalQueue is Maintainable {
         midasShares = vault.convertToShares(tbtcAmount);
 
         // Withdraw the midas shares from the Midas Allocator.
-        midasAllocator.withdraw(midasShares);
+        midasAllocator.withdrawShares(midasShares);
 
         // Burn the corresponding acreBTC shares.
         acrebtc.burn(_acreShares);

@@ -5,12 +5,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Maintainable} from "../utils/Maintainable.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
-import "../interfaces/IDispatcher.sol";
+import "../interfaces/IDispatcherV2.sol";
 import {IVault} from "./IVault.sol";
 import {WithdrawalQueue} from "./WithdrawalQueue.sol";
 
 /// @notice MidasAllocator routes tBTC to/from Midas Vault.
-contract MidasAllocator is IDispatcher, Maintainable {
+contract MidasAllocator is IDispatcherV2, Maintainable {
     using SafeERC20 for IERC20;
 
     /// @notice tBTC token contract.
@@ -91,14 +91,15 @@ contract MidasAllocator is IDispatcher, Maintainable {
         emit DepositAllocated(idleAmount, shares);
     }
 
-    /// @notice Withdraw shares from Midas Vault.
-    /// @dev This function can be invoked by the withdrawal queue.
-    /// @param amount Amount of shares to withdraw.
-    function withdraw(uint256 amount) external {
+    /// @notice Withdraw Midas Vault shares from the allocator to the withdrawal
+    ///         queue. This function is called by the withdrawal queue as a
+    ///         preparation for requesting a redemption from the Midas Vault.
+    function withdrawShares(uint256 midasShares) external {
         if (msg.sender != address(withdrawalQueue)) {
             revert NotWithdrawalQueue();
         }
-        vaultSharesToken.transfer(address(withdrawalQueue), amount);
+
+        vaultSharesToken.transfer(address(withdrawalQueue), midasShares);
     }
 
     /// @notice Returns the total amount of tBTC allocated to Midas Vault including
