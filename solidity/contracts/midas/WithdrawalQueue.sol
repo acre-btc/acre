@@ -160,10 +160,10 @@ contract WithdrawalQueue is Maintainable {
         address _receiver,
         uint256 _exitFeeInAssets
     ) external onlyAcreBTC {
-        (
-            uint256 midasShares,
-            uint256 tbtcAmount
-        ) = _calculateMidasSharesAndBurnAcreBtc(_shares);
+        (uint256 midasShares, uint256 tbtcAmount) = _prepareSharesRedemption(
+            _shares
+        );
+
         if (_exitFeeInAssets > 0) {
             uint256 exitFeeShares = vault.convertToShares(_exitFeeInAssets);
             vault.requestRedeem(exitFeeShares, acrebtc.treasury());
@@ -185,7 +185,7 @@ contract WithdrawalQueue is Maintainable {
         (
             uint256 midasShares,
             uint256 tbtcAmountWithFee
-        ) = _calculateMidasSharesAndBurnAcreBtc(_shares);
+        ) = _prepareSharesRedemption(_shares);
 
         uint256 midasRequestId = vault.requestRedeem(
             midasShares,
@@ -286,13 +286,41 @@ contract WithdrawalQueue is Maintainable {
         tbtcVault = newTbtcVault;
     }
 
-    function _calculateMidasSharesAndBurnAcreBtc(
-        uint256 _shares
+    /**
+     * @notice Prepares for a shares redemption in the Midas Vault.
+     *
+     *         It includes pulling the midas shares from the Midas Allocator which will
+     *         cause the `MidasAllocator.totalAssets` function to adjust the
+     *         total assets to be decreased. To maintain the balance between
+     *         totalAssets and totalSupply of the Acre Vault, it burns the corresponding
+     *         acreBTC shares.
+     *
+     *         Then it approves the midas shares to the vault to be able to redeem them later.
+     *
+     *          It also returns the calculated tBTC amount corresponding to the provided
+     *          acreBTC shares amount.
+     * @param _acreShares Number of acreBTC shares to redeem.
+     * @return midasShares Number of midas shares corresponding to the provided
+     *                     acreBTC shares.
+     * @return tbtcAmount Amount of tBTC corresponding to the provided
+     *                   acreBTC shares.
+     */
+    function _prepareSharesRedemption(
+        uint256 _acreShares
     ) internal returns (uint256 midasShares, uint256 tbtcAmount) {
-        tbtcAmount = acrebtc.convertToAssets(_shares);
+        // Calculate the tBTC amount corresponding to the provided acreBTC shares amount.
+        tbtcAmount = acrebtc.convertToAssets(_acreShares);
+
+        // Calculate the number of midas shares corresponding to the provided tBTC amount.
         midasShares = vault.convertToShares(tbtcAmount);
+
+        // Withdraw the midas shares from the Midas Allocator.
         midasAllocator.withdraw(midasShares);
-        acrebtc.burn(_shares);
+
+        // Burn the corresponding acreBTC shares.
+        acrebtc.burn(_acreShares);
+
+        // Approve the midas shares to the vault to be able to redeem them later.
         vaultSharesToken.approve(address(vault), midasShares);
     }
 
