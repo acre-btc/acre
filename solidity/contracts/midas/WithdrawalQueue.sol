@@ -15,6 +15,14 @@ contract WithdrawalQueue is Maintainable {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
+    /// @notice Struct representing a withdrawal request.
+    /// @param redeemer The owner of the acreBTC shares to be redeemed.
+    /// @param midasShares Amount of Midas Vault shares to redeem.
+    /// @param tbtcAmount Amount of tBTC to be redeemed (after exit fee).
+    /// @param exitFeeInTbtc Exit fee amount in tBTC.
+    /// @param completedAt Timestamp when the request was completed (0 if not completed).
+    /// @param redeemerOutputScript Output script for the Bitcoin redeemer.
+    /// @param midasRequestId The ID of the underlying Midas Vault redemption request.
     struct WithdrawalRequest {
         address redeemer;
         uint256 midasShares;
@@ -25,55 +33,59 @@ contract WithdrawalQueue is Maintainable {
         uint256 midasRequestId;
     }
 
-    /// @notice Basis point scale.
+    /// @notice Basis point scale (1e4 = 100%).
     uint256 internal constant BASIS_POINT_SCALE = 1e4;
 
     /// @notice tBTC token contract.
     ITBTCToken public tbtc;
 
-    /// @notice Address of the Vault contract.
+    /// @notice Midas Vault contract.
     IVault public vault;
 
-    /// @notice Address of the VaultReceiptToken contract.
+    /// @notice Midas Vault receipt token (ERC20).
     IERC20 public vaultSharesToken;
 
-    /// @notice Withdrawal requests.
+    /// @notice Mapping of withdrawal request IDs to their data.
     mapping(uint256 => WithdrawalRequest) public withdrawalRequests;
 
-    /// @notice Withdrawal request counter.
+    /// @notice Counter for withdrawal requests (auto-incremented).
     uint256 public count;
 
-    // Midas Allocator
+    /// @notice Midas Allocator contract.
     MidasAllocator public midasAllocator;
 
-    /// @notice TBTC Vault contract.
+    /// @notice tBTC Vault contract address (used for bridging).
     address public tbtcVault;
 
     /// @notice acreBTC contract.
     acreBTC public acrebtc;
 
-    /// @notice Not Midas Allocator.
+    /// @notice Error thrown if caller is not the Midas Allocator.
     error NotMidasAllocator();
 
-    /// @notice Not acreBTC.
+    /// @notice Error thrown if caller is not the acreBTC contract.
     error NotAcreBTC();
 
-    /// @notice Not tBTC token owner.
+    /// @notice Error thrown if the provided address is not the tBTC token owner.
     error NotTbtcTokenOwner();
 
-    /// @notice Unexpected tBTC token owner.
+    /// @notice Error thrown if the tBTC token owner is not as expected.
     error UnexpectedTbtcTokenOwner();
 
-    /// @notice Approve and call failed.
+    /// @notice Error thrown if approveAndCall fails.
     error ApproveAndCallFailed();
 
-    /// @notice Withdrawal request already completed.
+    /// @notice Error thrown if a withdrawal request is already completed.
     error WithdrawalRequestAlreadyCompleted();
 
-    /// @notice Withdrawal request not found.
+    /// @notice Error thrown if a withdrawal request is not found.
     error WithdrawalRequestNotFound();
 
-    /// @notice Invalid redemption data.
+    /// @notice Error thrown if redemption data is invalid.
+    /// @param redeemer The redeemer address in the redemption data.
+    /// @param expectedRedeemer The expected redeemer address.
+    /// @param redeemerOutputScript The output script in the redemption data.
+    /// @param expectedRedeemerOutputScript The expected output script.
     error InvalidRedemptionData(
         address redeemer,
         address expectedRedeemer,
@@ -82,6 +94,10 @@ contract WithdrawalQueue is Maintainable {
     );
 
     /// @notice Emitted when a redemption is requested.
+    /// @param requestId The withdrawal request ID.
+    /// @param midasRequestId The Midas Vault redemption request ID.
+    /// @param tbtcAmount The amount of tBTC to be redeemed (after exit fee).
+    /// @param midasShares The amount of Midas Vault shares to redeem.
     event RedeemRequested(
         uint256 indexed requestId,
         uint256 indexed midasRequestId,
@@ -89,8 +105,11 @@ contract WithdrawalQueue is Maintainable {
         uint256 midasShares
     );
 
-    /// @notice Emitted when a redemption of shares corresponding to a fee is
-    ///         requested.
+    /// @notice Emitted when a redemption of shares corresponding to a fee is requested.
+    /// @param requestId The withdrawal request ID.
+    /// @param midasRequestId The Midas Vault redemption request ID for the fee.
+    /// @param exitFeeInTbtc The exit fee in tBTC.
+    /// @param exitFeeInMidasShares The exit fee in Midas Vault shares.
     event RedeemFeeRequested(
         uint256 indexed requestId,
         uint256 indexed midasRequestId,
@@ -99,6 +118,11 @@ contract WithdrawalQueue is Maintainable {
     );
 
     /// @notice Emitted when a redemption with bridging to Bitcoin is requested.
+    /// @param requestId The withdrawal request ID.
+    /// @param midasRequestId The Midas Vault redemption request ID.
+    /// @param tbtcAmount The amount of tBTC to be redeemed (after exit fee).
+    /// @param midasShares The amount of Midas Vault shares to redeem.
+    /// @param exitFeeInTbtc The exit fee in tBTC.
     event RedeemAndBridgeRequested(
         uint256 indexed requestId,
         uint256 indexed midasRequestId,
@@ -107,15 +131,20 @@ contract WithdrawalQueue is Maintainable {
         uint256 exitFeeInTbtc
     );
 
-    /// @notice Emitted when RedeemAndBridge request is being completed and bridging
-    ///         to Bitcoin is requested.
+    /// @notice Emitted when a RedeemAndBridge request is completed and bridging to
+    ///         Bitcoin is requested.
+    /// @param requestId The withdrawal request ID.
+    /// @param redeemer The redeemer address.
+    /// @param tbtcAmount The amount of tBTC to be bridged.
     event RedeemCompletedAndBridgeRequested(
         uint256 indexed requestId,
         address indexed redeemer,
         uint256 tbtcAmount
     );
 
-    /// @notice Emitted when the tBTC vault is updated.
+    /// @notice Emitted when the tBTC vault address is updated.
+    /// @param oldTbtcVault The previous tBTC vault address.
+    /// @param newTbtcVault The new tBTC vault address.
     event TbtcVaultUpdated(address oldTbtcVault, address newTbtcVault);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -123,6 +152,7 @@ contract WithdrawalQueue is Maintainable {
         _disableInitializers();
     }
 
+    /// @notice Restricts function to only be callable by the acreBTC contract.
     modifier onlyAcreBTC() {
         if (msg.sender != address(acrebtc)) {
             revert NotAcreBTC();
@@ -175,6 +205,12 @@ contract WithdrawalQueue is Maintainable {
         midasAllocator = MidasAllocator(_midasAllocator);
     }
 
+    /// @notice Requests a redemption of shares for tBTC, optionally charging an exit fee.
+    /// @dev Only callable by the acreBTC contract.
+    /// @param _shares Amount of acreBTC shares to redeem.
+    /// @param _receiver Address to receive the tBTC.
+    /// @param _exitFeeInTbtc Exit fee in tBTC to be charged and sent to the treasury.
+    /// @return requestId The ID of the withdrawal request.
     function requestRedeem(
         uint256 _shares,
         address _receiver,
@@ -219,10 +255,12 @@ contract WithdrawalQueue is Maintainable {
         );
     }
 
-    /// @notice Requests a redemption with extra bridge data
-    /// @param _shares Amount of shares to withdraw.
-    /// @param _redeemerOutputScript Redeemer output script.
-    /// @param _redeemer The original redeemer address.
+    /// @notice Requests a redemption with bridging to Bitcoin.
+    /// @dev Only callable by the acreBTC contract.
+    /// @param _shares Amount of acreBTC shares to redeem.
+    /// @param _redeemer The owner of the acreBTC shares to be redeemed.
+    /// @param _redeemerOutputScript The output script for the Bitcoin redeemer.
+    /// @param _exitFeeInTbtc Exit fee in tBTC to be charged and sent to the treasury.
     /// @return requestId The ID of the withdrawal request.
     function requestRedeemAndBridge(
         uint256 _shares,
@@ -262,11 +300,11 @@ contract WithdrawalQueue is Maintainable {
         );
     }
 
-    /// @notice Completes a withdrawal request.
+    /// @notice Completes a withdrawal request and initiates the bridge to Bitcoin.
+    /// @dev Only callable by a maintainer.
     /// @param _requestId ID of the withdrawal request.
     /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
-    ///        See `redemptionData` parameter description of `Bridge.requestRedemption`
-    ///        function.
+    ///        See `redemptionData` parameter description of `Bridge.requestRedemption`.
     function finalizeRedeemAndBridge(
         uint256 _requestId,
         bytes calldata _tbtcRedemptionData
@@ -295,28 +333,22 @@ contract WithdrawalQueue is Maintainable {
         _bridgeToBitcoin(request, _tbtcRedemptionData);
     }
 
-    /// @notice Requests bridging to Bitcoin via tBTC Bridge.
-    /// @dev Redemption data in a format expected from `redemptionData` parameter
-    ///      of Bridge's `receiveBalanceApproval`.
-    ///      It uses tBTC token owner which is the TBTCVault contract as spender
-    ///      of tBTC requested for redemption.
-    /// @dev tBTC Bridge redemption process has a path where request can timeout.
-    ///      It is a scenario that is unlikely to happen with the current Bridge
-    ///      setup. This contract remains upgradable to have flexibility to handle
-    ///      adjustments to tBTC Bridge changes.
-    /// @dev Redemption data should include a `redeemer` address matching the
-    ///      address of the deposit owner who is redeeming the shares. In case anything
-    ///      goes wrong during the tBTC unminting process, the redeemer will be
-    ///      able to claim the tBTC tokens back from the tBTC Bank contract.
+    /// @notice Initiates bridging to Bitcoin via tBTC Bridge.
+    /// @dev Redemption data must be formatted as expected by the tBTC Bridge's
+    ///      `receiveBalanceApproval`.
+    ///      The tBTC token owner (the TBTCVault contract) is used as the spender
+    ///      of tBTC for redemption.
+    ///      The redemption data must include a `redeemer` address and output script
+    ///      matching the original request.
+    ///      If the tBTC Bridge redemption process fails or times out, the redeemer
+    ///      can claim tBTC from the tBTC Bank contract.
     /// @param _request The withdrawal request.
     /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
-    ///        See `redemptionData` parameter description of `Bridge.requestRedemption`
-    ///        function.
     function _bridgeToBitcoin(
         WithdrawalRequest memory _request,
         bytes calldata _tbtcRedemptionData
     ) internal {
-        // TBTC Token contract owner resolves to the TBTCVault contract.
+        // Ensure the tBTC token owner is the expected TBTCVault contract.
         if (tbtc.owner() != tbtcVault) revert UnexpectedTbtcTokenOwner();
 
         // Decode redemption data.
@@ -351,8 +383,8 @@ contract WithdrawalQueue is Maintainable {
         }
     }
 
-    /// @notice Updates TBTCVault contract address.
-    /// @param newTbtcVault New TBTCVault contract address.
+    /// @notice Updates the TBTCVault contract address.
+    /// @param newTbtcVault The new TBTCVault contract address.
     function updateTbtcVault(address newTbtcVault) external onlyOwner {
         if (newTbtcVault == address(0)) {
             revert ZeroAddress();
@@ -367,25 +399,15 @@ contract WithdrawalQueue is Maintainable {
         tbtcVault = newTbtcVault;
     }
 
-    /**
-     * @notice Prepares for a shares redemption in the Midas Vault.
-     *
-     *         It includes pulling the midas shares from the Midas Allocator which will
-     *         cause the `MidasAllocator.totalAssets` function to adjust the
-     *         total assets to be decreased. To maintain the balance between
-     *         totalAssets and totalSupply of the Acre Vault, it burns the corresponding
-     *         acreBTC shares.
-     *
-     *         Then it approves the midas shares to the vault to be able to redeem them later.
-     *
-     *          It also returns the calculated tBTC amount corresponding to the provided
-     *          acreBTC shares amount.
-     * @param _acreShares Number of acreBTC shares to redeem.
-     * @return midasShares Number of midas shares corresponding to the provided
-     *                     acreBTC shares.
-     * @return tbtcAmount Amount of tBTC corresponding to the provided
-     *                   acreBTC shares.
-     */
+    /// @notice Prepares for a shares redemption in the Midas Vault.
+    /// @dev Pulls the Midas shares from the Midas Allocator, which causes
+    ///      `MidasAllocator.totalAssets` to decrease. To maintain the balance
+    ///      between totalAssets and totalSupply of the Acre Vault, burns the
+    ///      corresponding acreBTC shares. Approves the Midas shares to the vault
+    ///      for redemption. Returns the calculated tBTC amount for the given acreBTC shares.
+    /// @param _acreShares Number of acreBTC shares to redeem.
+    /// @return midasShares Number of Midas shares corresponding to the provided acreBTC shares.
+    /// @return tbtcAmount Amount of tBTC corresponding to the provided acreBTC shares.
     function _prepareSharesRedemption(
         uint256 _acreShares
     ) internal returns (uint256 midasShares, uint256 tbtcAmount) {
@@ -405,6 +427,10 @@ contract WithdrawalQueue is Maintainable {
         vaultSharesToken.approve(address(vault), midasShares);
     }
 
+    /// @notice Compares two byte arrays for equality.
+    /// @param a First byte array.
+    /// @param b Second byte array.
+    /// @return True if the arrays are equal, false otherwise.
     function _equal(
         bytes memory a,
         bytes memory b
