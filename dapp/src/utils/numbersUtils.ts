@@ -218,9 +218,10 @@ const addLeadingZero = (num: number): string =>
 const getPercentValue = (value: number, maxValue: number) =>
   (value * 100) / maxValue
 
-type FormatNumberToCompactStringOptions = {
-  decimals?: Intl.NumberFormatOptions &
-    BigIntToLocaleStringOptions["maximumFractionDigits"]
+type BigIntDecimals = BigIntToLocaleStringOptions["maximumFractionDigits"]
+
+type FormatNumberToCompactStringOptions<V> = {
+  decimals?: V extends bigint ? BigIntDecimals : number
   withVariableDecimals?: boolean
   currency?: "USD"
 }
@@ -231,27 +232,28 @@ type FormatNumberToCompactStringOptions = {
  * @param options Formatting options.
  * @param options.currency If provided, formats the number as currency
  * (e.g., USD).
- * @param options.withVariableDecimals If true, adjusts decimal places based on
- * the scale of the number.
- * @param options.decimals Number of decimal places to include (ignored for
- * bigint to avoid floating point issues).
+ * @param options.withVariableDecimals If true, decimal places varies based on
+ * the size of the number (2 for thousands, 1 for millions or more).
+ * @param options.decimals If provided, sets the number of decimal places to
+ * a constant value. Defaults to 2 for currency and 4 otherwise.
  * @returns The formatted number as a string.
  */
-export function formatNumberToCompactString(
-  value: number | bigint,
-  options: FormatNumberToCompactStringOptions = {},
+export function formatNumberToCompactString<V extends number | bigint>(
+  value: V,
+  options: FormatNumberToCompactStringOptions<V> = {},
 ): string {
   const {
     currency,
     decimals = currency ? 2 : 4,
     withVariableDecimals = false,
   } = options
+
   const isBigInt = typeof value === "bigint"
 
   const isThousands = isBigInt ? value >= 1000n : value >= 1000
   const isMillionsOrMore = isBigInt ? value >= 1_000_000n : value >= 1_000_000
 
-  let maximumFractionDigits: typeof decimals = decimals
+  let maximumFractionDigits = decimals as BigIntDecimals
   if (withVariableDecimals && isThousands) maximumFractionDigits = 2
   if (withVariableDecimals && isMillionsOrMore) maximumFractionDigits = 1
 
