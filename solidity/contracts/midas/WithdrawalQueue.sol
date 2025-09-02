@@ -21,7 +21,7 @@ contract WithdrawalQueue is Maintainable {
     /// @param tbtcAmount Amount of tBTC to be redeemed (after exit fee).
     /// @param exitFeeInTbtc Exit fee amount in tBTC.
     /// @param completedAt Timestamp when the request was completed (0 if not completed).
-    /// @param redeemerOutputScript Output script for the Bitcoin redeemer.
+    /// @param redeemerOutputScriptHash Hash of the output script for the Bitcoin redeemer.
     /// @param midasRequestId The ID of the underlying Midas Vault redemption request.
     struct RedeemAndBridgeRequest {
         address redeemer;
@@ -29,7 +29,7 @@ contract WithdrawalQueue is Maintainable {
         uint256 tbtcAmount;
         uint256 exitFeeInTbtc;
         uint256 completedAt;
-        bytes redeemerOutputScript;
+        bytes32 redeemerOutputScriptHash;
         uint256 midasRequestId;
     }
 
@@ -84,13 +84,13 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Error thrown if redemption data is invalid.
     /// @param redeemer The redeemer address in the redemption data.
     /// @param expectedRedeemer The expected redeemer address.
-    /// @param redeemerOutputScript The output script in the redemption data.
-    /// @param expectedRedeemerOutputScript The expected output script.
+    /// @param redeemerOutputScriptHash The output script hash in the redemption data.
+    /// @param expectedRedeemerOutputScriptHash The expected output script hash.
     error InvalidRedemptionData(
         address redeemer,
         address expectedRedeemer,
-        bytes redeemerOutputScript,
-        bytes expectedRedeemerOutputScript
+        bytes32 redeemerOutputScriptHash,
+        bytes32 expectedRedeemerOutputScriptHash
     );
 
     /// @notice Emitted when a redemption is requested.
@@ -294,7 +294,7 @@ contract WithdrawalQueue is Maintainable {
             midasShares: midasShares,
             tbtcAmount: tbtcAmount,
             exitFeeInTbtc: _exitFeeInTbtc,
-            redeemerOutputScript: _redeemerOutputScript,
+            redeemerOutputScriptHash: keccak256(_redeemerOutputScript),
             midasRequestId: midasRequestId,
             completedAt: 0
         });
@@ -373,13 +373,13 @@ contract WithdrawalQueue is Maintainable {
         // output script passed in the initial redemption request.
         if (
             redeemer != _request.redeemer ||
-            !_equal(redeemerOutputScript, _request.redeemerOutputScript)
+            keccak256(redeemerOutputScript) != _request.redeemerOutputScriptHash
         )
             revert InvalidRedemptionData(
                 redeemer,
                 _request.redeemer,
-                redeemerOutputScript,
-                _request.redeemerOutputScript
+                keccak256(redeemerOutputScript),
+                _request.redeemerOutputScriptHash
             );
 
         // Initialize tBTC Bridge redemption process.
@@ -436,16 +436,5 @@ contract WithdrawalQueue is Maintainable {
 
         // Approve the midas shares to the vault to be able to redeem them later.
         vaultSharesToken.approve(address(midasVault), midasShares);
-    }
-
-    /// @notice Compares two byte arrays for equality.
-    /// @param a First byte array.
-    /// @param b Second byte array.
-    /// @return True if the arrays are equal, false otherwise.
-    function _equal(
-        bytes memory a,
-        bytes memory b
-    ) internal pure returns (bool) {
-        return a.length == b.length && keccak256(a) == keccak256(b);
     }
 }
