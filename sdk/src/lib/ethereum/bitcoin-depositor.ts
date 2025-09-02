@@ -1,5 +1,5 @@
 import { packRevealDepositParameters } from "@keep-network/tbtc-v2.ts"
-import { BitcoinDepositor as BitcoinDepositorTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinDepositor"
+import { BitcoinDepositor as BitcoinDepositorTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinDepositor.sol"
 import SepoliaBitcoinDepositor from "@acre-btc/contracts/deployments/sepolia/BitcoinDepositor.json"
 import MainnetBitcoinDepositor from "@acre-btc/contracts/deployments/mainnet/BitcoinDepositor.json"
 

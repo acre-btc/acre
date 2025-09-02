@@ -67,6 +67,9 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///      The threshold is in tBTC token precision.
     uint256 public bridgeFeesReimbursementThreshold;
 
+    /// @notice Acre Vault contract.
+    address public acreVault;
+
     // TEST: New variable;
     uint256 public newVariable;
 
