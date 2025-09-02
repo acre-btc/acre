@@ -66,7 +66,7 @@ export interface BitcoinDepositor extends DepositorProxy {
 
   /**
    * Encodes deposit owner address and referral as extra data.
-   * @param depositOwner The address to which the stBTC shares will be minted.
+   * @param depositOwner The address to which the acreBTC shares will be minted.
    * @param referral Data used for referral program.
    */
   encodeExtraData(depositOwner: ChainIdentifier, referral: number): Hex

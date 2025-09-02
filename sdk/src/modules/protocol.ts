@@ -37,7 +37,7 @@ export default class Protocol {
    *          precision.
    */
   async totalAssets() {
-    return toSatoshi(await this.#contracts.stBTC.totalAssets())
+    return toSatoshi(await this.#contracts.acreBTC.totalAssets())
   }
 
   /**
@@ -53,7 +53,7 @@ export default class Protocol {
       await this.#contracts.bitcoinDepositor.calculateDepositFee(
         amountInTokenPrecision,
       )
-    const depositFee = await this.#contracts.stBTC.calculateDepositFee(
+    const depositFee = await this.#contracts.acreBTC.calculateDepositFee(
       amountInTokenPrecision,
     )
 
@@ -93,7 +93,7 @@ export default class Protocol {
         amountInTokenPrecision,
       )
 
-    const withdrawalFee = await this.#contracts.stBTC.calculateWithdrawalFee(
+    const withdrawalFee = await this.#contracts.acreBTC.calculateWithdrawalFee(
       amountInTokenPrecision,
     )
 

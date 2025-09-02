@@ -130,19 +130,19 @@ export default class Account {
   }
 
   /**
-   * @returns Balance of the account's stBTC shares (in 1e18 precision).
+   * @returns Balance of the account's acreBTC shares (in 1e18 precision).
    */
   async sharesBalance() {
-    return this.#contracts.stBTC.balanceOf(this.#ethereumAddress)
+    return this.#contracts.acreBTC.balanceOf(this.#ethereumAddress)
   }
 
   /**
    * @returns Balance of Bitcoin position in Acre estimated based on the
-   *          account's stBTC shares (in 1e8 satoshi precision).
+   *          account's acreBTC shares (in 1e8 satoshi precision).
    */
   async estimatedBitcoinBalance() {
     return toSatoshi(
-      await this.#contracts.stBTC.assetsBalanceOf(this.#ethereumAddress),
+      await this.#contracts.acreBTC.assetsBalanceOf(this.#ethereumAddress),
     )
   }
 
@@ -199,9 +199,9 @@ export default class Account {
     messageSignedStepCallback?: MessageSignedStepCallback,
   ): Promise<{ transactionHash: string; redemptionKey: string }> {
     const tbtcAmount = fromSatoshi(btcAmount)
-    const shares = await this.#contracts.stBTC.convertToShares(tbtcAmount)
+    const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
     // Including fees.
-    const redeemedTbtc = await this.#contracts.stBTC.previewRedeem(shares)
+    const redeemedTbtc = await this.#contracts.acreBTC.previewRedeem(shares)
 
     const redeemerProxy = new OrangeKitTbtcRedeemerProxy(
       this.#contracts,
