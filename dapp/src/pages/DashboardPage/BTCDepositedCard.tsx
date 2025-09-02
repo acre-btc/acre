@@ -1,21 +1,19 @@
 import React from "react"
-import FeaturedMetricsCard, {
-  FeaturedMetricsCardProps,
-} from "#/components/shared/FeaturedMetricsCard"
 import { IconCurrencyBitcoin } from "@tabler/icons-react"
+import BitcoinAmountFeaturedMetricsCard, {
+  BitcoinAmountFeaturedMetricsCardProps,
+} from "#/components/shared/BitcoinAmountFeaturedMetricsCard"
 
 type BTCDepositedCardProps = Omit<
-  FeaturedMetricsCardProps,
-  "label" | "icon" | "value" | "infoContent"
+  BitcoinAmountFeaturedMetricsCardProps,
+  "label" | "icon" | "infoContent"
 >
 
 function BTCDepositedCard(props: BTCDepositedCardProps) {
   return (
-    <FeaturedMetricsCard
+    <BitcoinAmountFeaturedMetricsCard
       icon={IconCurrencyBitcoin}
-      label="BTC Deposited"
-      infoContent="Total BTC deposited in Acre"
-      value={["0.4800 BTC", "$49,871.29"]}
+      label="Current Balance"
       {...props}
     />
   )
