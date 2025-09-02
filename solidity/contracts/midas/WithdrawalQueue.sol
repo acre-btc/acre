@@ -318,7 +318,7 @@ contract WithdrawalQueue is Maintainable {
         uint256 _requestId,
         bytes calldata _tbtcRedemptionData
     ) external onlyMaintainer {
-        RedeemAndBridgeRequest memory request = redemAndBridgeRequests[
+        RedeemAndBridgeRequest storage request = redemAndBridgeRequests[
             _requestId
         ];
         if (request.redeemer == address(0)) revert WithdrawalRequestNotFound();
@@ -356,7 +356,7 @@ contract WithdrawalQueue is Maintainable {
     /// @param _request The withdrawal request.
     /// @param _tbtcRedemptionData Additional data required for the tBTC redemption.
     function _bridgeToBitcoin(
-        RedeemAndBridgeRequest memory _request,
+        RedeemAndBridgeRequest storage _request,
         bytes calldata _tbtcRedemptionData
     ) internal {
         // Ensure the tBTC token owner is the expected TBTCVault contract.
