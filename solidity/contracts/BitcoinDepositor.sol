@@ -82,6 +82,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @notice stBTC contract.
     /// @dev DEPRECATED: Use `acreVault` instead. Kept for storage slots backwards
     ///      compatibility.
+    // slither-disable-next-line constable-states
     stBTC public stbtc;
 
     /// @notice Minimum amount of a single deposit (in tBTC token precision).
