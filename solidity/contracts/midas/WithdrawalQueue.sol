@@ -17,20 +17,16 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Struct representing a redemption request with bridging to Bitcoin.
     /// @param redeemer The owner of the acreBTC shares to be redeemed.
-    /// @param midasShares Amount of Midas Vault shares to redeem.
     /// @param tbtcAmount Amount of tBTC to be redeemed (after exit fee).
     /// @param exitFeeInTbtc Exit fee amount in tBTC.
     /// @param completedAt Timestamp when the request was completed (0 if not completed).
     /// @param redeemerOutputScriptHash Hash of the output script for the Bitcoin redeemer.
-    /// @param midasRequestId The ID of the underlying Midas Vault redemption request.
     struct RedeemAndBridgeRequest {
         address redeemer;
-        uint256 midasShares;
         uint256 tbtcAmount;
         uint256 exitFeeInTbtc;
         uint256 completedAt;
         bytes32 redeemerOutputScriptHash;
-        uint256 midasRequestId;
     }
 
     /// @notice Basis point scale (1e4 = 100%).
@@ -291,11 +287,9 @@ contract WithdrawalQueue is Maintainable {
 
         redemAndBridgeRequests[requestId] = RedeemAndBridgeRequest({
             redeemer: _redeemer,
-            midasShares: midasShares,
             tbtcAmount: tbtcAmount,
             exitFeeInTbtc: _exitFeeInTbtc,
             redeemerOutputScriptHash: keccak256(_redeemerOutputScript),
-            midasRequestId: midasRequestId,
             completedAt: 0
         });
 
