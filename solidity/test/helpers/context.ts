@@ -15,6 +15,7 @@ import type {
   FeesReimbursementPool,
   MidasAllocator,
   MidasVaultStub,
+  WithdrawalQueue,
 } from "../../typechain"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -47,6 +48,9 @@ export async function deployment() {
     await getDeployedContract("MidasAllocator")
   const midasVault: MidasVaultStub = await getDeployedContract("MidasVault")
 
+  const withdrawalQueue: WithdrawalQueue =
+    await getDeployedContract("WithdrawalQueue")
+
   return {
     tbtc,
     stbtc,
@@ -61,5 +65,6 @@ export async function deployment() {
     acreBtc,
     midasAllocator,
     midasVault,
+    withdrawalQueue,
   }
 }

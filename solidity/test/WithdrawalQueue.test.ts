@@ -53,45 +53,11 @@ async function fixture() {
     tbtcVault,
     acreBtc: acreBTC,
     midasAllocator,
+    withdrawalQueue,
   } = await deployment()
   const { governance, maintainer } = await getNamedSigners()
   const [depositor, depositor2, thirdParty, deployer] =
     await getUnnamedSigners()
-
-  // Deploy WithdrawalQueue
-  const WithdrawalQueueFactory = await ethers.getContractFactory(
-    "WithdrawalQueue",
-    deployer,
-  )
-  const withdrawalQueue = (await upgrades.deployProxy(
-    WithdrawalQueueFactory,
-    [
-      await tbtc.getAddress(),
-      await midasVault.getAddress(),
-      await midasAllocator.getAddress(),
-      await tbtcVault.getAddress(),
-      await acreBTC.getAddress(),
-    ],
-    {
-      kind: "transparent",
-    },
-  )) as unknown as WithdrawalQueue
-
-  // Set withdrawal queue in MidasAllocator
-  await midasAllocator
-    .connect(governance)
-    .setWithdrawalQueue(await withdrawalQueue.getAddress())
-
-  // Add maintainer to WithdrawalQueue (using deployer who is the initial owner)
-  await withdrawalQueue.connect(deployer).addMaintainer(maintainer.address)
-
-  // Transfer ownership to governance
-  await withdrawalQueue.connect(deployer).transferOwnership(governance.address)
-
-  // Set withdrawal queue in acreBTC
-  await acreBTC
-    .connect(governance)
-    .updateWithdrawalQueue(await withdrawalQueue.getAddress())
 
   return {
     governance,
@@ -134,7 +100,7 @@ describe("WithdrawalQueue", () => {
       depositor2,
       deployer,
       tbtc,
-      acreBTC,
+      acreBtc: acreBTC,
       midasAllocator,
       midasVault,
       tbtcVault,
