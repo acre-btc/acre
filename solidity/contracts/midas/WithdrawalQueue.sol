@@ -216,7 +216,7 @@ contract WithdrawalQueue is Maintainable {
         address _receiver,
         uint256 _exitFeeInTbtc
     ) external onlyAcreBTC returns (uint256 requestId) {
-        requestId = count++;
+        requestId = ++count;
 
         (
             uint256 midasShares,
@@ -272,7 +272,7 @@ contract WithdrawalQueue is Maintainable {
         bytes calldata _redeemerOutputScript,
         uint256 _exitFeeInTbtc
     ) external onlyAcreBTC returns (uint256 requestId) {
-        requestId = count++;
+        requestId = ++count;
 
         (
             uint256 midasSharesWithFee,
