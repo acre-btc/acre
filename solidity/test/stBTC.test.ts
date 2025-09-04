@@ -10,7 +10,7 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signer
 import type { SnapshotRestorer } from "@nomicfoundation/hardhat-toolbox/network-helpers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
-import { to1e18 } from "./utils"
+import { to1e18, feeOnTotal, feeOnRaw } from "./utils"
 
 import {
   StBTC as stBTC,
@@ -65,7 +65,6 @@ async function fixture() {
 describe("stBTC", () => {
   const entryFeeBasisPoints = 5n // Used only for the tests.
   const exitFeeBasisPoints = 10n // Used only for the tests.
-  const basisPointScale = 10000n // Matches the contract.
 
   let stbtc: stBTC
   let tbtc: TestERC20
@@ -4001,31 +4000,6 @@ describe("stBTC", () => {
       })
     })
   })
-
-  // Calculates the fee when it's included in the amount.
-  // One is added to the result if there is a remainder to match the Solidity
-  // mulDiv() math which rounds up towards infinity (Ceil) when fees are
-  // calculated.
-  function feeOnTotal(amount: bigint, feeBasisPoints: bigint) {
-    const result =
-      (amount * feeBasisPoints) / (feeBasisPoints + basisPointScale)
-    if ((amount * feeBasisPoints) % (feeBasisPoints + basisPointScale) > 0) {
-      return result + 1n
-    }
-    return result
-  }
-
-  // Calculates the fee when it's not included in the amount.
-  // One is added to the result if there is a remainder to match the Solidity
-  // mulDiv() math which rounds up towards infinity (Ceil) when fees are
-  // calculated.
-  function feeOnRaw(amount: bigint, feeBasisPoints: bigint) {
-    const result = (amount * feeBasisPoints) / basisPointScale
-    if ((amount * feeBasisPoints) % basisPointScale > 0) {
-      return result + 1n
-    }
-    return result
-  }
 
   // 10 is added or subtracted to/from the expected value to match the Solidity
   // math which rounds up or down depending on the modulo remainder. It is a very
