@@ -47,52 +47,16 @@ function createRedemptionData(
 }
 
 async function fixture() {
-  const { tbtc, midasVault, tbtcVault } = await deployment()
+  const {
+    tbtc,
+    midasVault,
+    tbtcVault,
+    acreBtc: acreBTC,
+    midasAllocator,
+  } = await deployment()
   const { governance, maintainer } = await getNamedSigners()
   const [depositor, depositor2, thirdParty, deployer] =
     await getUnnamedSigners()
-
-  // Deploy acreBTC contract directly for testing
-  const AcreBTCFactory = await ethers.getContractFactory("acreBTC", deployer)
-  const acreBTC = (await upgrades.deployProxy(
-    AcreBTCFactory,
-    [await tbtc.getAddress(), deployer.address], // Use deployer as initial treasury
-    {
-      kind: "transparent",
-    },
-  )) as unknown as AcreBTC
-
-  await acreBTC.connect(deployer).transferOwnership(governance.address)
-  await acreBTC.connect(governance).acceptOwnership()
-
-  // Deploy a new MidasAllocator configured with our acreBTC
-  const MidasAllocatorFactory = await ethers.getContractFactory(
-    "MidasAllocator",
-    deployer,
-  )
-  const midasAllocator = (await upgrades.deployProxy(
-    MidasAllocatorFactory,
-    [
-      await tbtc.getAddress(),
-      await acreBTC.getAddress(),
-      await midasVault.getAddress(),
-    ],
-    {
-      kind: "transparent",
-    },
-  )) as unknown as MidasAllocator
-
-  // Transfer ownership to governance
-  await midasAllocator.connect(deployer).transferOwnership(governance.address)
-  await midasAllocator.connect(governance).acceptOwnership()
-
-  // Add maintainer to MidasAllocator
-  await midasAllocator.connect(governance).addMaintainer(maintainer.address)
-
-  // Set up acreBTC dispatcher to midasAllocator so totalAssets works
-  await acreBTC
-    .connect(governance)
-    .updateDispatcher(await midasAllocator.getAddress())
 
   // Deploy WithdrawalQueue
   const WithdrawalQueueFactory = await ethers.getContractFactory(
@@ -137,7 +101,7 @@ async function fixture() {
     maintainer,
     deployer,
     tbtc,
-    acreBTC,
+    acreBtc: acreBTC,
     midasAllocator,
     midasVault,
     tbtcVault,
