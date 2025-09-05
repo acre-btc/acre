@@ -38,9 +38,13 @@ contract MidasVaultStub is IVault {
         uint256 shares,
         address receiver
     ) external returns (uint256) {
+        uint256 assets = convertToAssets(shares);
+
         MidasVaultSharesStub(share).burn(msg.sender, shares);
 
         emit MidasVaultRedeemRequested(shares, receiver);
+
+        IERC20(asset).safeTransfer(receiver, assets);
 
         return ++redeemRequestId;
     }
