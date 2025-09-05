@@ -6,14 +6,13 @@ import {
   impersonateAccount,
   setBalance,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers"
-import { ContractTransactionResponse } from "ethers"
 
 import { beforeAfterSnapshotWrapper } from "../helpers"
 
 import {
   AcreBTC,
   MidasAllocator,
-  TBTCVaultStub,
+  TBTCVaultStub as TBTCVaultStubType,
   WithdrawalQueue,
   IVault,
 } from "../../typechain"
@@ -46,7 +45,7 @@ async function sepoliaIntegrationFixture() {
   const tbtcVault = (await TBTCVaultStub.deploy(
     SEPOLIA_USDC_ADDRESS,
     deployer.address,
-  )) as TBTCVaultStub
+  )) as TBTCVaultStubType
 
   // Deploy real acreBTC contract
   const acreBTCFactory = await ethers.getContractFactory("acreBTC", deployer)
@@ -102,12 +101,6 @@ async function sepoliaIntegrationFixture() {
   // Add maintainer to both WithdrawalQueue and MidasAllocator
   await withdrawalQueue.connect(deployer).addMaintainer(maintainer.address)
   await midasAllocator.connect(deployer).addMaintainer(maintainer.address)
-
-  // Get vault shares token for later use
-  const vaultSharesToken = await ethers.getContractAt(
-    "IERC20",
-    await midasVault.share(),
-  )
 
   // Set stBTC as dispatcher for testing (before transferring ownership)
   await acreBTC
@@ -182,37 +175,25 @@ async function sepoliaIntegrationFixture() {
 }
 
 describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
-  let usdc: any
   let acreBTC: AcreBTC
   let midasAllocator: MidasAllocator
   let midasVault: IVault
-  let tbtcVault: TBTCVaultStub
   let withdrawalQueue: WithdrawalQueue
   let governance: HardhatEthersSigner
-  let maintainer: HardhatEthersSigner
-  let deployer: HardhatEthersSigner
   let depositor: HardhatEthersSigner
   let depositor2: HardhatEthersSigner
-  let thirdParty: HardhatEthersSigner
   let treasury: HardhatEthersSigner
-  let whale: HardhatEthersSigner
 
   beforeEach(async () => {
     ;({
-      usdc,
       acreBTC,
       midasAllocator,
       midasVault,
-      tbtcVault,
       withdrawalQueue,
       governance,
-      maintainer,
-      deployer,
       depositor,
       depositor2,
-      thirdParty,
       treasury,
-      whale,
     } = await loadFixture(sepoliaIntegrationFixture))
   })
 
@@ -301,10 +282,10 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
             return false
           }
         })
-        console.log(event)
+
         if (event) {
           const parsedEvent = withdrawalQueue.interface.parseLog(event)
-          const eventTbtcAmount = parsedEvent!.args.tbtcAmount
+          const eventTbtcAmount: bigint = parsedEvent!.args.tbtcAmount as bigint
 
           // The event tBTC amount should be approximately equal to the original deposit
           // (within small tolerance for potential rounding differences)
@@ -331,12 +312,12 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
           .requestRedeemAndBridge(sharesToRedeem, walletPubKeyHash)
 
         // Verify withdrawal request was created
-        const request = await withdrawalQueue.withdrawalRequests(initialCount)
+        const request =
+          await withdrawalQueue.redemAndBridgeRequests(initialCount)
         expect(request.redeemer).to.equal(depositor2.address)
-        expect(request.walletPubKeyHash).to.equal(walletPubKeyHash)
-        expect(request.isCompleted).to.be.false
-        expect(request.createdAt).to.be.gt(0)
-        expect(request.completedAt).to.equal(0)
+        expect(request.redeemerOutputScriptHash).to.equal(walletPubKeyHash)
+        expect(request.completedAt).to.be.equal(0)
+        expect(request.redeemerOutputScriptHash).to.equal(walletPubKeyHash)
 
         // Verify count incremented
         expect(await withdrawalQueue.count()).to.equal(initialCount + BigInt(1))
@@ -348,32 +329,49 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
       it("should handle multiple withdrawal requests correctly", async () => {
         const sharesToRedeem1 = to1e6(1)
         const sharesToRedeem2 = to1e6(1.5)
-        const walletPubKeyHash1 = "0x1111111111111111111111111111111111111111"
-        const walletPubKeyHash2 = "0x2222222222222222222222222222222222222222"
+        const redeemerOutputScript1 =
+          "0x1111111111111111111111111111111111111111"
+        const redeemerOutputScript2 =
+          "0x2222222222222222222222222222222222222222"
 
         const initialCount = await withdrawalQueue.count()
 
         // Create first request
         await withdrawalQueue
           .connect(depositor)
-          .requestRedeemAndBridge(sharesToRedeem1, walletPubKeyHash1)
+          .requestRedeemAndBridge(
+            sharesToRedeem1,
+            depositor,
+            redeemerOutputScript1,
+            0,
+          )
 
         // Create second request
         await withdrawalQueue
           .connect(depositor2)
-          .requestRedeemAndBridge(sharesToRedeem2, walletPubKeyHash2)
+          .requestRedeemAndBridge(
+            sharesToRedeem2,
+            depositor2,
+            redeemerOutputScript2,
+            0,
+          )
 
         // Verify both requests were stored correctly
-        const request1 = await withdrawalQueue.withdrawalRequests(initialCount)
-        const request2 = await withdrawalQueue.withdrawalRequests(
+        const request1 =
+          await withdrawalQueue.redemAndBridgeRequests(initialCount)
+        const request2 = await withdrawalQueue.redemAndBridgeRequests(
           initialCount + BigInt(1),
         )
 
         expect(request1.redeemer).to.equal(depositor.address)
-        expect(request1.walletPubKeyHash).to.equal(walletPubKeyHash1)
+        expect(request1.redeemerOutputScriptHash).to.equal(
+          redeemerOutputScript1,
+        )
 
         expect(request2.redeemer).to.equal(depositor2.address)
-        expect(request2.walletPubKeyHash).to.equal(walletPubKeyHash2)
+        expect(request2.redeemerOutputScriptHash).to.equal(
+          redeemerOutputScript2,
+        )
 
         // Verify count updated correctly
         expect(await withdrawalQueue.count()).to.equal(initialCount + BigInt(2))
@@ -398,7 +396,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
         const expectedFee = (midasShares * exitFeeBasisPoints) / BigInt(10000)
         await withdrawalQueue
           .connect(depositor)
-          .requestRedeem(sharesToRedeem, depositor.address)
+          .requestRedeem(sharesToRedeem, depositor.address, 0)
 
         const finalTreasuryShares = await vaultSharesToken.balanceOf(
           treasury.address,
@@ -456,7 +454,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
         await withdrawalQueue
           .connect(depositor)
-          .requestRedeem(sharesToRedeem, depositor.address)
+          .requestRedeem(sharesToRedeem, depositor.address, 0)
 
         const finalAllocatorShares = await vaultSharesToken.balanceOf(
           await midasAllocator.getAddress(),
@@ -472,7 +470,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
         await withdrawalQueue
           .connect(depositor2)
-          .requestRedeem(sharesToRedeem, depositor2.address)
+          .requestRedeem(sharesToRedeem, depositor2.address, 0)
 
         const finalTotalAssets = await midasAllocator.totalAssets()
 
@@ -484,7 +482,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
       it("should revert if non-withdrawal-queue tries to call MidasAllocator.withdraw()", async () => {
         await expect(
-          midasAllocator.connect(depositor).withdraw(to1e6(1)),
+          midasAllocator.connect(depositor).withdrawShares(to1e6(1)),
         ).to.be.revertedWithCustomError(midasAllocator, "NotWithdrawalQueue")
       })
     })
@@ -501,10 +499,15 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
         // Mix of simple and bridge requests
         await withdrawalQueue
           .connect(depositor)
-          .requestRedeem(simpleShares, depositor.address)
+          .requestRedeem(simpleShares, depositor.address, 0)
         await withdrawalQueue
           .connect(depositor2)
-          .requestRedeemAndBridge(bridgeShares, walletPubKeyHash)
+          .requestRedeemAndBridge(
+            bridgeShares,
+            depositor2.address,
+            walletPubKeyHash,
+            0,
+          )
 
         // Verify count only increased for bridge request
         expect(await withdrawalQueue.count()).to.equal(initialCount + BigInt(1))
@@ -516,10 +519,13 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
         )
 
         // Verify bridge request data integrity
-        const request = await withdrawalQueue.withdrawalRequests(initialCount)
+        const request =
+          await withdrawalQueue.redemAndBridgeRequests(initialCount)
         expect(request.redeemer).to.equal(depositor2.address)
-        expect(request.walletPubKeyHash).to.equal(walletPubKeyHash)
-        expect(request.isCompleted).to.be.false
+        expect(request.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(walletPubKeyHash),
+        )
+        expect(request.completedAt).to.be.equal(0)
       })
     })
   })
