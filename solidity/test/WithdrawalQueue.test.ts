@@ -18,6 +18,7 @@ import {
   MidasVaultStub,
   WithdrawalQueue,
   TBTCVaultStub,
+  IERC20,
 } from "../typechain"
 
 import { to1e18, feeOnTotal } from "./utils"
@@ -94,7 +95,6 @@ describe("WithdrawalQueue", () => {
   let treasury: HardhatEthersSigner
   let depositor: HardhatEthersSigner
   let depositor2: HardhatEthersSigner
-  let deployer: HardhatEthersSigner
   let tbtcVaultFakeSigner: HardhatEthersSigner
 
   before(async () => {
@@ -105,7 +105,6 @@ describe("WithdrawalQueue", () => {
       treasury,
       depositor,
       depositor2,
-      deployer,
       tbtc,
       acreBtc: acreBTC,
       midasAllocator,
