@@ -303,36 +303,6 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         }
     }
 
-    /// @notice Withdraws assets from the vault and transfers them to the
-    ///         receiver.
-    /// @dev Withdraw unallocated assets first and if not enough, route through
-    ///      withdrawal queue.
-    /// @param assets Amount of assets to withdraw.
-    /// @param receiver The address to which the assets will be transferred.
-    /// @param owner The address of the owner of the shares.
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) public override returns (uint256) {
-        return super.withdraw(assets, receiver, owner);
-    }
-
-    /// @notice Redeems shares for assets and transfers them to the receiver.
-    /// @dev Redeem unallocated assets only. If the assets are not enough, the
-    ///      function will revert and require the user to request a redemption
-    ///      through the withdrawal queue with the `requestRedeem` function.
-    /// @param shares Amount of shares to redeem.
-    /// @param receiver The address to which the assets will be transferred.
-    /// @param owner The address of the owner of the shares.
-    function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
-    ) public override returns (uint256) {
-        return super.redeem(shares, receiver, owner);
-    }
-
     /// @notice Requests a redemption through the withdrawal queue.
     /// @dev This function routes through the withdrawal queue for redemptions.
     /// @param shares Amount of shares to redeem.
