@@ -83,6 +83,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         uint256 indexed requestId,
         address indexed owner,
         address indexed receiver,
+        address caller,
         uint256 shares
     );
 
@@ -90,6 +91,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     event RedemptionToBitcoinRequested(
         uint256 indexed requestId,
         address indexed owner,
+        address indexed caller,
         uint256 shares
     );
 
@@ -365,7 +367,13 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             exitFee
         );
 
-        emit RedemptionRequested(requestId, owner, receiver, shares);
+        emit RedemptionRequested(
+            requestId,
+            owner,
+            receiver,
+            msg.sender,
+            shares
+        );
     }
 
     /// @notice Burns shares from the caller.
@@ -412,7 +420,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             exitFee
         );
 
-        emit RedemptionToBitcoinRequested(requestId, owner, shares);
+        emit RedemptionToBitcoinRequested(requestId, owner, msg.sender, shares);
     }
 
     /// @notice Returns the total amount of assets held by the vault across all
