@@ -150,8 +150,6 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
             );
         if (redeemer != owner) revert RedeemerNotOwner(redeemer, owner);
 
-        IERC20(acreBtc).safeTransferFrom(owner, address(this), shares);
-
         uint256 requestId = acreBtc.requestRedeemAndBridge(
             shares,
             owner,
