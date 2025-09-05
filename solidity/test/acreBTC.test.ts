@@ -1750,7 +1750,7 @@ describe("acreBTC", () => {
             .requestRedeemAndBridge(to1e18(2), depositor1, "0x01")
 
           await expect(tx)
-            .to.emit(acreBtc, "RedemptionRequested")
+            .to.emit(acreBtc, "RedemptionToBitcoinRequested")
             .withArgs(1, depositor1.address, depositor1.address, to1e18(2))
         })
       })
