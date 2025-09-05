@@ -221,7 +221,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
         // requestRedeem doesn't emit WithdrawalRequestCreated (only requestRedeemAndBridge does)
         await withdrawalQueue
           .connect(depositor)
-          .requestRedeem(sharesToRedeem, depositor.address)
+          .requestRedeem(sharesToRedeem, depositor.address, 0)
 
         // Verify stBTC was burned
         const finalStBTCBalance = await acreBTC.balanceOf(depositor.address)
@@ -251,7 +251,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
         await expect(
           withdrawalQueue
             .connect(depositor)
-            .requestRedeem(sharesToRedeem, depositor.address),
+            .requestRedeem(sharesToRedeem, depositor.address, 0),
         ).to.be.revertedWithCustomError(acreBTC, "ERC20InsufficientAllowance")
 
         // Restore allowance for other tests
@@ -272,7 +272,12 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
         const tx = await withdrawalQueue
           .connect(depositor)
-          .requestRedeemAndBridge(userShares, walletPubKeyHash)
+          .requestRedeemAndBridge(
+            userShares,
+            depositor.address,
+            walletPubKeyHash,
+            0,
+          )
         const receipt = await tx.wait()
         const event = receipt!.logs.find((log) => {
           try {
@@ -309,7 +314,12 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
         const tx = await withdrawalQueue
           .connect(depositor2)
-          .requestRedeemAndBridge(sharesToRedeem, walletPubKeyHash)
+          .requestRedeemAndBridge(
+            sharesToRedeem,
+            depositor2.address,
+            walletPubKeyHash,
+            0,
+          )
 
         // Verify withdrawal request was created
         const request =
@@ -426,7 +436,7 @@ describe("WithdrawalQueue Integration Tests (Sepolia)", () => {
 
         await withdrawalQueue
           .connect(depositor2)
-          .requestRedeem(sharesToRedeem, depositor2.address)
+          .requestRedeem(sharesToRedeem, depositor2.address, 0)
 
         const finalTreasuryShares = await vaultSharesToken.balanceOf(
           treasury.address,
