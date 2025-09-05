@@ -16,6 +16,7 @@ import type {
   MidasAllocator,
   MidasVaultStub,
   WithdrawalQueue,
+  BitcoinRedeemerV2,
 } from "../../typechain"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -51,6 +52,9 @@ export async function deployment() {
   const withdrawalQueue: WithdrawalQueue =
     await getDeployedContract("WithdrawalQueue")
 
+  const bitcoinRedeemerV2: BitcoinRedeemerV2 =
+    await getDeployedContract("BitcoinRedeemerV2")
+
   return {
     tbtc,
     stbtc,
@@ -66,5 +70,6 @@ export async function deployment() {
     midasAllocator,
     midasVault,
     withdrawalQueue,
+    bitcoinRedeemerV2,
   }
 }
