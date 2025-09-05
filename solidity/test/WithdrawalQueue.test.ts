@@ -8,6 +8,7 @@ import {
   stopImpersonatingAccount,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers"
 
+import type { ContractTransactionResponse } from "ethers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
 import {
@@ -20,11 +21,6 @@ import {
 } from "../typechain"
 
 import { to1e18, feeOnTotal } from "./utils"
-import type {
-  ContractTransactionReceipt,
-  ContractTransactionResponse,
-} from "ethers"
-import { tbtcRedemptionData } from "./data/tbtc"
 
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
@@ -280,7 +276,7 @@ describe("WithdrawalQueue", () => {
       context("with no exit fee", () => {
         beforeAfterSnapshotWrapper()
 
-        let tx: ContractTransactionReceipt
+        let tx: ContractTransactionResponse
 
         let redeemedAssets: bigint
         let redeemedMidasShares: bigint
@@ -291,9 +287,7 @@ describe("WithdrawalQueue", () => {
           redeemedAssets = await acreBTC.convertToAssets(redeemedShares)
           redeemedMidasShares = await midasVault.convertToShares(redeemedAssets)
 
-          await acreBTC
-            .connect(depositor)
-            .approve(await acreBTC.getAddress(), redeemedShares)
+          await acreBTC.connect(depositor).approve(depositor, redeemedShares)
 
           tx = await acreBTC
             .connect(depositor)
@@ -346,7 +340,7 @@ describe("WithdrawalQueue", () => {
       context("with exit fee", () => {
         beforeAfterSnapshotWrapper()
 
-        let tx: ContractTransactionReceipt
+        let tx: ContractTransactionResponse
 
         let redeemedAssets: bigint
         let redeemedMidasShares: bigint
@@ -370,9 +364,7 @@ describe("WithdrawalQueue", () => {
             (await acreBTC.convertToAssets(redeemedShares)) - exitFee
           redeemedMidasShares = await midasVault.convertToShares(redeemedAssets)
 
-          await acreBTC
-            .connect(depositor)
-            .approve(await acreBTC.getAddress(), redeemedShares)
+          await acreBTC.connect(depositor).approve(depositor, redeemedShares)
 
           tx = await acreBTC
             .connect(depositor)
@@ -444,7 +436,7 @@ describe("WithdrawalQueue", () => {
 
       const expectedRequestId = 1n
 
-      let tx: ContractTransactionReceipt
+      let tx: ContractTransactionResponse
 
       let redeemedAssets: bigint
       let redeemedMidasShares: bigint
@@ -482,10 +474,6 @@ describe("WithdrawalQueue", () => {
         await midasAllocator.connect(maintainer).allocate()
 
         // Request redemption and bridge
-        await acreBTC
-          .connect(depositor)
-          .approve(await acreBTC.getAddress(), redeemedShares)
-
         tx = await acreBTC
           .connect(depositor)
           .requestRedeemAndBridge(
@@ -639,9 +627,6 @@ describe("WithdrawalQueue", () => {
       beforeAfterSnapshotWrapper()
 
       before(async () => {
-        await acreBTC
-          .connect(depositor)
-          .approve(await acreBTC.getAddress(), redeemedShares)
         await acreBTC
           .connect(depositor)
           .requestRedeemAndBridge(
@@ -830,176 +815,287 @@ describe("WithdrawalQueue", () => {
   describe("edge cases and integration", () => {
     beforeAfterSnapshotWrapper()
 
-    const redeemerOutputScript = "0x1234"
+    const redeemerOutputScript1 = "0x1234"
+    const redeemerOutputScript2 = "0x5678"
     const depositAmount = to1e18(10)
 
-    it("should handle multiple bridge requests from same user", async () => {
-      const initialCount = await withdrawalQueue.count()
+    describe("multiple bridge requests from same user", () => {
+      beforeAfterSnapshotWrapper()
 
-      await tbtc.mint(depositor.address, depositAmount)
-      await tbtc
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), depositAmount)
-      await acreBTC.connect(depositor).deposit(depositAmount, depositor.address)
+      it("should handle multiple bridge requests from same user", async () => {
+        await tbtc.mint(depositor.address, depositAmount)
+        await tbtc
+          .connect(depositor)
+          .approve(await acreBTC.getAddress(), depositAmount)
+        await acreBTC
+          .connect(depositor)
+          .deposit(depositAmount, depositor.address)
 
-      await midasAllocator.connect(maintainer).allocate()
+        await midasAllocator.connect(maintainer).allocate()
 
-      const amount1 = to1e18(2)
-      const amount2 = to1e18(3)
+        const amount1 = to1e18(2)
+        const amount2 = to1e18(3)
 
-      await acreBTC
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), amount1)
-      await acreBTC
-        .connect(depositor)
-        .requestRedeemAndBridge(
-          amount1,
-          depositor.address,
-          redeemerOutputScript,
+        await acreBTC
+          .connect(depositor)
+          .requestRedeemAndBridge(
+            amount1,
+            depositor.address,
+            redeemerOutputScript1,
+          )
+
+        await acreBTC
+          .connect(depositor)
+          .requestRedeemAndBridge(
+            amount2,
+            depositor.address,
+            redeemerOutputScript2,
+          )
+
+        expect(await withdrawalQueue.count()).to.equal(2n)
+
+        const request1 = await withdrawalQueue.redemAndBridgeRequests(1)
+        const request2 = await withdrawalQueue.redemAndBridgeRequests(2)
+
+        expect(request1.redeemer).to.equal(depositor.address)
+        expect(request1.tbtcAmount).to.be.equal(amount1)
+        expect(request1.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(redeemerOutputScript1),
         )
 
-      await acreBTC
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), amount2)
-      await acreBTC
-        .connect(depositor)
-        .requestRedeemAndBridge(
-          amount2,
-          depositor.address,
-          redeemerOutputScript,
+        expect(request2.redeemer).to.equal(depositor.address)
+        expect(request2.tbtcAmount).to.be.equal(amount2)
+        expect(request2.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(redeemerOutputScript2),
         )
-
-      expect(await withdrawalQueue.count()).to.equal(initialCount + 2n)
-
-      const request1 =
-        await withdrawalQueue.redemAndBridgeRequests(initialCount)
-      const request2 = await withdrawalQueue.redemAndBridgeRequests(
-        initialCount + 1n,
-      )
-
-      expect(request1.redeemer).to.equal(depositor.address)
-      expect(request1.tbtcAmount).to.be.closeTo(amount1, to1e18(1)) // Allow 1 tBTC difference for rounding
-
-      expect(request2.redeemer).to.equal(depositor.address)
-      expect(request2.tbtcAmount).to.be.closeTo(amount2, to1e18(1)) // Allow 1 tBTC difference for rounding
+      })
     })
 
-    it("should handle mixed direct and bridge redemptions", async () => {
-      const initialCount = await withdrawalQueue.count()
+    describe("mixed direct and bridge redemptions", () => {
+      beforeAfterSnapshotWrapper()
 
-      // Use fresh depositor with more generous balance for this test
-      const testDepositAmount = to1e18(100) // Much larger amount to ensure sufficient balance
-      await tbtc.mint(depositor.address, testDepositAmount)
-      await tbtc
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), testDepositAmount)
-      await acreBTC
-        .connect(depositor)
-        .deposit(testDepositAmount, depositor.address)
+      it("should handle mixed direct and bridge redemptions", async () => {
+        // Use fresh depositor with more generous balance for this test
+        const testDepositAmount = to1e18(100) // Much larger amount to ensure sufficient balance
+        await tbtc.mint(depositor.address, testDepositAmount)
+        await tbtc
+          .connect(depositor)
+          .approve(await acreBTC.getAddress(), testDepositAmount)
+        await acreBTC
+          .connect(depositor)
+          .deposit(testDepositAmount, depositor.address)
 
-      await midasAllocator.connect(maintainer).allocate()
+        await midasAllocator.connect(maintainer).allocate()
 
-      // Ensure the vault has sufficient tBTC for direct redemption
-      const acreBTCAddress = await acreBTC.getAddress()
-      const amount1 = to1e18(2)
-      const amount2 = to1e18(3)
+        // Ensure the vault has sufficient tBTC for direct redemption
+        const amount1 = to1e18(2)
+        const amount2 = to1e18(3)
 
-      // Give the vault enough tBTC for the direct redemption
-      await tbtc.mint(acreBTCAddress, amount1 + amount2)
+        // Direct redemption
+        await acreBTC
+          .connect(depositor)
+          .requestRedeem(amount1, depositor.address, depositor.address)
 
-      await acreBTC
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), amount1)
+        expect(await withdrawalQueue.count()).to.equal(1)
 
-      // Direct redemption - should not increment counter
-      await acreBTC
-        .connect(depositor)
-        .requestRedeem(amount1, depositor.address, depositor.address)
+        // Bridge redemption - should increment counter
+        await acreBTC
+          .connect(depositor)
+          .requestRedeemAndBridge(
+            amount2,
+            depositor.address,
+            redeemerOutputScript2,
+          )
 
-      expect(await withdrawalQueue.count()).to.equal(initialCount)
+        expect(await withdrawalQueue.count()).to.equal(2)
 
-      // Bridge redemption - should increment counter
-      await acreBTC
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), amount2)
-      await acreBTC
-        .connect(depositor)
-        .requestRedeemAndBridge(
-          amount2,
-          depositor.address,
-          redeemerOutputScript,
+        // Check direct request not being stored
+        const request1 = await withdrawalQueue.redemAndBridgeRequests(1)
+        expect(request1.redeemer).to.equal(ethers.ZeroAddress)
+        expect(request1.tbtcAmount).to.equal(0)
+
+        // Check bridge request being stored
+        const request = await withdrawalQueue.redemAndBridgeRequests(2)
+        expect(request.redeemer).to.equal(depositor.address)
+        expect(request.tbtcAmount).to.be.equal(amount2)
+        expect(request.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(redeemerOutputScript2),
         )
-
-      expect(await withdrawalQueue.count()).to.equal(initialCount + 1n)
-
-      const request = await withdrawalQueue.redemAndBridgeRequests(initialCount)
-      expect(request.redeemer).to.equal(depositor.address)
-      // The tbtcAmount should be reasonable - allowing for conversion rate changes after first redemption
-      // After the direct redemption, the vault ratio changed significantly, so we expect a higher tBTC amount
-      expect(request.tbtcAmount).to.be.closeTo(amount2, to1e18(4)) // Allow 4 tBTC difference for significant rate changes
+      })
     })
 
-    it("should handle bridge requests from multiple users", async () => {
-      const initialCount = await withdrawalQueue.count()
+    describe("bridge requests from multiple users", () => {
+      beforeAfterSnapshotWrapper()
 
-      // Use larger deposits to ensure sufficient balance for both users
-      const testDepositAmount = to1e18(20) // Much larger amount to ensure sufficient balance
+      it("should handle bridge requests from multiple users", async () => {
+        // Use larger deposits to ensure sufficient balance for both users
+        const testDepositAmount = to1e18(20) // Much larger amount to ensure sufficient balance
 
-      // Setup for depositor
-      await tbtc.mint(depositor.address, testDepositAmount)
-      await tbtc
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), testDepositAmount)
-      await acreBTC
-        .connect(depositor)
-        .deposit(testDepositAmount, depositor.address)
+        // Setup for depositor
+        await tbtc.mint(depositor.address, testDepositAmount)
+        await tbtc
+          .connect(depositor)
+          .approve(await acreBTC.getAddress(), testDepositAmount)
+        await acreBTC
+          .connect(depositor)
+          .deposit(testDepositAmount, depositor.address)
 
-      // Setup for depositor2
-      await tbtc.mint(depositor2.address, testDepositAmount)
-      await tbtc
-        .connect(depositor2)
-        .approve(await acreBTC.getAddress(), testDepositAmount)
-      await acreBTC
-        .connect(depositor2)
-        .deposit(testDepositAmount, depositor2.address)
+        // Setup for depositor2
+        await tbtc.mint(depositor2.address, testDepositAmount)
+        await tbtc
+          .connect(depositor2)
+          .approve(await acreBTC.getAddress(), testDepositAmount)
+        await acreBTC
+          .connect(depositor2)
+          .deposit(testDepositAmount, depositor2.address)
 
-      await midasAllocator.connect(maintainer).allocate()
+        await midasAllocator.connect(maintainer).allocate()
 
-      const amount = to1e18(3)
-      const outputScript1 = "0x1111"
-      const outputScript2 = "0x2222"
+        const amount = to1e18(3)
+        const outputScript1 = "0x1111"
+        const outputScript2 = "0x2222"
 
-      await acreBTC
-        .connect(depositor)
-        .approve(await acreBTC.getAddress(), amount)
-      await acreBTC
-        .connect(depositor)
-        .requestRedeemAndBridge(amount, depositor.address, outputScript1)
+        await acreBTC
+          .connect(depositor)
+          .requestRedeemAndBridge(amount, depositor.address, outputScript1)
 
-      await acreBTC
-        .connect(depositor2)
-        .approve(await acreBTC.getAddress(), amount)
-      await acreBTC
-        .connect(depositor2)
-        .requestRedeemAndBridge(amount, depositor2.address, outputScript2)
+        await acreBTC
+          .connect(depositor2)
+          .requestRedeemAndBridge(amount, depositor2.address, outputScript2)
 
-      expect(await withdrawalQueue.count()).to.equal(initialCount + 2n)
+        expect(await withdrawalQueue.count()).to.equal(2)
 
-      const request1 =
-        await withdrawalQueue.redemAndBridgeRequests(initialCount)
-      const request2 = await withdrawalQueue.redemAndBridgeRequests(
-        initialCount + 1n,
-      )
+        const request1 = await withdrawalQueue.redemAndBridgeRequests(1)
+        const request2 = await withdrawalQueue.redemAndBridgeRequests(2)
 
-      expect(request1.redeemer).to.equal(depositor.address)
-      expect(request1.redeemerOutputScriptHash).to.equal(
-        ethers.keccak256(outputScript1),
-      )
+        expect(request1.redeemer).to.equal(depositor.address)
+        expect(request1.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(outputScript1),
+        )
 
-      expect(request2.redeemer).to.equal(depositor2.address)
-      expect(request2.redeemerOutputScriptHash).to.equal(
-        ethers.keccak256(outputScript2),
-      )
+        expect(request2.redeemer).to.equal(depositor2.address)
+        expect(request2.redeemerOutputScriptHash).to.equal(
+          ethers.keccak256(outputScript2),
+        )
+      })
+    })
+
+    describe("check conversion rates updates", () => {
+      beforeAfterSnapshotWrapper()
+
+      // TODO: This test should be ported to the mainnet integration tests suite
+      // and validated with the mainnet setup and the Midas Vault.
+      it("should update conversion rates", async () => {
+        // Set fees to 0 for simpler testing
+        await acreBTC.connect(governance).updateEntryFeeBasisPoints(0)
+        await acreBTC.connect(governance).updateExitFeeBasisPoints(0)
+
+        // Deposit from Depositor 1: 40 tBTC
+        const depositAmount1 = to1e18(40)
+        const receivedShares1 = depositAmount1
+        await tbtc.mint(depositor.address, depositAmount1)
+        await tbtc
+          .connect(depositor)
+          .approve(await acreBTC.getAddress(), depositAmount1)
+        await acreBTC
+          .connect(depositor)
+          .deposit(depositAmount1, depositor.address)
+
+        // Deposit from Depositor 2: 60 tBTC
+        const depositAmount2 = to1e18(60)
+        const receivedShares2 = depositAmount2
+        await tbtc.mint(depositor2.address, depositAmount2)
+        await tbtc
+          .connect(depositor2)
+          .approve(await acreBTC.getAddress(), depositAmount2)
+        await acreBTC
+          .connect(depositor2)
+          .deposit(depositAmount2, depositor2.address)
+
+        await midasAllocator.connect(maintainer).allocate()
+
+        // Check initial conversion rates
+        expect(await acreBTC.totalSupply()).to.be.equal(
+          receivedShares1 + receivedShares2,
+        )
+        expect(await acreBTC.totalAssets()).to.be.equal(
+          depositAmount1 + depositAmount2,
+        )
+        expect(await acreBTC.convertToAssets(receivedShares1)).to.be.equal(
+          depositAmount1,
+        )
+        expect(await acreBTC.convertToAssets(receivedShares2)).to.be.equal(
+          depositAmount2,
+        )
+
+        // Yield 10 tBTC to acreBTC
+        const yieldAmount = to1e18(50)
+        const yieldDepositor1 = to1e18(20) // 40% of yield
+        const yieldDepositor2 = to1e18(30) // 60% of yield
+        await tbtc.mint(await acreBTC.getAddress(), yieldAmount)
+
+        // Check conversion rates after yield
+        expect(await acreBTC.totalSupply()).to.be.closeTo(
+          receivedShares1 + receivedShares2,
+          1n,
+        )
+        expect(await acreBTC.totalAssets()).to.be.closeTo(
+          depositAmount1 + depositAmount2 + yieldAmount,
+          1n,
+        )
+        expect(await acreBTC.convertToAssets(receivedShares1)).to.be.closeTo(
+          depositAmount1 + yieldDepositor1,
+          1n,
+        )
+        expect(await acreBTC.convertToAssets(receivedShares2)).to.be.closeTo(
+          depositAmount2 + yieldDepositor2,
+          1n,
+        )
+
+        // Request redeem from Depositor 1
+        const redeemShares1 = to1e18(10) // 1/4 of depositor 1's shares
+        const redeemAmount1 = to1e18(15) // 1/4 * (40 + 20) = 15
+
+        await acreBTC
+          .connect(depositor)
+          .requestRedeem(redeemShares1, depositor.address, depositor.address)
+
+        // Check conversion rates after redeem from Depositor 1
+        expect(await acreBTC.totalSupply()).to.be.closeTo(
+          receivedShares1 + receivedShares2 - redeemShares1,
+          1n,
+        )
+        expect(await acreBTC.totalAssets()).to.be.closeTo(
+          depositAmount1 + depositAmount2 + yieldAmount - redeemAmount1,
+          1n,
+        )
+
+        // Request redeem and bridge from Depositor 2
+        const redeemShares2 = to1e18(15) // 1/4 of depositor 2's shares
+        const redeemAmount2 = to1e18("22.5") // 1/4 * (60 + 30) = 22.5
+
+        await acreBTC
+          .connect(depositor2)
+          .requestRedeemAndBridge(
+            redeemShares2,
+            depositor2.address,
+            redeemerOutputScript2,
+          )
+
+        // Check conversion rates after redeem and bridge from Depositor 2
+        expect(await acreBTC.totalSupply()).to.be.closeTo(
+          receivedShares1 + receivedShares2 - redeemShares1 - redeemShares2,
+          1n,
+        )
+        expect(await acreBTC.totalAssets()).to.be.closeTo(
+          depositAmount1 +
+            depositAmount2 +
+            yieldAmount -
+            redeemAmount1 -
+            redeemAmount2,
+          1n,
+        )
+      })
     })
   })
 })
