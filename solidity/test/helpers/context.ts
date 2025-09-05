@@ -13,6 +13,8 @@ import type {
   AcreMultiAssetVault,
   MezoPortalStub,
   FeesReimbursementPool,
+  MidasAllocator,
+  MidasVaultStub,
 } from "../../typechain"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -41,6 +43,10 @@ export async function deployment() {
 
   const acreBtc: acreBTC = await getDeployedContract("acreBTC")
 
+  const midasAllocator: MidasAllocator =
+    await getDeployedContract("MidasAllocator")
+  const midasVault: MidasVaultStub = await getDeployedContract("MidasVault")
+
   return {
     tbtc,
     stbtc,
@@ -53,5 +59,7 @@ export async function deployment() {
     mezoAllocator,
     mezoPortal,
     acreBtc,
+    midasAllocator,
+    midasVault,
   }
 }

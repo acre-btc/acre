@@ -5,8 +5,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { getNamedAccounts, deployments } = hre
   const { deployer } = await getNamedAccounts()
 
-  // TODO: Update to the new MidasAllocator
-  const dispatcher = await deployments.get("MezoAllocator")
+  const dispatcher = await deployments.get("MidasAllocator")
 
   await deployments.execute(
     "acreBTC",
@@ -19,6 +18,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["acreBTCUpdateDispatcher"]
-func.dependencies = ["acreBTC", "MezoAllocator"]
+func.dependencies = ["acreBTC", "MidasAllocator"]
 func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
   Promise.resolve(hre.network.name === "integration")
