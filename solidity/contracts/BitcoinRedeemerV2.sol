@@ -5,13 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "@thesis-co/solidity-contracts/contracts/token/IReceiveApproval.sol";
 
-import "./stBTC.sol";
 import "./acreBTC.sol";
 import "./bridge/ITBTCToken.sol";
 import {ZeroAddress} from "./utils/Errors.sol";
 
 /// @title Bitcoin Redeemer
-/// @notice This contract facilitates redemption of stBTC tokens to Bitcoin through
+/// @notice This contract facilitates redemption of acreBTC tokens to Bitcoin through
 ///         tBTC redemption process.
 contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
     using SafeERC20 for IERC20;
@@ -31,9 +30,9 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
     event TbtcVaultUpdated(address oldTbtcVault, address newTbtcVault);
 
     /// Emitted when redemption is requested.
-    /// @param owner Owner of stBTC tokens.
+    /// @param owner Owner of acreBTC tokens.
     /// @param requestId ID of the redemption request.
-    /// @param shares Number of stBTC tokens.
+    /// @param shares Number of acreBTC tokens.
     event RedemptionRequested(
         address indexed owner,
         uint256 indexed requestId,
@@ -42,9 +41,6 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
 
     /// Reverts if the tBTC Token address is zero.
     error TbtcTokenZeroAddress();
-
-    /// Reverts if the stBTC address is zero.
-    error StbtcZeroAddress();
 
     /// Reverts if the TBTCVault address is zero.
     error TbtcVaultZeroAddress();
@@ -75,7 +71,7 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
         _disableInitializers();
     }
 
-    /// @notice Initializes the contract with tBTC token and stBTC token addresses.
+    /// @notice Initializes the contract with tBTC token and acreBTC token addresses.
     /// @param _tbtcToken The address of the tBTC token contract.
     /// @param _tbtcVault The address of the TBTCVault contract.
     /// @param _acreBtc The address of the acreBTC token contract.
