@@ -29,9 +29,6 @@ contract WithdrawalQueue is Maintainable {
         bytes32 redeemerOutputScriptHash;
     }
 
-    /// @notice Basis point scale (1e4 = 100%).
-    uint256 internal constant BASIS_POINT_SCALE = 1e4;
-
     /// @notice tBTC token contract.
     ITBTCToken public tbtc;
 
