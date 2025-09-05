@@ -352,7 +352,11 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         );
 
         // Transfer shares to withdrawal queue using internal _transfer
-        IERC20(address(this)).transferFrom(owner, withdrawalQueue, shares);
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _transfer(owner, withdrawalQueue, shares);
 
         // Process redemption through queue
         requestId = WithdrawalQueue(withdrawalQueue).requestRedeem(
@@ -393,8 +397,12 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             _exitFeeBasisPoints()
         );
 
-        // Transfer shares to withdrawal queue
-        IERC20(address(this)).transferFrom(owner, withdrawalQueue, shares);
+        // Transfer shares to withdrawal queue using internal _transfer
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _transfer(owner, withdrawalQueue, shares);
 
         // Process bridge redemption through queue, passing the redeemer address
         requestId = WithdrawalQueue(withdrawalQueue).requestRedeemAndBridge(
