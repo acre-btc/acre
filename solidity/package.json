@@ -29,7 +29,8 @@
     "lint:config:fix": "prettier --write '**/*.@(json)'",
     "node:forking": "FORKING=true hardhat node --no-deploy",
     "test": "npm run prepare:env && hardhat test ./test/*.test.ts",
-    "test:integration": "hardhat test --deploy-fixture ./test/integration/*.test.ts --network integration"
+    "test:integration": "hardhat test --deploy-fixture ./test/integration/*.test.ts --network integration",
+    "test:integration:sepolia": "SEPOLIA_FORKING=true hardhat test --deploy-fixture ./test/integration/*.sepolia.test.ts --network hardhat"
   },
   "devDependencies": {
     "@keep-network/hardhat-helpers": "0.7.2",

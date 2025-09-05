@@ -214,4 +214,48 @@ describe("MidasAllocator", () => {
       })
     })
   })
+
+  describe("withdrawShares", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the withdrawal queue", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator.connect(thirdParty).withdrawShares(to1e18(1)),
+        ).to.be.revertedWithCustomError(midasAllocator, "NotWithdrawalQueue")
+      })
+    })
+  })
+
+  describe("emergencyWithdraw", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the owner", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator.connect(thirdParty).emergencyWithdraw(),
+        ).to.be.revertedWithCustomError(
+          midasAllocator,
+          "OwnableUnauthorizedAccount",
+        )
+      })
+    })
+  })
+
+  describe("setWithdrawalQueue", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the owner", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator
+            .connect(thirdParty)
+            .setWithdrawalQueue(thirdParty.address),
+        ).to.be.revertedWithCustomError(
+          midasAllocator,
+          "OwnableUnauthorizedAccount",
+        )
+      })
+    })
+  })
 })
