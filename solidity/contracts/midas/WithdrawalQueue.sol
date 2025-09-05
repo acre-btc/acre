@@ -427,6 +427,6 @@ contract WithdrawalQueue is Maintainable {
         acrebtc.burn(_acreShares);
 
         // Approve the midas shares to the vault to be able to redeem them later.
-        vaultSharesToken.approve(address(midasVault), midasShares);
+        vaultSharesToken.forceApprove(address(midasVault), midasShares);
     }
 }

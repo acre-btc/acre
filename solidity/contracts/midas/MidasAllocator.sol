@@ -99,7 +99,7 @@ contract MidasAllocator is IDispatcherV2, Maintainable {
             revert NotWithdrawalQueue();
         }
 
-        vaultSharesToken.transfer(address(withdrawalQueue), midasShares);
+        vaultSharesToken.safeTransfer(address(withdrawalQueue), midasShares);
     }
 
     /// @notice Returns the total amount of tBTC allocated to Midas Vault including
@@ -116,10 +116,10 @@ contract MidasAllocator is IDispatcherV2, Maintainable {
     ///         Acre Vault contract.
     /// @dev This is a special function that can be used to migrate funds during
     ///      allocator upgrade or in case of emergencies.
-    function emergencyWithdraw() external onlyOwner {
+    function emergencyWithdraw() external onlyOwner returns (uint256) {
         uint256 shares = vaultSharesToken.balanceOf(address(this));
-        vaultSharesToken.approve(address(midasVault), shares);
-        midasVault.requestRedeem(shares, address(acreVault));
+        vaultSharesToken.forceApprove(address(midasVault), shares);
+        return midasVault.requestRedeem(shares, address(acreVault));
     }
 
     /// @notice Sets the withdrawal queue address.
