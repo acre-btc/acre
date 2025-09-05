@@ -125,7 +125,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
 
     function initialize(IERC20 asset, address _treasury) public initializer {
         __ERC4626_init(asset);
-        __ERC20_init("Acre Staked Bitcoin", "acreBTC"); // TODO: Confirm name
+        __ERC20_init("Acre Bitcoin", "acreBTC");
         __PausableOwnable_init(msg.sender, msg.sender);
 
         if (address(_treasury) == address(0)) {
