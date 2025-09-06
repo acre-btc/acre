@@ -1,7 +1,9 @@
+// TOOD: Update imports
 import { BitcoinRedeemer as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemer"
 import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
 import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
 
+import { ethers } from "ethers"
 import {
   EthersContractConfig,
   EthersContractDeployment,
@@ -10,6 +12,7 @@ import {
 import { ChainIdentifier, BitcoinRedeemer, WithdrawalFees } from "../contracts"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
+import { Hex } from "../utils"
 
 type TbtcBridgeRedemptionParameters = {
   redemptionTreasuryFeeDivisor: bigint
@@ -35,7 +38,10 @@ export default class EthereumBitcoinRedeemer
 
     switch (network) {
       case "sepolia":
-        artifact = SepoliaBitcoinRedeemer
+        artifact = {
+          ...SepoliaBitcoinRedeemer,
+          address: "0x3f836b84c7A46Ae733F89dE26226ce674fc68Bd7",
+        }
         break
       case "mainnet":
         artifact = MainnetBitcoinRedeemer
@@ -99,5 +105,32 @@ export default class EthereumBitcoinRedeemer
       redemptionTreasuryFeeDivisor,
     }
     return this.#cache.tbtcBridgeRedemptionParameters
+  }
+
+  /**
+   * @see {BitcoinRedeemer#encodeReceiveApprovalExtraData}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  encodeReceiveApprovalExtraData(
+    redeemer: ChainIdentifier,
+    redeemerOutputScript: Hex,
+  ): Hex {
+    // We only need encode `redeemer` and `redeemerOutputScript`. Other values
+    // can be empty because the are not used in the contract.
+    return Hex.from(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
+        [
+          `0x${redeemer.identifierHex}`,
+          // The Ethereum address is 20 bytes so we can use it as "empty" ` bytes20`
+          // type.
+          ethers.ZeroAddress,
+          ethers.encodeBytes32String(""),
+          0,
+          0,
+          redeemerOutputScript.toPrefixedString(),
+        ],
+      ),
+    )
   }
 }

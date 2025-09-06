@@ -1,16 +1,17 @@
-import { OrangeKitSdk } from "@orangekit/sdk"
+import { OrangeKitSdk, SafeTransactionData } from "@orangekit/sdk"
+import { BitcoinAddressConverter } from "@keep-network/tbtc-v2.ts"
 import { AcreContracts, ChainIdentifier } from "../lib/contracts"
 import StakeInitialization from "./staking"
 import { fromSatoshi, toSatoshi } from "../lib/utils"
 import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
-import OrangeKitTbtcRedeemerProxy, {
+import {
   DataBuiltStepCallback,
   MessageSignedStepCallback,
   OnSignMessageStepCallback,
 } from "../lib/redeemer-proxy"
-import { AcreBitcoinProvider } from "../lib/bitcoin"
+import { AcreBitcoinProvider, BitcoinNetwork } from "../lib/bitcoin"
 
 export { DepositReceipt } from "./tbtc"
 
@@ -75,6 +76,8 @@ export default class Account {
 
   readonly #orangeKitSdk: OrangeKitSdk
 
+  readonly #bitcoinNetwork: BitcoinNetwork
+
   constructor(
     contracts: AcreContracts,
     tbtc: Tbtc,
@@ -86,6 +89,7 @@ export default class Account {
     },
     bitcoinProvider: AcreBitcoinProvider,
     orangeKitSdk: OrangeKitSdk,
+    bitcoinNetwork: BitcoinNetwork,
   ) {
     this.#contracts = contracts
     this.#tbtc = tbtc
@@ -95,6 +99,7 @@ export default class Account {
     this.#bitcoinProvider = bitcoinProvider
     this.#orangeKitSdk = orangeKitSdk
     this.#bitcoinPublicKey = account.bitcoinPublicKey
+    this.#bitcoinNetwork = bitcoinNetwork
   }
 
   /**
@@ -201,28 +206,42 @@ export default class Account {
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
     // Including fees.
-    const redeemedTbtc = await this.#contracts.acreBTC.previewRedeem(shares)
+    // TODO: Do we need this?
+    // const redeemedTbtc = await this.#contracts.stBTC.previewRedeem(shares)
 
-    const redeemerProxy = new OrangeKitTbtcRedeemerProxy(
-      this.#contracts,
-      this.#orangeKitSdk,
-      {
-        bitcoinAddress: this.#bitcoinAddress,
-        ethereumAddress: this.#ethereumAddress,
-        publicKey: this.#bitcoinPublicKey,
-      },
-      this.#bitcoinProvider,
+    const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
+      this.#contracts.bitcoinRedeemer.getChainIdentifier(),
       shares,
-      dataBuiltStepCallback,
-      onSignMessageStepCallback,
-      messageSignedStepCallback,
+      this.#contracts.bitcoinRedeemer.encodeReceiveApprovalExtraData(
+        this.#ethereumAddress,
+        BitcoinAddressConverter.addressToOutputScript(
+          this.#bitcoinAddress,
+          this.#bitcoinNetwork,
+        ),
+      ),
+    )
+    await dataBuiltStepCallback?.(safeTxData)
+
+    const transactionHash = await this.#orangeKitSdk.sendTransaction(
+      `0x${this.#contracts.acreBTC.getChainIdentifier().identifierHex}`,
+      "0x0",
+      safeTxData.toPrefixedString(),
+      this.#bitcoinAddress,
+      this.#bitcoinPublicKey,
+      async (message: string, txData: SafeTransactionData) => {
+        await onSignMessageStepCallback?.(message)
+        const signedMessage =
+          await (this.#bitcoinProvider.signWithdrawMessage?.(message, txData) ??
+            (await this.#bitcoinProvider.signMessage(message)))
+
+        await messageSignedStepCallback?.(signedMessage)
+
+        return signedMessage
+      },
     )
 
-    return this.#tbtc.initiateRedemption(
-      this.#bitcoinAddress,
-      redeemedTbtc,
-      redeemerProxy,
-    )
+    // TODO: Return redemption request ID instead of the redemption key.
+    return { transactionHash, redemptionKey: "" }
   }
 
   /**
