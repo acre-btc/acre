@@ -23,12 +23,10 @@ export default class Tbtc {
     tbtcApi: TbtcApi,
     tbtcSdk: TbtcSdk,
     bitcoinDepositor: BitcoinDepositor,
-    network: BitcoinNetwork,
   ) {
     this.#tbtcApi = tbtcApi
     this.#tbtcSdk = tbtcSdk
     this.#bitcoinDepositor = bitcoinDepositor
-    this.#network = network
   }
 
   /**
@@ -57,7 +55,7 @@ export default class Tbtc {
         ? await TbtcSdk.initializeMainnet(signer)
         : await TbtcSdk.initializeSepolia(signer)
 
-    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor, network)
+    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor)
   }
 
   /**
