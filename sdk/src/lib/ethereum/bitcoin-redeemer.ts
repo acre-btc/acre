@@ -5,6 +5,7 @@ import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/Bitc
 
 import { ethers } from "ethers"
 import {
+  EthereumContractRunner,
   EthersContractConfig,
   EthersContractDeployment,
   EthersContractWrapper,
@@ -33,6 +34,8 @@ export default class EthereumBitcoinRedeemer
 
   #tbtcBridge: TbtcBridge | undefined
 
+  #runner: EthereumContractRunner
+
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
@@ -51,6 +54,7 @@ export default class EthereumBitcoinRedeemer
     }
 
     super(config, artifact)
+    this.#runner = config.runner
     this.#cache = {
       tbtcBridgeRedemptionParameters: undefined,
     }
@@ -132,5 +136,43 @@ export default class EthereumBitcoinRedeemer
         ],
       ),
     )
+  }
+
+  /**
+   * @see {BitcoinRedeemer#findRedemptionRequestIdFromTransaction}
+   */
+  async findRedemptionRequestIdFromTransaction(
+    transactionHash: Hex,
+  ): Promise<bigint> {
+    const receipt = await this.#runner.provider?.getTransactionReceipt(
+      transactionHash.toPrefixedString(),
+    )
+
+    if (!receipt)
+      throw new Error(
+        `Cannot find the redemption request id. Transaction with hash ${transactionHash.toPrefixedString()} not found`,
+      )
+
+    const eventTopic = this.instance.interface.getEvent(
+      "RedemptionRequested",
+    ).topicHash
+
+    // We assume only one redemption was requested in this transaction.
+    const log = receipt.logs.find(
+      (receiptLog) => receiptLog.topics[0] === eventTopic,
+    )
+
+    if (!log)
+      throw new Error(
+        "Cannot find the redemption request id. RedemptionRequested not found",
+      )
+
+    // @ts-expect-error Something is off with types.
+    const parsedLog = this.instance.interface.parseLog(log)
+
+    if (!parsedLog)
+      throw new Error("Cannot find the redemption request id. Cannot parse log")
+
+    return parsedLog.args[1] as bigint
   }
 }

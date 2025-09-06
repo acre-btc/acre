@@ -31,4 +31,11 @@ export interface BitcoinRedeemer {
     redeemer: ChainIdentifier,
     redeemerOutputScript: Hex,
   ): Hex
+
+  /**
+   * Finds the redemption request ID from a given transaction.
+   * @param transactionHash The transaction hash in which the redeem request was
+   *                        executed.
+   */
+  findRedemptionRequestIdFromTransaction(transactionHash: Hex): Promise<bigint>
 }

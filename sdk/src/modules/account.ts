@@ -194,14 +194,14 @@ export default class Account {
    *        signing step.
    * @param messageSignedStepCallback A callback triggered after the message
    *        signing step.
-   * @returns Hash of the withdrawal transaction and the redemption key.
+   * @returns Hash of the withdrawal transaction and the redemption request id.
    */
   async initializeWithdrawal(
     btcAmount: bigint,
     dataBuiltStepCallback?: DataBuiltStepCallback,
     onSignMessageStepCallback?: OnSignMessageStepCallback,
     messageSignedStepCallback?: MessageSignedStepCallback,
-  ): Promise<{ transactionHash: string; redemptionKey: string }> {
+  ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
     // Including fees.
@@ -239,8 +239,11 @@ export default class Account {
       },
     )
 
-    // TODO: Return redemption request ID instead of the redemption key.
-    return { transactionHash, redemptionKey: "" }
+    const redemptionRequestId =
+      await this.#contracts.bitcoinRedeemer.findRedemptionRequestIdFromTransaction(
+        Hex.from(transactionHash),
+      )
+    return { transactionHash, redemptionRequestId }
   }
 
   /**
