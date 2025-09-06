@@ -2,18 +2,17 @@ import { OrangeKitSdk, SafeTransactionData } from "@orangekit/sdk"
 import { BitcoinAddressConverter } from "@keep-network/tbtc-v2.ts"
 import { AcreContracts, ChainIdentifier } from "../lib/contracts"
 import StakeInitialization from "./staking"
-import { fromSatoshi, toSatoshi } from "../lib/utils"
+import { fromSatoshi, toSatoshi, Hex } from "../lib/utils"
 import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
-import {
-  DataBuiltStepCallback,
-  MessageSignedStepCallback,
-  OnSignMessageStepCallback,
-} from "../lib/redeemer-proxy"
 import { AcreBitcoinProvider, BitcoinNetwork } from "../lib/bitcoin"
 
 export { DepositReceipt } from "./tbtc"
+
+export type DataBuiltStepCallback = (safeTxData: Hex) => Promise<void>
+export type OnSignMessageStepCallback = (messageToSign: string) => Promise<void>
+export type MessageSignedStepCallback = (signedMessage: string) => Promise<void>
 
 /**
  * Represents the deposit data.
