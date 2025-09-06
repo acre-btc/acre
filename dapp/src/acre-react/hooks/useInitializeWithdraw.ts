@@ -3,7 +3,7 @@ import {
   DataBuiltStepCallback,
   MessageSignedStepCallback,
   OnSignMessageStepCallback,
-} from "@acre-btc/sdk/dist/src/lib/redeemer-proxy"
+} from "@acre-btc/sdk"
 import useAcreContext from "./useAcreContext"
 
 export default function useInitializeWithdraw() {
