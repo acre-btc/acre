@@ -6,6 +6,7 @@ import useDetectEmbed from "./useDetectEmbed"
 import useFetchBTCPriceUSD from "./useFetchBTCPriceUSD"
 import useDisconnectWallet from "./useDisconnectWallet"
 import useSentry from "./useSentry"
+import useRegisterAcreEthereumAddressInLedgerLive from "./useRegisterAcreEthereumAddressInLedgerLive"
 
 export default function useInitApp() {
   // TODO: Let's uncomment when dark mode is ready
@@ -19,4 +20,5 @@ export default function useInitApp() {
   useAccountChangedOKX()
   useAccountsChangedOKX()
   useAccountsChangedUnisat()
+  useRegisterAcreEthereumAddressInLedgerLive()
 }

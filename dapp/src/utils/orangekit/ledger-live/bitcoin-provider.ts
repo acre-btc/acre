@@ -347,4 +347,20 @@ export default class AcreLedgerLiveBitcoinProvider
       this.#derivationPath,
     )
   }
+
+  registerYieldBearingEthereumAddress(params: {
+    /** Required: Valid Ethereum address (0x format) */
+    ethereumAddress: string
+    /** Optional: Token contract address */
+    tokenContractAddress?: string
+    /** Optional: Token ticker symbol (e.g., stBTC, acreBTC) */
+    tokenTicker?: string
+    /** Optional: Additional metadata */
+    meta?: Record<string, unknown>
+  }) {
+    return this.#walletApiClient.request(
+      "custom.acre.registerYieldBearingEthereumAddress",
+      params,
+    )
+  }
 }
