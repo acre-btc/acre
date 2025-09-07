@@ -1,4 +1,4 @@
-import ethers, { Contract } from "ethers"
+import { ethers, Contract } from "ethers"
 import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
 import {
   EthereumAddress,
@@ -7,6 +7,7 @@ import {
 } from "../../../src/lib/ethereum"
 import TbtcBridge from "../../../src/lib/ethereum/tbtc-bridge"
 import { WithdrawalFees } from "../../../src/lib/contracts"
+import { Hex } from "../../../src/lib/utils"
 
 jest.mock("ethers", (): object => ({
   Contract: jest.fn(),
@@ -114,6 +115,58 @@ describe("BitcoinRedeemer", () => {
       it("should return correct fees", () => {
         expect(result).toMatchObject(expectedResult)
       })
+    })
+  })
+
+  describe("encodeReceiveApprovalExtraData", () => {
+    const redeemer = EthereumAddress.from(ethers.Wallet.createRandom().address)
+    const redeemerOutputScript = Hex.from(
+      "16001473167C206A13859666C2C3204D8D435185C04C56",
+    )
+
+    const spyOnDefaultAbiCoder = jest.spyOn(
+      ethers.AbiCoder.defaultAbiCoder(),
+      "encode",
+    )
+
+    let result: Hex
+
+    beforeAll(() => {
+      result = bitcoinRedeemer.encodeReceiveApprovalExtraData(
+        redeemer,
+        redeemerOutputScript,
+      )
+    })
+
+    it("should call the encode function from default abi coder", () => {
+      expect(spyOnDefaultAbiCoder).toHaveBeenCalledWith(
+        ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
+        [
+          `0x${redeemer.identifierHex}`,
+          // The Ethereum address is 20 bytes so we can use it as "empty" ` bytes20`
+          // type.
+          ethers.ZeroAddress,
+          ethers.encodeBytes32String(""),
+          0,
+          0,
+          redeemerOutputScript.toPrefixedString(),
+        ],
+      )
+    })
+
+    it("should encode data correctly", () => {
+      const [decodedRedeemer, , , , , decodedRedeemerOutputScript] =
+        ethers.AbiCoder.defaultAbiCoder().decode(
+          ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
+          result.toPrefixedString(),
+        )
+
+      expect(
+        redeemer.equals(EthereumAddress.from(decodedRedeemer as string)),
+      ).toBeTruthy()
+      expect(redeemerOutputScript.toPrefixedString()).toBe(
+        decodedRedeemerOutputScript,
+      )
     })
   })
 })
