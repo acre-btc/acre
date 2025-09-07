@@ -164,7 +164,7 @@ export default class EthereumBitcoinRedeemer
 
     if (!log)
       throw new Error(
-        "Cannot find the redemption request id. RedemptionRequested not found",
+        "Cannot find the redemption request id. The RedemptionRequested event not found",
       )
 
     // @ts-expect-error Something is off with types.

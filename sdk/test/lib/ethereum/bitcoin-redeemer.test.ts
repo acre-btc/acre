@@ -1,4 +1,4 @@
-import { ethers, Contract } from "ethers"
+import ethers, { AbiCoder, Contract, TransactionReceipt } from "ethers"
 import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
 import {
   EthereumAddress,
@@ -30,8 +30,17 @@ const testData = {
 
 describe("BitcoinRedeemer", () => {
   let bitcoinRedeemer: EthereumBitcoinRedeemer
-
-  const mockedContractInstance = {}
+  const mockedContractInstance = {
+    interface: {
+      getEvent: jest.fn(),
+      parseLog: jest.fn(),
+    },
+  }
+  const mockedRunner: EthereumContractRunner = {
+    provider: {
+      getTransactionReceipt: jest.fn(),
+    } as unknown as EthereumContractRunner["provider"],
+  }
 
   beforeAll(() => {
     jest
@@ -42,7 +51,7 @@ describe("BitcoinRedeemer", () => {
 
     bitcoinRedeemer = new EthereumBitcoinRedeemer(
       {
-        runner: {} as EthereumContractRunner,
+        runner: mockedRunner,
       },
       "sepolia",
     )
@@ -156,7 +165,7 @@ describe("BitcoinRedeemer", () => {
 
     it("should encode data correctly", () => {
       const [decodedRedeemer, , , , , decodedRedeemerOutputScript] =
-        ethers.AbiCoder.defaultAbiCoder().decode(
+        AbiCoder.defaultAbiCoder().decode(
           ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
           result.toPrefixedString(),
         )
@@ -167,6 +176,114 @@ describe("BitcoinRedeemer", () => {
       expect(redeemerOutputScript.toPrefixedString()).toBe(
         decodedRedeemerOutputScript,
       )
+    })
+  })
+
+  describe("findRedemptionRequestIdFromTransaction", () => {
+    const txHash = Hex.from(
+      "0x6ecf70666399edf65fc1e159b22fbb48cf0e389e84fdbb3550a7366d9af7efff",
+    )
+    const mockedRedemptionRequestedEventTopic =
+      "0x46949ee51143d5b58e4df83122d6c382a04f7bffbe563f78cd7fa61ee519ec08"
+
+    beforeAll(() => {
+      jest
+        .spyOn(mockedContractInstance.interface, "getEvent")
+        .mockReturnValue({ topicHash: mockedRedemptionRequestedEventTopic })
+    })
+
+    describe("when cannot find the tx receipt", () => {
+      beforeAll(() => {
+        jest
+          .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+          .mockResolvedValueOnce(null)
+      })
+
+      it("should throw an error", async () => {
+        await expect(
+          bitcoinRedeemer.findRedemptionRequestIdFromTransaction(txHash),
+        ).rejects.toThrow(
+          `Cannot find the redemption request id. Transaction with hash ${txHash.toPrefixedString()} not found`,
+        )
+      })
+    })
+
+    describe("when the transaction exists", () => {
+      beforeAll(() => {
+        jest
+          .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+          .mockResolvedValueOnce({ logs: [] } as unknown as TransactionReceipt)
+      })
+
+      describe("when the `RedemptionRequested` event does not exist", () => {
+        it("should throw an error", async () => {
+          await expect(
+            bitcoinRedeemer.findRedemptionRequestIdFromTransaction(txHash),
+          ).rejects.toThrow(
+            "Cannot find the redemption request id. The RedemptionRequested event not found",
+          )
+        })
+      })
+
+      describe("when the `RedemptionRequested` event exists", () => {
+        const mockedRedemptionRequestId = 1n
+        const mockedLogRedemptionRequestedLog = {
+          topics: [mockedRedemptionRequestedEventTopic],
+        }
+        let result: bigint
+        beforeAll(async () => {
+          jest
+            .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+            .mockResolvedValue({
+              logs: [mockedLogRedemptionRequestedLog],
+            } as unknown as TransactionReceipt)
+
+          jest
+            .spyOn(mockedContractInstance.interface, "parseLog")
+            .mockReturnValue({ args: ["", mockedRedemptionRequestId] })
+
+          result =
+            await bitcoinRedeemer.findRedemptionRequestIdFromTransaction(txHash)
+        })
+
+        it("should find the transaction receipt", () => {
+          expect(
+            mockedRunner.provider?.getTransactionReceipt,
+          ).toHaveBeenCalledWith(txHash.toPrefixedString())
+        })
+
+        it("should get the event signature", () => {
+          expect(
+            mockedContractInstance.interface.getEvent,
+          ).toHaveBeenCalledWith("RedemptionRequested")
+        })
+
+        it("should parse log", () => {
+          expect(
+            mockedContractInstance.interface.parseLog,
+          ).toHaveBeenCalledWith(mockedLogRedemptionRequestedLog)
+        })
+
+        it("should return the redemption request id", () => {
+          expect(result.toString()).toBe(mockedRedemptionRequestId.toString())
+        })
+
+        describe("when `RedemptionRequested` log can't be parsed", () => {
+          beforeAll(() => {
+            jest
+              .spyOn(mockedContractInstance.interface, "parseLog")
+              .mockReturnValue(null)
+          })
+
+          it("should throw an error", async () => {
+            await expect(
+              bitcoinRedeemer.findRedemptionRequestIdFromTransaction(txHash),
+            ).rejects.toThrow(
+              "Cannot find the redemption request id. Cannot parse log",
+            )
+          })
+        })
+      })
     })
   })
 })
