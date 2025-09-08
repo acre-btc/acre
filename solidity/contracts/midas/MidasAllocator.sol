@@ -125,9 +125,6 @@ contract MidasAllocator is IDispatcherV2, Maintainable {
     /// @notice Sets the withdrawal queue address.
     /// @param _withdrawalQueue Address of the withdrawal queue.
     function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {
-        if (_withdrawalQueue == address(0)) {
-            revert ZeroAddress();
-        }
         withdrawalQueue = WithdrawalQueue(_withdrawalQueue);
     }
 }

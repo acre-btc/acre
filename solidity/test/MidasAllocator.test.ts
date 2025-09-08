@@ -257,5 +257,36 @@ describe("MidasAllocator", () => {
         )
       })
     })
+
+    context("when a caller is the owner", () => {
+      beforeAfterSnapshotWrapper()
+
+      context("when the new withdrawal queue address is zero address", () => {
+        it("should revert", async () => {
+          await midasAllocator
+            .connect(governance)
+            .setWithdrawalQueue(ethers.ZeroAddress)
+
+          expect(await midasAllocator.withdrawalQueue()).to.equal(
+            ethers.ZeroAddress,
+          )
+        })
+      })
+
+      context(
+        "when the new withdrawal queue address is not zero address",
+        () => {
+          it("should update the withdrawal queue address", async () => {
+            await midasAllocator
+              .connect(governance)
+              .setWithdrawalQueue(thirdParty.address)
+
+            expect(await midasAllocator.withdrawalQueue()).to.equal(
+              thirdParty.address,
+            )
+          })
+        },
+      )
+    })
   })
 })
