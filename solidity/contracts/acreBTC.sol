@@ -223,11 +223,10 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     function updateWithdrawalQueue(
         address newWithdrawalQueue
     ) external onlyOwner {
-        // newWithdrawalQueue can be zero to disable the withdrawal queue
-        address oldWithdrawalQueue = withdrawalQueue;
-        withdrawalQueue = newWithdrawalQueue;
+        emit WithdrawalQueueUpdated(withdrawalQueue, newWithdrawalQueue);
 
-        emit WithdrawalQueueUpdated(oldWithdrawalQueue, newWithdrawalQueue);
+        // newWithdrawalQueue can be zero to disable the withdrawal queue
+        withdrawalQueue = newWithdrawalQueue;
     }
 
     /// @notice Calls `receiveApproval` function on spender previously approving
