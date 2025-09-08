@@ -20,6 +20,7 @@ interface ImportMetaEnv {
   readonly VITE_POSTHOG_API_HOST: string
   readonly VITE_POSTHOG_API_KEY: string
   readonly VITE_FEATURE_MOBILE_MODE_ENABLED: string
+  readonly VITE_AMPLITUDE_API_KEY: string
 }
 
 interface ImportMeta {

@@ -18,6 +18,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useDispatch } from "react-redux"
 import { setAddress } from "#/store/wallet"
+import { identifyUser } from "#/amplitude"
 import useResetWalletState from "./useResetWalletState"
 import useLastUsedBtcAddress from "./useLastUsedBtcAddress"
 import useBitcoinBalance from "./useBitcoinBalance"
@@ -78,6 +79,7 @@ export default function useWallet(): UseWalletReturn {
         dispatch(setAddress(bitcoinAddress))
         setAddressInLocalStorage(bitcoinAddress)
         sentry.setUser(bitcoinAddress)
+        identifyUser(bitcoinAddress)
       },
     },
   })
@@ -90,6 +92,7 @@ export default function useWallet(): UseWalletReturn {
         removeAddressFromLocalStorage()
         resetWalletState()
         sentry.setUser(undefined)
+        identifyUser(undefined)
       },
     },
   })
@@ -129,6 +132,7 @@ export default function useWallet(): UseWalletReturn {
         dispatch(setAddress(bitcoinAddress))
         setAddressInLocalStorage(bitcoinAddress)
         sentry.setUser(bitcoinAddress)
+        identifyUser(bitcoinAddress)
       },
     },
     queryClient,
