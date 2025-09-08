@@ -18,16 +18,8 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
     /// Interface for tBTC token contract.
     ITBTCToken public tbtcToken;
 
-    /// Address of the TBTCVault contract.
-    address public tbtcVault;
-
     /// Address of the Acre Vault contract.
     acreBTC public acreBtc;
-
-    /// Emitted when the TBTCVault contract address is updated.
-    /// @param oldTbtcVault Address of the old TBTCVault contract.
-    /// @param newTbtcVault Address of the new TBTCVault contract.
-    event TbtcVaultUpdated(address oldTbtcVault, address newTbtcVault);
 
     /// Emitted when redemption is requested.
     /// @param owner Owner of acreBTC tokens.
@@ -42,9 +34,6 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
     /// Reverts if the tBTC Token address is zero.
     error TbtcTokenZeroAddress();
 
-    /// Reverts if the TBTCVault address is zero.
-    error TbtcVaultZeroAddress();
-
     /// Reverts if the Acre Vault address is zero.
     error AcreBtcZeroAddress();
 
@@ -54,17 +43,8 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
     /// Attempted to call receiveApproval with empty data.
     error EmptyExtraData();
 
-    /// Attempted to call _redeemSharesAndUnmint with unexpected tBTC token owner.
-    error UnexpectedTbtcTokenOwner();
-
     /// Reverts if the redeemer is not the deposit owner.
     error RedeemerNotOwner(address redeemer, address owner);
-
-    /// Reverts when approveAndCall to tBTC contract fails.
-    error ApproveAndCallFailed();
-
-    /// Reverts if the new TBTCVault contract is not tBTC token owner.
-    error NotTbtcTokenOwner();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -73,11 +53,9 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
 
     /// @notice Initializes the contract with tBTC token and acreBTC token addresses.
     /// @param _tbtcToken The address of the tBTC token contract.
-    /// @param _tbtcVault The address of the TBTCVault contract.
     /// @param _acreBtc The address of the acreBTC token contract.
     function initialize(
         address _tbtcToken,
-        address _tbtcVault,
         address _acreBtc
     ) public initializer {
         __Ownable2Step_init();
@@ -86,15 +64,11 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
         if (address(_tbtcToken) == address(0)) {
             revert TbtcTokenZeroAddress();
         }
-        if (address(_tbtcVault) == address(0)) {
-            revert TbtcVaultZeroAddress();
-        }
         if (address(_acreBtc) == address(0)) {
             revert AcreBtcZeroAddress();
         }
 
         tbtcToken = ITBTCToken(_tbtcToken);
-        tbtcVault = _tbtcVault;
         acreBtc = acreBTC(_acreBtc);
     }
 
@@ -114,22 +88,6 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
         if (extraData.length == 0) revert EmptyExtraData();
 
         _requestRedemption(from, amount, extraData);
-    }
-
-    /// @notice Updates TBTCVault contract address.
-    /// @param newTbtcVault New TBTCVault contract address.
-    function updateTbtcVault(address newTbtcVault) external onlyOwner {
-        if (newTbtcVault == address(0)) {
-            revert ZeroAddress();
-        }
-
-        if (newTbtcVault != tbtcToken.owner()) {
-            revert NotTbtcTokenOwner();
-        }
-
-        emit TbtcVaultUpdated(tbtcVault, newTbtcVault);
-
-        tbtcVault = newTbtcVault;
     }
 
     function _requestRedemption(
