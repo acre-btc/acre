@@ -31,6 +31,12 @@ contract MidasAllocator is IDispatcherV2, Maintainable {
     /// @notice Emitted when tBTC is deposited to Midas Vault.
     event DepositAllocated(uint256 addedAmount, uint256 shares);
 
+    /// @notice Emitted when the withdrawal queue address is updated.
+    event WithdrawalQueueUpdated(
+        address oldWithdrawalQueue,
+        address newWithdrawalQueue
+    );
+
     /// @notice Not withdrawal queue.
     error NotWithdrawalQueue();
 
@@ -125,6 +131,8 @@ contract MidasAllocator is IDispatcherV2, Maintainable {
     /// @notice Sets the withdrawal queue address.
     /// @param _withdrawalQueue Address of the withdrawal queue.
     function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {
+        emit WithdrawalQueueUpdated(address(withdrawalQueue), _withdrawalQueue);
+
         withdrawalQueue = WithdrawalQueue(_withdrawalQueue);
     }
 }
