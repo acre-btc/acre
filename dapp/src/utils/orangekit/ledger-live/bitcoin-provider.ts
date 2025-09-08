@@ -58,6 +58,23 @@ function numberToValidHexString(value: number): string {
   return `0x${hex}`
 }
 
+export type RegisterYieldBearingEthereumAddressResult = {
+  /** Whether the registration was successful */
+  success: boolean
+  /** Generated account name (e.g., "Yield-bearing BTC on ACRE") */
+  accountName: string
+  /** ID of the created Ethereum parent account */
+  parentAccountId: string
+  /** ID of the created token sub-account */
+  tokenAccountId: string
+  /** The registered Ethereum address */
+  ethereumAddress: string
+  /** The token contract address used */
+  tokenContractAddress: string
+  /** Additional metadata (if provided) */
+  meta?: Record<string, unknown>
+}
+
 export type AcreLedgerLiveBitcoinProviderOptions =
   | {
       tryConnectToAddress?: string
@@ -361,6 +378,6 @@ export default class AcreLedgerLiveBitcoinProvider
     return this.#walletApiClient.request(
       "custom.acre.registerYieldBearingEthereumAddress",
       params,
-    )
+    ) as Promise<RegisterYieldBearingEthereumAddressResult>
   }
 }

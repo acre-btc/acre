@@ -1,30 +1,26 @@
-import { useEffect } from "react"
+import AcreLedgerLiveBitcoinProvider from "#/utils/orangekit/ledger-live/bitcoin-provider"
+import { useQuery } from "@tanstack/react-query"
 import useIsEmbed from "./useIsEmbed"
 import { useBitcoinProvider } from "./orangeKit"
+import useWallet from "./useWallet"
 
 const useRegisterAcreEthereumAddressInLedgerLive = () => {
   const { embeddedApp } = useIsEmbed()
-  const bitcoinProvider = useBitcoinProvider()
+  const bitcoinProvider = useBitcoinProvider<AcreLedgerLiveBitcoinProvider>()
+  const { ethAddress } = useWallet()
 
-  useEffect(() => {
-    const handle = async () => {
-      if (
-        embeddedApp === "ledger-live" &&
-        bitcoinProvider &&
-        "registerYieldBearingEthereumAddress" in bitcoinProvider
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result =
-          // @ts-expect-error WIP draft
-          await bitcoinProvider.registerYieldBearingEthereumAddress({})
-        // eslint-disable-next-line no-console
-        console.log(result)
-      }
-    }
+  return useQuery({
+    queryKey: ["registerAcreEthereumAddressInLedgerLive", ethAddress],
+    enabled: embeddedApp === "ledger-live" && !!bitcoinProvider,
+    queryFn: async () => {
+      if (!bitcoinProvider || !ethAddress)
+        throw new Error("Cannot register Ethereum address in Ledger Live")
 
-    // eslint-disable-next-line no-void
-    void handle()
-  }, [bitcoinProvider, embeddedApp])
+      return bitcoinProvider.registerYieldBearingEthereumAddress({
+        ethereumAddress: ethAddress,
+      })
+    },
+  })
 }
 
 export default useRegisterAcreEthereumAddressInLedgerLive
