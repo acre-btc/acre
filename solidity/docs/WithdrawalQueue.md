@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `WithdrawalQueue` contract is a core component of the Acre protocol that manages asynchronous withdrawals from the Midas Vault back to Bitcoin. It serves as an intermediary between users holding stBTC tokens and the underlying Midas Vault infrastructure, facilitating both simple redemptions and Bitcoin bridge withdrawals.
+The `WithdrawalQueue` contract is a core component of the Acre protocol that manages asynchronous withdrawals from the Midas Vault back to Bitcoin. It serves as an intermediary between users holding acreBTC tokens and the underlying Midas Vault infrastructure, facilitating both simple redemptions and Bitcoin bridge withdrawals.
 
 ## Architecture & Integration
 
@@ -10,7 +10,7 @@ The `WithdrawalQueue` contract is a core component of the Acre protocol that man
 
 The WithdrawalQueue integrates with several key contracts:
 
-1. **stBTC** - The ERC4626 vault token representing staked Bitcoin
+1. **acreBTC** - The ERC4626 vault token representing staked Bitcoin
 2. **MidasAllocator** - Manages allocation of tBTC to/from Midas Vault
 3. **Midas Vault (IVault)** - External yield-generating vault for tBTC
 4. **tBTC Token** - The underlying Bitcoin-backed token
@@ -41,7 +41,7 @@ graph TB
 ### 1. Withdrawal Request Structure
 
 ```solidity
-struct WithdrawalRequest {
+struct RedeemAndBridgeRequest {
     address redeemer;          // User initiating withdrawal
     uint256 shares;            // Midas vault shares amount
     uint256 tbtcAmount;        // Equivalent tBTC amount
@@ -57,18 +57,18 @@ struct WithdrawalRequest {
 
 #### Simple Redemption: `requestRedeem()`
 
-For users who want to redeem stBTC for tBTC without bridging to Bitcoin:
+For users who want to redeem acreBTC for tBTC without bridging to Bitcoin:
 
 ```solidity
-function requestRedeem(uint256 _shares, address _receiver) external
+function requestRedeem(uint256 _shares, address _receiver, uint256 _exitFeeInTbtc) external
 ```
 
 **Process Flow:**
-1. Transfer stBTC from user to WithdrawalQueue
-2. Convert stBTC shares to equivalent tBTC amount
+1. Transfer acreBTC from user to WithdrawalQueue
+2. Convert acreBTC shares to equivalent tBTC amount
 3. Calculate equivalent Midas vault shares
 4. Withdraw Midas shares from MidasAllocator
-5. Burn the stBTC tokens
+5. Burn the acreBTC tokens
 6. Calculate and transfer exit fee to treasury
 7. Submit asynchronous redemption request to Midas Vault
 
@@ -87,14 +87,14 @@ function requestRedeemAndBridge(uint256 _shares, bytes20 _walletPubKeyHash) exte
 4. Store Bitcoin wallet hash for later bridge completion
 5. Emit `WithdrawalRequestCreated` event
 
-### 3. Request Completion
+### 3. Finalize redeem
 
-#### `completeWithdrawalRequest()`
+#### `finalizeRedeemAndBridge()`
 
 Only callable by maintainers to finalize bridge withdrawals:
 
 ```solidity
-function completeWithdrawalRequest(uint256 _requestId, bytes calldata _tbtcRedemptionData) external onlyMaintainer
+function finalizeRedeemAndBridge(uint256 _requestId, bytes calldata _tbtcRedemptionData) external onlyMaintainer
 ```
 
 **Validation & Execution:**
@@ -110,18 +110,18 @@ The WithdrawalQueue implements a dual exit fee system:
 
 ### 1. Midas Vault Shares Exit Fee
 - Applied to Midas vault shares during `requestRedeem()`
-- Calculated as: `(midasShares × stbtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE`
-- Paid in Midas vault shares to stBTC treasury
+- Calculated as: `(midasShares × acrebtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE`
+- Paid in Midas vault shares to acreBTC treasury
 
 ### 2. tBTC Exit Fee  
-- Applied to tBTC amount during `completeWithdrawalRequest()`
-- Calculated as: `(tbtcAmount × stbtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE`
-- Paid in tBTC tokens to stBTC treasury
+- Applied to tBTC amount during `finalizeRedeemAndBridge()`
+- Calculated as: `(tbtcAmount × acrebtc.exitFeeBasisPoints()) / BASIS_POINT_SCALE`
+- Paid in tBTC tokens to acreBTC treasury
 
 ### Fee Configuration
 - Basis points scale: 10,000 (100 basis points = 1%)
 - Default exit fee: 25 basis points (0.25%)
-- Fees are configurable by stBTC governance
+- Fees are configurable by acreBTC governance
 
 ## Key Design Decisions
 
@@ -144,8 +144,8 @@ The WithdrawalQueue implements a dual exit fee system:
 
 | Aspect | WithdrawalQueue | BitcoinRedeemer |
 |--------|----------------|-----------------|
-| **Purpose** | Midas Vault integration | Direct stBTC redemption |
-| **Redemption** | Asynchronous via Midas | Synchronous via stBTC |
+| **Purpose** | Midas Vault integration | Direct acreBTC redemption |
+| **Redemption** | Asynchronous via Midas | Synchronous via acreBTC |
 | **State Management** | Tracks withdrawal requests | Stateless operations |
 | **Exit Fees** | Dual fee system | Standard ERC4626 fees |
 | **Access Control** | Maintainer completion | Direct user execution |
@@ -198,7 +198,7 @@ event WithdrawalRequestCompleted(uint256 indexed requestId);
 
 ## Integration Points
 
-### With stBTC
+### With acreBTC
 - Token transfers and burning
 - Asset/share conversion calculations
 - Exit fee basis points configuration
