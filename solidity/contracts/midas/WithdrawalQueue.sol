@@ -323,6 +323,7 @@ contract WithdrawalQueue is Maintainable {
     /// @notice Returns the minimum redemption amount of tBTC for bridging to Bitcoin.
     /// @return The minimum redemption amount of tBTC.
     function minimumBridgeRedemptionTbtcAmount() public view returns (uint64) {
+        // slither-disable-next-line unused-return
         (uint64 redemptionDustThresholdInSatoshis, , , , , , ) = IBridge(
             tbtcBridge
         ).redemptionParameters();

@@ -110,6 +110,7 @@ contract BitcoinRedeemerV2 is Ownable2StepUpgradeable, IReceiveApproval {
             redeemerOutputScript
         );
 
+        // slither-disable-next-line reentrancy-events
         emit RedemptionRequested(owner, requestId, shares);
     }
 }

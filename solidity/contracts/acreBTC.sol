@@ -226,6 +226,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
         emit WithdrawalQueueUpdated(withdrawalQueue, newWithdrawalQueue);
 
         // newWithdrawalQueue can be zero to disable the withdrawal queue
+        // slither-disable-next-line missing-zero-check
         withdrawalQueue = newWithdrawalQueue;
     }
 
@@ -336,6 +337,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             exitFee
         );
 
+        // slither-disable-next-line reentrancy-events
         emit RedemptionRequested(
             requestId,
             owner,
@@ -389,6 +391,7 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
             exitFee
         );
 
+        // slither-disable-next-line reentrancy-events
         emit RedemptionToBitcoinRequested(requestId, owner, msg.sender, shares);
     }
 
