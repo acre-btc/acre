@@ -9,7 +9,7 @@ import { ContractTransactionResponse, MaxUint256, ZeroAddress } from "ethers"
 import DepositState from "../types/depositState"
 
 import type {
-  StBTC,
+  AcreBTC as acreBTC,
   BridgeStub,
   TBTCVaultStub,
   BitcoinDepositor,
@@ -27,7 +27,7 @@ async function fixture() {
     feesReimbursementPool,
     tbtcBridge,
     tbtcVault,
-    stbtc,
+    acreBtc,
     tbtc,
   } = await deployment()
 
@@ -36,7 +36,7 @@ async function fixture() {
     feesReimbursementPool,
     tbtcBridge,
     tbtcVault,
-    stbtc,
+    acreBtc,
     tbtc,
   }
 }
@@ -67,7 +67,7 @@ describe("BitcoinDepositor", () => {
   let feesReimbursementPool: FeesReimbursementPool
   let tbtcBridge: BridgeStub
   let tbtcVault: TBTCVaultStub
-  let stbtc: StBTC
+  let acreBtc: acreBTC
   let tbtc: TestERC20
 
   let governance: HardhatEthersSigner
@@ -80,13 +80,13 @@ describe("BitcoinDepositor", () => {
       feesReimbursementPool,
       tbtcBridge,
       tbtcVault,
-      stbtc,
+      acreBtc,
       tbtc,
     } = await loadFixture(fixture))
     ;({ governance, treasury } = await getNamedSigners())
     ;[thirdParty] = await getUnnamedSigners()
 
-    await stbtc.connect(governance).updateMinimumDepositAmount(
+    await acreBtc.connect(governance).updateMinimumDepositAmount(
       10000000000000, // 0.00001
     )
 
@@ -330,7 +330,7 @@ describe("BitcoinDepositor", () => {
                   .finalizeDeposit(tbtcDepositData.depositKey),
               )
                 .to.be.revertedWithCustomError(
-                  stbtc,
+                  acreBtc,
                   "ERC20InsufficientBalance",
                 )
                 .withArgs(
@@ -395,7 +395,7 @@ describe("BitcoinDepositor", () => {
 
                 it("should emit Deposit event", async () => {
                   await expect(tx)
-                    .to.emit(stbtc, "Deposit")
+                    .to.emit(acreBtc, "Deposit")
                     .withArgs(
                       await bitcoinDepositor.getAddress(),
                       tbtcDepositData.depositOwner,
@@ -407,9 +407,9 @@ describe("BitcoinDepositor", () => {
                 it("should deposit in Acre contract", async () => {
                   await expect(
                     tx,
-                    "invalid minted stBTC amount",
+                    "invalid minted acreBTC amount",
                   ).to.changeTokenBalances(
-                    stbtc,
+                    acreBtc,
                     [tbtcDepositData.depositOwner],
                     [expectedReceivedSharesAmount],
                   )
@@ -419,7 +419,7 @@ describe("BitcoinDepositor", () => {
                     "invalid deposited tBTC amount",
                   ).to.changeTokenBalances(
                     tbtc,
-                    [stbtc],
+                    [acreBtc],
                     [expectedAssetsAmount],
                   )
                 })
@@ -446,7 +446,7 @@ describe("BitcoinDepositor", () => {
                   it("should not reimburse bridge fees", async () => {
                     await expect(tx).to.changeTokenBalances(
                       tbtc,
-                      [feesReimbursementPool, stbtc],
+                      [feesReimbursementPool, acreBtc],
                       [0, amountToDeposit],
                     )
                   })
@@ -475,7 +475,7 @@ describe("BitcoinDepositor", () => {
                   it("should reimburse bridge fees", async () => {
                     await expect(tx).to.changeTokenBalances(
                       tbtc,
-                      [feesReimbursementPool, stbtc],
+                      [feesReimbursementPool, acreBtc],
                       [-bridgeFees, amountToDeposit + bridgeFees],
                     )
                   })
@@ -511,7 +511,7 @@ describe("BitcoinDepositor", () => {
 
                   it("should emit Deposit event", async () => {
                     await expect(tx)
-                      .to.emit(stbtc, "Deposit")
+                      .to.emit(acreBtc, "Deposit")
                       .withArgs(
                         await bitcoinDepositor.getAddress(),
                         tbtcDepositData.depositOwner,
@@ -523,9 +523,9 @@ describe("BitcoinDepositor", () => {
                   it("should deposit in Acre contract", async () => {
                     await expect(
                       tx,
-                      "invalid minted stBTC amount",
+                      "invalid minted acreBTC amount",
                     ).to.changeTokenBalances(
-                      stbtc,
+                      acreBtc,
                       [tbtcDepositData.depositOwner],
                       [expectedReceivedSharesAmount],
                     )
@@ -535,7 +535,7 @@ describe("BitcoinDepositor", () => {
                       "invalid deposited tBTC amount",
                     ).to.changeTokenBalances(
                       tbtc,
-                      [stbtc],
+                      [acreBtc],
                       [expectedAssetsAmount],
                     )
                   })
@@ -564,7 +564,7 @@ describe("BitcoinDepositor", () => {
                   it("should reimburse bridge fees", async () => {
                     await expect(tx).to.changeTokenBalances(
                       tbtc,
-                      [feesReimbursementPool, stbtc],
+                      [feesReimbursementPool, acreBtc],
                       [-bridgeFees, amountToDeposit + bridgeFees],
                     )
                   })
@@ -600,7 +600,7 @@ describe("BitcoinDepositor", () => {
 
                   it("should emit Deposit event", async () => {
                     await expect(tx)
-                      .to.emit(stbtc, "Deposit")
+                      .to.emit(acreBtc, "Deposit")
                       .withArgs(
                         await bitcoinDepositor.getAddress(),
                         tbtcDepositData.depositOwner,
@@ -612,9 +612,9 @@ describe("BitcoinDepositor", () => {
                   it("should deposit in Acre contract", async () => {
                     await expect(
                       tx,
-                      "invalid minted stBTC amount",
+                      "invalid minted acreBTC amount",
                     ).to.changeTokenBalances(
-                      stbtc,
+                      acreBtc,
                       [tbtcDepositData.depositOwner],
                       [expectedReceivedSharesAmount],
                     )
@@ -624,7 +624,7 @@ describe("BitcoinDepositor", () => {
                       "invalid deposited tBTC amount",
                     ).to.changeTokenBalances(
                       tbtc,
-                      [stbtc],
+                      [acreBtc],
                       [expectedAssetsAmount],
                     )
                   })
@@ -664,7 +664,7 @@ describe("BitcoinDepositor", () => {
                   it("should reimburse bridge fees", async () => {
                     await expect(tx).to.changeTokenBalances(
                       tbtc,
-                      [feesReimbursementPool, stbtc],
+                      [feesReimbursementPool, acreBtc],
                       [
                         -availableReimbursementAmount,
                         amountToDeposit + availableReimbursementAmount,
@@ -703,7 +703,7 @@ describe("BitcoinDepositor", () => {
 
                   it("should emit Deposit event", async () => {
                     await expect(tx)
-                      .to.emit(stbtc, "Deposit")
+                      .to.emit(acreBtc, "Deposit")
                       .withArgs(
                         await bitcoinDepositor.getAddress(),
                         tbtcDepositData.depositOwner,
@@ -715,9 +715,9 @@ describe("BitcoinDepositor", () => {
                   it("should deposit in Acre contract", async () => {
                     await expect(
                       tx,
-                      "invalid minted stBTC amount",
+                      "invalid minted acreBTC amount",
                     ).to.changeTokenBalances(
-                      stbtc,
+                      acreBtc,
                       [tbtcDepositData.depositOwner],
                       [expectedReceivedSharesAmount],
                     )
@@ -727,7 +727,7 @@ describe("BitcoinDepositor", () => {
                       "invalid deposited tBTC amount",
                     ).to.changeTokenBalances(
                       tbtc,
-                      [stbtc],
+                      [acreBtc],
                       [expectedAssetsAmount],
                     )
                   })
@@ -781,7 +781,7 @@ describe("BitcoinDepositor", () => {
 
               it("should emit Deposit event", async () => {
                 await expect(tx)
-                  .to.emit(stbtc, "Deposit")
+                  .to.emit(acreBtc, "Deposit")
                   .withArgs(
                     await bitcoinDepositor.getAddress(),
                     tbtcDepositData.depositOwner,
@@ -793,9 +793,9 @@ describe("BitcoinDepositor", () => {
               it("should deposit in Acre contract", async () => {
                 await expect(
                   tx,
-                  "invalid minted stBTC amount",
+                  "invalid minted acreBTC amount",
                 ).to.changeTokenBalances(
-                  stbtc,
+                  acreBtc,
                   [tbtcDepositData.depositOwner],
                   [expectedReceivedSharesAmount],
                 )
@@ -803,7 +803,11 @@ describe("BitcoinDepositor", () => {
                 await expect(
                   tx,
                   "invalid deposited tBTC amount",
-                ).to.changeTokenBalances(tbtc, [stbtc], [expectedAssetsAmount])
+                ).to.changeTokenBalances(
+                  tbtc,
+                  [acreBtc],
+                  [expectedAssetsAmount],
+                )
               })
             })
 
@@ -1238,6 +1242,62 @@ describe("BitcoinDepositor", () => {
         expectedDepositOwner,
       )
       expect(actualReferral, "invalid referral").to.be.equal(expectedReferral)
+    })
+  })
+
+  describe("updateAcreVault", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not owner", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateAcreVault(thirdParty.address),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is owner", () => {
+      describe("when new vault address is zero address", () => {
+        it("should revert", async () => {
+          await expect(
+            bitcoinDepositor.connect(governance).updateAcreVault(ZeroAddress),
+          ).to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "AcreVaultZeroAddress",
+          )
+        })
+      })
+
+      describe("when new vault address is non-zero address", () => {
+        const newVaultAddress = "0x1234567890123456789012345678901234567890"
+
+        let tx: ContractTransactionResponse
+
+        before(async () => {
+          tx = await bitcoinDepositor
+            .connect(governance)
+            .updateAcreVault(newVaultAddress)
+        })
+
+        it("should emit AcreVaultUpdated event", async () => {
+          await expect(tx)
+            .to.emit(bitcoinDepositor, "AcreVaultUpdated")
+            .withArgs(newVaultAddress)
+        })
+
+        it("should update acre vault address", async () => {
+          expect(await bitcoinDepositor.acreVault()).to.be.equal(
+            newVaultAddress,
+          )
+        })
+      })
     })
   })
 

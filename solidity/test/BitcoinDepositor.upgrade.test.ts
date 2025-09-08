@@ -7,7 +7,7 @@ import { ContractTransactionResponse } from "ethers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 import {
   TestERC20,
-  StBTC,
+  AcreBTC as acreBTC,
   BitcoinDepositor,
   BridgeStub,
   TBTCVaultStub,
@@ -18,22 +18,22 @@ import { to1e18 } from "./utils"
 use(chaiAsPromised)
 
 async function fixture() {
-  const { tbtc, stbtc, bitcoinDepositor, tbtcBridge, tbtcVault } =
+  const { tbtc, acreBtc, bitcoinDepositor, tbtcBridge, tbtcVault } =
     await deployment()
 
-  return { tbtc, stbtc, bitcoinDepositor, tbtcBridge, tbtcVault }
+  return { tbtc, acreBtc, bitcoinDepositor, tbtcBridge, tbtcVault }
 }
 
 describe("BitcoinDepositor contract upgrade", () => {
   let tbtc: TestERC20
   let tbtcBridge: BridgeStub
   let tbtcVault: TBTCVaultStub
-  let stbtc: StBTC
+  let acreBtc: acreBTC
   let bitcoinDepositor: BitcoinDepositor
   let governance: HardhatEthersSigner
 
   before(async () => {
-    ;({ tbtc, stbtc, bitcoinDepositor, tbtcBridge, tbtcVault } =
+    ;({ tbtc, acreBtc, bitcoinDepositor, tbtcBridge, tbtcVault } =
       await loadFixture(fixture))
     ;({ governance } = await helpers.signers.getNamedSigners())
   })
@@ -96,7 +96,9 @@ describe("BitcoinDepositor contract upgrade", () => {
         expect(await bitcoinDepositorV2.tbtcToken()).to.eq(
           await tbtc.getAddress(),
         )
-        expect(await bitcoinDepositorV2.stbtc()).to.eq(await stbtc.getAddress())
+        expect(await bitcoinDepositorV2.acreVault()).to.eq(
+          await acreBtc.getAddress(),
+        )
 
         expect(await bitcoinDepositorV2.minDepositAmount()).to.eq(
           v1InitialParameters.minDepositAmount,
