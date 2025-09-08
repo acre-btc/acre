@@ -19,9 +19,10 @@ import {
   WithdrawalQueue,
   TBTCVaultStub,
   IERC20,
+  type BridgeStub,
 } from "../typechain"
 
-import { to1e18, feeOnTotal } from "./utils"
+import { to1e18, feeOnTotal, feeOnRaw } from "./utils"
 
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
@@ -51,6 +52,7 @@ async function fixture() {
     acreBtc: acreBTC,
     midasAllocator,
     withdrawalQueue,
+    tbtcBridge,
   } = await deployment()
   const { deployer, governance, treasury, maintainer } = await getNamedSigners()
   const [depositor, depositor2, thirdParty] = await getUnnamedSigners()
@@ -74,6 +76,7 @@ async function fixture() {
     midasVault,
     midasVaultSharesToken,
     tbtcVault,
+    tbtcBridge,
     withdrawalQueue,
   }
 }
@@ -87,6 +90,7 @@ describe("WithdrawalQueue", () => {
   let midasVaultSharesToken: IERC20
   let midasVault: MidasVaultStub
   let tbtcVault: TBTCVaultStub
+  let tbtcBridge: BridgeStub
   let withdrawalQueue: WithdrawalQueue
 
   let thirdParty: HardhatEthersSigner
@@ -111,6 +115,7 @@ describe("WithdrawalQueue", () => {
       midasVault,
       midasVaultSharesToken,
       tbtcVault,
+      tbtcBridge,
       withdrawalQueue,
     } = await loadFixture(fixture))
 
@@ -145,6 +150,9 @@ describe("WithdrawalQueue", () => {
       expect(await withdrawalQueue.acrebtc()).to.equal(
         await acreBTC.getAddress(),
       )
+      expect(await withdrawalQueue.tbtcBridge()).to.equal(
+        await tbtcBridge.getAddress(),
+      )
       expect(await withdrawalQueue.count()).to.equal(0)
     })
 
@@ -160,6 +168,7 @@ describe("WithdrawalQueue", () => {
             await midasAllocator.getAddress(),
             await tbtcVault.getAddress(),
             await acreBTC.getAddress(),
+            await tbtcBridge.getAddress(),
           ],
           {
             kind: "transparent",
@@ -180,6 +189,7 @@ describe("WithdrawalQueue", () => {
             await midasAllocator.getAddress(),
             await tbtcVault.getAddress(),
             await acreBTC.getAddress(),
+            await tbtcBridge.getAddress(),
           ],
           {
             kind: "transparent",
@@ -200,6 +210,7 @@ describe("WithdrawalQueue", () => {
             ethers.ZeroAddress,
             await tbtcVault.getAddress(),
             await acreBTC.getAddress(),
+            await tbtcBridge.getAddress(),
           ],
           {
             kind: "transparent",
@@ -220,6 +231,7 @@ describe("WithdrawalQueue", () => {
             await midasAllocator.getAddress(),
             ethers.ZeroAddress,
             await acreBTC.getAddress(),
+            await tbtcBridge.getAddress(),
           ],
           {
             kind: "transparent",
@@ -239,6 +251,7 @@ describe("WithdrawalQueue", () => {
             await midasVault.getAddress(),
             await midasAllocator.getAddress(),
             await tbtcVault.getAddress(),
+            await tbtcBridge.getAddress(),
             ethers.ZeroAddress,
           ],
           {
@@ -428,37 +441,13 @@ describe("WithdrawalQueue", () => {
 
     const redeemerOutputScript =
       "0x1600143A40F641492A28AC72C7098A9D6AA083E5E62F66" // bytes
-    const redeemedShares = to1e18(5)
 
     context("when user has sufficient acreBTC balance", () => {
       beforeAfterSnapshotWrapper()
 
       const expectedRequestId = 1n
 
-      let tx: ContractTransactionResponse
-
-      let redeemedAssets: bigint
-      let redeemedMidasShares: bigint
-
-      let exitFee: bigint
-      let exitFeeInMidasShares: bigint
-
       before(async () => {
-        // Set 1% exit fee
-        await acreBTC
-          .connect(governance)
-          .updateExitFeeBasisPoints(exitFeeBasisPoints)
-
-        exitFee = feeOnTotal(
-          await acreBTC.convertToAssets(redeemedShares),
-          exitFeeBasisPoints,
-        )
-        exitFeeInMidasShares = await midasVault.convertToShares(exitFee)
-
-        redeemedAssets =
-          (await acreBTC.convertToAssets(redeemedShares)) - exitFee
-        redeemedMidasShares = await midasVault.convertToShares(redeemedAssets)
-
         // Setup: Give depositor generous amount of tBTC and let them deposit to get acreBTC
         const generousAmount = to1e18(100) // Much larger amount
         await tbtc.mint(depositor.address, generousAmount)
@@ -472,69 +461,183 @@ describe("WithdrawalQueue", () => {
         // Allocate funds to Midas to have shares available
         await midasAllocator.connect(maintainer).allocate()
 
-        // Request redemption and bridge
-        tx = await acreBTC
-          .connect(depositor)
-          .requestRedeemAndBridge(
-            redeemedShares,
+        // Set 1% exit fee
+        await acreBTC
+          .connect(governance)
+          .updateExitFeeBasisPoints(exitFeeBasisPoints)
+      })
+
+      describe("test redemption request", () => {
+        beforeAfterSnapshotWrapper()
+
+        const redeemedShares = to1e18(5)
+
+        let tx: ContractTransactionResponse
+
+        let redeemedAssets: bigint
+        let redeemedMidasShares: bigint
+
+        let exitFee: bigint
+        let exitFeeInMidasShares: bigint
+
+        before(async () => {
+          exitFee = feeOnTotal(
+            await acreBTC.convertToAssets(redeemedShares),
+            exitFeeBasisPoints,
+          )
+          exitFeeInMidasShares = await midasVault.convertToShares(exitFee)
+
+          redeemedAssets =
+            (await acreBTC.convertToAssets(redeemedShares)) - exitFee
+          redeemedMidasShares = await midasVault.convertToShares(redeemedAssets)
+
+          // Request redemption and bridge
+          tx = await acreBTC
+            .connect(depositor)
+            .requestRedeemAndBridge(
+              redeemedShares,
+              depositor.address,
+              redeemerOutputScript,
+            )
+        })
+
+        it("should remove midas shares from Midas Allocator", async () => {
+          await expect(tx).to.changeTokenBalance(
+            midasVaultSharesToken,
+            await midasAllocator.getAddress(),
+            -(redeemedMidasShares + exitFeeInMidasShares),
+          )
+        })
+
+        it("should burn acreBTC from depositor", async () => {
+          await expect(tx).to.changeTokenBalance(
+            acreBTC,
             depositor.address,
-            redeemerOutputScript,
+            -redeemedShares,
           )
-      })
+        })
 
-      it("should remove midas shares from Midas Allocator", async () => {
-        await expect(tx).to.changeTokenBalance(
-          midasVaultSharesToken,
-          await midasAllocator.getAddress(),
-          -(redeemedMidasShares + exitFeeInMidasShares),
-        )
-      })
+        it("should call Midas Vault to redeem shares", async () => {
+          await expect(tx)
+            .to.emit(midasVault, "MidasVaultRedeemRequested")
+            .withArgs(
+              redeemedMidasShares + exitFeeInMidasShares,
+              await withdrawalQueue.getAddress(),
+            )
+        })
 
-      it("should burn acreBTC from depositor", async () => {
-        await expect(tx).to.changeTokenBalance(
-          acreBTC,
-          depositor.address,
-          -redeemedShares,
-        )
-      })
+        it("should register redeem and bridge request", async () => {
+          const storedRequest =
+            await withdrawalQueue.redemAndBridgeRequests(expectedRequestId)
 
-      it("should call Midas Vault to redeem shares", async () => {
-        await expect(tx)
-          .to.emit(midasVault, "MidasVaultRedeemRequested")
-          .withArgs(
-            redeemedMidasShares + exitFeeInMidasShares,
-            await withdrawalQueue.getAddress(),
+          expect(storedRequest.redeemer).to.equal(depositor.address)
+          expect(storedRequest.tbtcAmount).to.equal(redeemedAssets)
+          expect(storedRequest.exitFeeInTbtc).to.equal(exitFee)
+          expect(storedRequest.completedAt).to.equal(0n)
+          expect(storedRequest.redeemerOutputScriptHash).to.equal(
+            ethers.keccak256(redeemerOutputScript),
           )
+        })
+
+        it("should emit RedeemAndBridgeRequested event", async () => {
+          await expect(tx)
+            .to.emit(withdrawalQueue, "RedeemAndBridgeRequested")
+            .withArgs(
+              expectedRequestId,
+              depositor.address,
+              101,
+              redeemedAssets,
+              exitFee,
+              redeemedMidasShares + exitFeeInMidasShares,
+            )
+        })
+
+        it("should increment request counter", async () => {
+          expect(await withdrawalQueue.count()).to.equal(1n)
+        })
       })
 
-      it("should register redeem and bridge request", async () => {
-        const storedRequest =
-          await withdrawalQueue.redemAndBridgeRequests(expectedRequestId)
+      describe("test minimum redemption amount for bridging to Bitcoin", () => {
+        beforeAfterSnapshotWrapper()
 
-        expect(storedRequest.redeemer).to.equal(depositor.address)
-        expect(storedRequest.tbtcAmount).to.equal(redeemedAssets)
-        expect(storedRequest.exitFeeInTbtc).to.equal(exitFee)
-        expect(storedRequest.completedAt).to.equal(0n)
-        expect(storedRequest.redeemerOutputScriptHash).to.equal(
-          ethers.keccak256(redeemerOutputScript),
+        // The value matches the one configured in BridgeStub contract, but converted
+        // to 1e18 precision.
+        const minimumBridgeRedemptionTbtcAmount = to1e18(0.009) // 0.009 tBTC
+
+        const exitFee = feeOnRaw(
+          minimumBridgeRedemptionTbtcAmount,
+          exitFeeBasisPoints,
         )
-      })
 
-      it("should emit RedeemAndBridgeRequested event", async () => {
-        await expect(tx)
-          .to.emit(withdrawalQueue, "RedeemAndBridgeRequested")
-          .withArgs(
-            expectedRequestId,
-            depositor.address,
-            101,
-            redeemedAssets,
-            exitFee,
-            redeemedMidasShares + exitFeeInMidasShares,
-          )
-      })
+        const minimumBridgeRedemptionTbtcAmountWithFee =
+          minimumBridgeRedemptionTbtcAmount + exitFee
 
-      it("should increment request counter", async () => {
-        expect(await withdrawalQueue.count()).to.equal(1n)
+        context(
+          "when redemption amount is less than the minimum redemption amount for bridging to Bitcoin",
+          () => {
+            beforeAfterSnapshotWrapper()
+
+            it("should revert", async () => {
+              const shares = await acreBTC.convertToAssets(
+                minimumBridgeRedemptionTbtcAmountWithFee - 1n,
+              )
+
+              await expect(
+                acreBTC
+                  .connect(depositor)
+                  .requestRedeemAndBridge(
+                    shares,
+                    depositor.address,
+                    redeemerOutputScript,
+                  ),
+              )
+                .to.be.revertedWithCustomError(
+                  withdrawalQueue,
+                  "RedemptionAmountTooSmall",
+                )
+                .withArgs(
+                  minimumBridgeRedemptionTbtcAmount - 1n,
+                  minimumBridgeRedemptionTbtcAmount,
+                )
+            })
+          },
+        )
+
+        context(
+          "when redemption amount is greater than the minimum redemption amount for bridging to Bitcoin",
+          () => {
+            beforeAfterSnapshotWrapper()
+
+            it("should not revert", async () => {
+              const shares = await acreBTC.convertToAssets(
+                minimumBridgeRedemptionTbtcAmountWithFee,
+              )
+
+              const redeemedMidasShares = await midasVault.convertToShares(
+                minimumBridgeRedemptionTbtcAmountWithFee,
+              )
+
+              const tx = await acreBTC
+                .connect(depositor)
+                .requestRedeemAndBridge(
+                  shares,
+                  depositor.address,
+                  redeemerOutputScript,
+                )
+
+              await expect(tx)
+                .to.emit(withdrawalQueue, "RedeemAndBridgeRequested")
+                .withArgs(
+                  expectedRequestId,
+                  depositor.address,
+                  101,
+                  minimumBridgeRedemptionTbtcAmount,
+                  exitFee,
+                  redeemedMidasShares,
+                )
+            })
+          },
+        )
       })
     })
 

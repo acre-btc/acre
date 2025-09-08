@@ -10,6 +10,7 @@ import {ITBTCToken} from "../bridge/ITBTCToken.sol";
 import {acreBTC} from "../acreBTC.sol";
 import {MidasAllocator} from "./MidasAllocator.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IBridge} from "../bridge/IBridge.sol";
 
 contract WithdrawalQueue is Maintainable {
     using SafeERC20 for IERC20;
@@ -53,6 +54,9 @@ contract WithdrawalQueue is Maintainable {
     /// @notice acreBTC contract.
     acreBTC public acrebtc;
 
+    /// @notice tBTC Bridge contract.
+    address public tbtcBridge;
+
     /// @notice Error thrown if caller is not the Midas Allocator.
     error NotMidasAllocator();
 
@@ -64,6 +68,9 @@ contract WithdrawalQueue is Maintainable {
 
     /// @notice Error thrown if the tBTC token owner is not as expected.
     error UnexpectedTbtcTokenOwner();
+
+    /// @notice Error thrown if the redemption amount is too small.
+    error RedemptionAmountTooSmall(uint256 amount, uint256 minimumAmount);
 
     /// @notice Error thrown if approveAndCall fails.
     error ApproveAndCallFailed();
@@ -168,7 +175,8 @@ contract WithdrawalQueue is Maintainable {
         address _midasVault,
         address _midasAllocator,
         address _tbtcVault,
-        address _acreBTC
+        address _acreBTC,
+        address _tbtcBridge
     ) public initializer {
         __MaintainableOwnable_init(msg.sender);
 
@@ -184,11 +192,15 @@ contract WithdrawalQueue is Maintainable {
         if (_acreBTC == address(0)) {
             revert ZeroAddress();
         }
+        if (_tbtcBridge == address(0)) {
+            revert ZeroAddress();
+        }
 
         tbtc = ITBTCToken(_tbtc);
         midasVault = IVault(_midasVault);
         tbtcVault = _tbtcVault;
         acrebtc = acreBTC(_acreBTC);
+        tbtcBridge = _tbtcBridge;
 
         vaultSharesToken = IERC20(midasVault.share());
         if (address(vaultSharesToken) == address(0)) {
@@ -283,6 +295,13 @@ contract WithdrawalQueue is Maintainable {
 
         uint256 tbtcAmount = tbtcAmountWithFee - _exitFeeInTbtc;
 
+        // Check if the redemption amount is greater than the minimum redemption
+        // amount for bridging to Bitcoin.
+        uint64 minimumTbtcAmount = minimumBridgeRedemptionTbtcAmount();
+        if (tbtcAmount < minimumTbtcAmount) {
+            revert RedemptionAmountTooSmall(tbtcAmount, minimumTbtcAmount);
+        }
+
         redemAndBridgeRequests[requestId] = RedeemAndBridgeRequest({
             redeemer: _redeemer,
             tbtcAmount: tbtcAmount,
@@ -299,6 +318,16 @@ contract WithdrawalQueue is Maintainable {
             _exitFeeInTbtc,
             midasSharesWithFee
         );
+    }
+
+    /// @notice Returns the minimum redemption amount of tBTC for bridging to Bitcoin.
+    /// @return The minimum redemption amount of tBTC.
+    function minimumBridgeRedemptionTbtcAmount() public view returns (uint64) {
+        (uint64 redemptionDustThresholdInSatoshis, , , , , , ) = IBridge(
+            tbtcBridge
+        ).redemptionParameters();
+
+        return redemptionDustThresholdInSatoshis * 10 ** 10;
     }
 
     /// @notice Completes a withdrawal request and initiates the bridge to Bitcoin.

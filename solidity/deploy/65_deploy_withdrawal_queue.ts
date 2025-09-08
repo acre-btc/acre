@@ -13,6 +13,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const midasAllocator = await deployments.get("MidasAllocator")
   const tbtcVault = await deployments.get("TBTCVault")
   const acreBtc = await deployments.get("acreBTC")
+  const tbtcBridge = await deployments.get("Bridge")
 
   let deployment = await deployments.getOrNull("WithdrawalQueue")
   if (deployment && helpers.address.isValid(deployment.address)) {
@@ -26,6 +27,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         midasAllocator.address,
         tbtcVault.address,
         acreBtc.address,
+        tbtcBridge.address,
       ],
       factoryOpts: {
         signer: deployerSigner,
@@ -54,4 +56,5 @@ func.dependencies = [
   "MidasAllocator",
   "TBTCVault",
   "acreBTC",
+  "Bridge",
 ]
