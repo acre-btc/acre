@@ -7,22 +7,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts()
   const { log } = deployments
 
-  const acreBtc = await deployments.get("acreBTC")
+  const feesReimbursementPool = await deployments.get("FeesReimbursementPool")
 
-  log(`updating Acre Vault of BitcoinDepositor to ${acreBtc.address}`)
+  log(
+    `updating fees reimbursement pool of BitcoinDepositor to ${feesReimbursementPool.address}`,
+  )
 
   await deployments.execute(
-    "BitcoinDepositor",
+    "BitcoinDepositorV2",
     { from: deployer, log: true, waitConfirmations: 1 },
-    "updateAcreVault",
-    acreBtc.address,
+    "updateFeesReimbursementPool",
+    feesReimbursementPool.address,
   )
 }
 
 export default func
 
-func.tags = ["UpdateBitcoinDepositorAcreVault"]
-func.dependencies = ["BitcoinDepositor", "acreBTC"]
+func.tags = ["UpdateFeesReimbursementPool"]
+func.dependencies = ["BitcoinDepositorV2", "FeesReimbursementPool"]
 
 // Run only on Hardhat network. On all other networks this function needs to be
 // called by the governance.

@@ -19,6 +19,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["UpdatePauseAdminAcreBTC"]
-func.dependencies = ["acreBTC"]
+// func.dependencies = ["acreBTC"]
 func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
   Promise.resolve(hre.network.name === "integration")

@@ -18,7 +18,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["acreBTCUpdateMinimumDepositAmount"]
-func.dependencies = ["acreBTC"]
+// func.dependencies = ["acreBTC"]
 
 // Run only on Sepolia testnet.
 func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
