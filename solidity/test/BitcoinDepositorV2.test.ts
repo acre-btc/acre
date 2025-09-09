@@ -9,11 +9,12 @@ import { ContractTransactionResponse, MaxUint256, ZeroAddress } from "ethers"
 import DepositState from "../types/depositState"
 
 import type {
-  StBTC,
+  AcreBTC as acreBTC,
   BridgeStub,
   TBTCVaultStub,
-  BitcoinDepositor,
+  BitcoinDepositorV2,
   TestERC20,
+  FeesReimbursementPool,
 } from "../typechain"
 import { deployment } from "./helpers"
 import { beforeAfterSnapshotWrapper } from "./helpers/snapshot"
@@ -21,16 +22,29 @@ import { tbtcDepositData } from "./data/tbtc"
 import { to1ePrecision } from "./utils"
 
 async function fixture() {
-  const { bitcoinDepositor, tbtcBridge, tbtcVault, stbtc, tbtc } =
-    await deployment()
+  const {
+    bitcoinDepositorV2,
+    feesReimbursementPool,
+    tbtcBridge,
+    tbtcVault,
+    acreBtc,
+    tbtc,
+  } = await deployment()
 
-  return { bitcoinDepositor, tbtcBridge, tbtcVault, stbtc, tbtc }
+  return {
+    bitcoinDepositor: bitcoinDepositorV2,
+    feesReimbursementPool,
+    tbtcBridge,
+    tbtcVault,
+    acreBtc,
+    tbtc,
+  }
 }
 
 const { lastBlockTime } = helpers.time
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
-describe("BitcoinDepositor", () => {
+describe("BitcoinDepositorV2", () => {
   const defaultDepositDustThreshold = 1000000 // 1000000 satoshi = 0.01 BTC
   const defaultDepositTreasuryFeeDivisor = 2000 // 1/2000 = 0.05% = 0.0005
   const defaultDepositTxMaxFee = 1000 // 1000 satoshi = 0.00001 BTC
@@ -45,13 +59,15 @@ describe("BitcoinDepositor", () => {
   // Amounts below are calculated in 1e18 precision:
   const initialDepositAmount = to1ePrecision(10000, 10) // 10000 satoshi
   const bridgedTbtcAmount = to1ePrecision(897501, 8) // 8975,01 satoshi
+  const bridgeFees = to1ePrecision(102499, 8) // 1024.99 satoshi
   const depositorFee = to1ePrecision(10, 10) // 10 satoshi
   const amountToDeposit = to1ePrecision(896501, 8) // 8965,01 satoshi
 
-  let bitcoinDepositor: BitcoinDepositor
+  let bitcoinDepositor: BitcoinDepositorV2
+  let feesReimbursementPool: FeesReimbursementPool
   let tbtcBridge: BridgeStub
   let tbtcVault: TBTCVaultStub
-  let stbtc: StBTC
+  let acreBtc: acreBTC
   let tbtc: TestERC20
 
   let governance: HardhatEthersSigner
@@ -59,12 +75,18 @@ describe("BitcoinDepositor", () => {
   let thirdParty: HardhatEthersSigner
 
   before(async () => {
-    ;({ bitcoinDepositor, tbtcBridge, tbtcVault, stbtc, tbtc } =
-      await loadFixture(fixture))
+    ;({
+      bitcoinDepositor,
+      feesReimbursementPool,
+      tbtcBridge,
+      tbtcVault,
+      acreBtc,
+      tbtc,
+    } = await loadFixture(fixture))
     ;({ governance, treasury } = await getNamedSigners())
     ;[thirdParty] = await getUnnamedSigners()
 
-    await stbtc.connect(governance).updateMinimumDepositAmount(
+    await acreBtc.connect(governance).updateMinimumDepositAmount(
       10000000000000, // 0.00001
     )
 
@@ -85,6 +107,8 @@ describe("BitcoinDepositor", () => {
     await bitcoinDepositor
       .connect(governance)
       .updateDepositorFeeDivisor(defaultDepositorFeeDivisor)
+
+    await tbtc.mint(await feesReimbursementPool.getAddress(), bridgeFees)
   })
 
   describe("initializeDeposit", () => {
@@ -306,7 +330,7 @@ describe("BitcoinDepositor", () => {
                   .finalizeDeposit(tbtcDepositData.depositKey),
               )
                 .to.be.revertedWithCustomError(
-                  stbtc,
+                  acreBtc,
                   "ERC20InsufficientBalance",
                 )
                 .withArgs(
@@ -326,73 +350,388 @@ describe("BitcoinDepositor", () => {
             })
 
             describe("when depositor fee divisor is not zero", () => {
-              beforeAfterSnapshotWrapper()
+              describe("when bridge fees reimbursement threshold is zero", () => {
+                beforeAfterSnapshotWrapper()
 
-              const expectedAssetsAmount = amountToDeposit
-              const expectedReceivedSharesAmount = amountToDeposit
+                const expectedAssetsAmount = amountToDeposit
+                const expectedReceivedSharesAmount = amountToDeposit
 
-              let tx: ContractTransactionResponse
+                let tx: ContractTransactionResponse
 
-              before(async () => {
-                tx = await bitcoinDepositor
-                  .connect(thirdParty)
-                  .finalizeDeposit(tbtcDepositData.depositKey)
-              })
+                before(async () => {
+                  tx = await bitcoinDepositor
+                    .connect(thirdParty)
+                    .finalizeDeposit(tbtcDepositData.depositKey)
+                })
 
-              it("should transfer depositor fee", async () => {
-                await expect(tx).to.changeTokenBalances(
-                  tbtc,
-                  [treasury],
-                  [depositorFee],
-                )
-              })
+                it("should transfer depositor fee", async () => {
+                  await expect(tx).to.changeTokenBalances(
+                    tbtc,
+                    [treasury],
+                    [depositorFee],
+                  )
+                })
 
-              it("should update deposit state", async () => {
-                const depositState = await bitcoinDepositor.deposits(
-                  tbtcDepositData.depositKey,
-                )
-
-                expect(depositState).to.be.equal(DepositState.Finalized)
-              })
-
-              it("should emit DepositFinalized event", async () => {
-                await expect(tx)
-                  .to.emit(bitcoinDepositor, "DepositFinalized")
-                  .withArgs(
+                it("should update deposit state", async () => {
+                  const depositState = await bitcoinDepositor.deposits(
                     tbtcDepositData.depositKey,
-                    thirdParty.address,
-                    tbtcDepositData.referral,
-                    initialDepositAmount,
-                    bridgedTbtcAmount,
-                    depositorFee,
                   )
+
+                  expect(depositState).to.be.equal(DepositState.Finalized)
+                })
+
+                it("should emit DepositFinalized event", async () => {
+                  await expect(tx)
+                    .to.emit(bitcoinDepositor, "DepositFinalized")
+                    .withArgs(
+                      tbtcDepositData.depositKey,
+                      thirdParty.address,
+                      tbtcDepositData.referral,
+                      initialDepositAmount,
+                      bridgedTbtcAmount,
+                      depositorFee,
+                    )
+                })
+
+                it("should emit Deposit event", async () => {
+                  await expect(tx)
+                    .to.emit(acreBtc, "Deposit")
+                    .withArgs(
+                      await bitcoinDepositor.getAddress(),
+                      tbtcDepositData.depositOwner,
+                      expectedAssetsAmount,
+                      expectedReceivedSharesAmount,
+                    )
+                })
+
+                it("should deposit in Acre contract", async () => {
+                  await expect(
+                    tx,
+                    "invalid minted acreBTC amount",
+                  ).to.changeTokenBalances(
+                    acreBtc,
+                    [tbtcDepositData.depositOwner],
+                    [expectedReceivedSharesAmount],
+                  )
+
+                  await expect(
+                    tx,
+                    "invalid deposited tBTC amount",
+                  ).to.changeTokenBalances(
+                    tbtc,
+                    [acreBtc],
+                    [expectedAssetsAmount],
+                  )
+                })
               })
 
-              it("should emit Deposit event", async () => {
-                await expect(tx)
-                  .to.emit(stbtc, "Deposit")
-                  .withArgs(
-                    await bitcoinDepositor.getAddress(),
-                    tbtcDepositData.depositOwner,
-                    expectedAssetsAmount,
-                    expectedReceivedSharesAmount,
-                  )
-              })
+              describe("when bridge fees reimbursement threshold is not zero", () => {
+                describe("when bridge fees reimbursement threshold is less than the deposit amount", () => {
+                  beforeAfterSnapshotWrapper()
 
-              it("should deposit in Acre contract", async () => {
-                await expect(
-                  tx,
-                  "invalid minted stBTC amount",
-                ).to.changeTokenBalances(
-                  stbtc,
-                  [tbtcDepositData.depositOwner],
-                  [expectedReceivedSharesAmount],
-                )
+                  let tx: ContractTransactionResponse
 
-                await expect(
-                  tx,
-                  "invalid deposited tBTC amount",
-                ).to.changeTokenBalances(tbtc, [stbtc], [expectedAssetsAmount])
+                  before(async () => {
+                    await bitcoinDepositor
+                      .connect(governance)
+                      .updateBridgeFeesReimbursementThreshold(
+                        initialDepositAmount - 1n,
+                      )
+
+                    tx = await bitcoinDepositor
+                      .connect(thirdParty)
+                      .finalizeDeposit(tbtcDepositData.depositKey)
+                  })
+
+                  it("should not reimburse bridge fees", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [feesReimbursementPool, acreBtc],
+                      [0, amountToDeposit],
+                    )
+                  })
+                })
+
+                describe("when bridge fees reimbursement threshold equals the deposit amount", () => {
+                  beforeAfterSnapshotWrapper()
+
+                  const expectedAssetsAmount = amountToDeposit + bridgeFees
+                  const expectedReceivedSharesAmount = expectedAssetsAmount
+
+                  let tx: ContractTransactionResponse
+
+                  before(async () => {
+                    await bitcoinDepositor
+                      .connect(governance)
+                      .updateBridgeFeesReimbursementThreshold(
+                        initialDepositAmount,
+                      )
+
+                    tx = await bitcoinDepositor
+                      .connect(thirdParty)
+                      .finalizeDeposit(tbtcDepositData.depositKey)
+                  })
+
+                  it("should reimburse bridge fees", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [feesReimbursementPool, acreBtc],
+                      [-bridgeFees, amountToDeposit + bridgeFees],
+                    )
+                  })
+
+                  it("should transfer depositor fee", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [treasury],
+                      [depositorFee],
+                    )
+                  })
+
+                  it("should update deposit state", async () => {
+                    const depositState = await bitcoinDepositor.deposits(
+                      tbtcDepositData.depositKey,
+                    )
+
+                    expect(depositState).to.be.equal(DepositState.Finalized)
+                  })
+
+                  it("should emit DepositFinalized event", async () => {
+                    await expect(tx)
+                      .to.emit(bitcoinDepositor, "DepositFinalized")
+                      .withArgs(
+                        tbtcDepositData.depositKey,
+                        thirdParty.address,
+                        tbtcDepositData.referral,
+                        initialDepositAmount,
+                        bridgedTbtcAmount + bridgeFees,
+                        depositorFee,
+                      )
+                  })
+
+                  it("should emit Deposit event", async () => {
+                    await expect(tx)
+                      .to.emit(acreBtc, "Deposit")
+                      .withArgs(
+                        await bitcoinDepositor.getAddress(),
+                        tbtcDepositData.depositOwner,
+                        expectedAssetsAmount,
+                        expectedReceivedSharesAmount,
+                      )
+                  })
+
+                  it("should deposit in Acre contract", async () => {
+                    await expect(
+                      tx,
+                      "invalid minted acreBTC amount",
+                    ).to.changeTokenBalances(
+                      acreBtc,
+                      [tbtcDepositData.depositOwner],
+                      [expectedReceivedSharesAmount],
+                    )
+
+                    await expect(
+                      tx,
+                      "invalid deposited tBTC amount",
+                    ).to.changeTokenBalances(
+                      tbtc,
+                      [acreBtc],
+                      [expectedAssetsAmount],
+                    )
+                  })
+                })
+
+                describe("when bridge fees reimbursement threshold is greater than the deposit amount", () => {
+                  beforeAfterSnapshotWrapper()
+
+                  const expectedAssetsAmount = amountToDeposit + bridgeFees
+                  const expectedReceivedSharesAmount = expectedAssetsAmount
+
+                  let tx: ContractTransactionResponse
+
+                  before(async () => {
+                    await bitcoinDepositor
+                      .connect(governance)
+                      .updateBridgeFeesReimbursementThreshold(
+                        initialDepositAmount + 1n,
+                      )
+
+                    tx = await bitcoinDepositor
+                      .connect(thirdParty)
+                      .finalizeDeposit(tbtcDepositData.depositKey)
+                  })
+
+                  it("should reimburse bridge fees", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [feesReimbursementPool, acreBtc],
+                      [-bridgeFees, amountToDeposit + bridgeFees],
+                    )
+                  })
+
+                  it("should transfer depositor fee", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [treasury],
+                      [depositorFee],
+                    )
+                  })
+
+                  it("should update deposit state", async () => {
+                    const depositState = await bitcoinDepositor.deposits(
+                      tbtcDepositData.depositKey,
+                    )
+
+                    expect(depositState).to.be.equal(DepositState.Finalized)
+                  })
+
+                  it("should emit DepositFinalized event", async () => {
+                    await expect(tx)
+                      .to.emit(bitcoinDepositor, "DepositFinalized")
+                      .withArgs(
+                        tbtcDepositData.depositKey,
+                        thirdParty.address,
+                        tbtcDepositData.referral,
+                        initialDepositAmount,
+                        bridgedTbtcAmount + bridgeFees,
+                        depositorFee,
+                      )
+                  })
+
+                  it("should emit Deposit event", async () => {
+                    await expect(tx)
+                      .to.emit(acreBtc, "Deposit")
+                      .withArgs(
+                        await bitcoinDepositor.getAddress(),
+                        tbtcDepositData.depositOwner,
+                        expectedAssetsAmount,
+                        expectedReceivedSharesAmount,
+                      )
+                  })
+
+                  it("should deposit in Acre contract", async () => {
+                    await expect(
+                      tx,
+                      "invalid minted acreBTC amount",
+                    ).to.changeTokenBalances(
+                      acreBtc,
+                      [tbtcDepositData.depositOwner],
+                      [expectedReceivedSharesAmount],
+                    )
+
+                    await expect(
+                      tx,
+                      "invalid deposited tBTC amount",
+                    ).to.changeTokenBalances(
+                      tbtc,
+                      [acreBtc],
+                      [expectedAssetsAmount],
+                    )
+                  })
+                })
+
+                describe("when fees reimbursement pool balance is less than bridge fees", () => {
+                  beforeAfterSnapshotWrapper()
+
+                  const availableReimbursementAmount = bridgeFees - 10n
+                  const expectedAssetsAmount =
+                    amountToDeposit + availableReimbursementAmount
+                  const expectedReceivedSharesAmount = expectedAssetsAmount
+
+                  let tx: ContractTransactionResponse
+
+                  before(async () => {
+                    await bitcoinDepositor
+                      .connect(governance)
+                      .updateBridgeFeesReimbursementThreshold(
+                        initialDepositAmount + 1n,
+                      )
+
+                    await feesReimbursementPool
+                      .connect(governance)
+                      .withdraw(thirdParty.address, bridgeFees)
+
+                    await tbtc.mint(
+                      await feesReimbursementPool.getAddress(),
+                      availableReimbursementAmount,
+                    )
+
+                    tx = await bitcoinDepositor
+                      .connect(thirdParty)
+                      .finalizeDeposit(tbtcDepositData.depositKey)
+                  })
+
+                  it("should reimburse bridge fees", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [feesReimbursementPool, acreBtc],
+                      [
+                        -availableReimbursementAmount,
+                        amountToDeposit + availableReimbursementAmount,
+                      ],
+                    )
+                  })
+
+                  it("should transfer depositor fee", async () => {
+                    await expect(tx).to.changeTokenBalances(
+                      tbtc,
+                      [treasury],
+                      [depositorFee],
+                    )
+                  })
+
+                  it("should update deposit state", async () => {
+                    const depositState = await bitcoinDepositor.deposits(
+                      tbtcDepositData.depositKey,
+                    )
+
+                    expect(depositState).to.be.equal(DepositState.Finalized)
+                  })
+
+                  it("should emit DepositFinalized event", async () => {
+                    await expect(tx)
+                      .to.emit(bitcoinDepositor, "DepositFinalized")
+                      .withArgs(
+                        tbtcDepositData.depositKey,
+                        thirdParty.address,
+                        tbtcDepositData.referral,
+                        initialDepositAmount,
+                        bridgedTbtcAmount + availableReimbursementAmount,
+                        depositorFee,
+                      )
+                  })
+
+                  it("should emit Deposit event", async () => {
+                    await expect(tx)
+                      .to.emit(acreBtc, "Deposit")
+                      .withArgs(
+                        await bitcoinDepositor.getAddress(),
+                        tbtcDepositData.depositOwner,
+                        expectedAssetsAmount,
+                        expectedReceivedSharesAmount,
+                      )
+                  })
+
+                  it("should deposit in Acre contract", async () => {
+                    await expect(
+                      tx,
+                      "invalid minted acreBTC amount",
+                    ).to.changeTokenBalances(
+                      acreBtc,
+                      [tbtcDepositData.depositOwner],
+                      [expectedReceivedSharesAmount],
+                    )
+
+                    await expect(
+                      tx,
+                      "invalid deposited tBTC amount",
+                    ).to.changeTokenBalances(
+                      tbtc,
+                      [acreBtc],
+                      [expectedAssetsAmount],
+                    )
+                  })
+                })
               })
             })
 
@@ -442,7 +781,7 @@ describe("BitcoinDepositor", () => {
 
               it("should emit Deposit event", async () => {
                 await expect(tx)
-                  .to.emit(stbtc, "Deposit")
+                  .to.emit(acreBtc, "Deposit")
                   .withArgs(
                     await bitcoinDepositor.getAddress(),
                     tbtcDepositData.depositOwner,
@@ -454,9 +793,9 @@ describe("BitcoinDepositor", () => {
               it("should deposit in Acre contract", async () => {
                 await expect(
                   tx,
-                  "invalid minted stBTC amount",
+                  "invalid minted acreBTC amount",
                 ).to.changeTokenBalances(
-                  stbtc,
+                  acreBtc,
                   [tbtcDepositData.depositOwner],
                   [expectedReceivedSharesAmount],
                 )
@@ -464,7 +803,11 @@ describe("BitcoinDepositor", () => {
                 await expect(
                   tx,
                   "invalid deposited tBTC amount",
-                ).to.changeTokenBalances(tbtc, [stbtc], [expectedAssetsAmount])
+                ).to.changeTokenBalances(
+                  tbtc,
+                  [acreBtc],
+                  [expectedAssetsAmount],
+                )
               })
             })
 
@@ -667,6 +1010,121 @@ describe("BitcoinDepositor", () => {
     })
   })
 
+  describe("updateFeesReimbursementPool", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not governance", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateFeesReimbursementPool(ZeroAddress),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is governance", () => {
+      describe("when new value is zero address", () => {
+        it("should revert", async () => {
+          await expect(
+            bitcoinDepositor
+              .connect(governance)
+              .updateFeesReimbursementPool(ZeroAddress),
+          ).to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "FeesReimbursementPoolZeroAddress",
+          )
+        })
+      })
+
+      describe("when new value is non-zero address", () => {
+        let tx: ContractTransactionResponse
+
+        before(async () => {
+          tx = await bitcoinDepositor
+            .connect(governance)
+            .updateFeesReimbursementPool(thirdParty.address)
+        })
+
+        it("should emit FeesReimbursementPoolUpdated event", async () => {
+          await expect(tx)
+            .to.emit(bitcoinDepositor, "FeesReimbursementPoolUpdated")
+            .withArgs(thirdParty.address)
+        })
+
+        it("should update value correctly", async () => {
+          expect(await bitcoinDepositor.feesReimbursementPool()).to.be.equal(
+            thirdParty.address,
+          )
+        })
+      })
+    })
+  })
+
+  describe("updateBridgeFeesReimbursementThreshold", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not governance", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateBridgeFeesReimbursementThreshold(1234),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is governance", () => {
+      const testUpdateBridgeFeesReimbursementThreshold = (newValue: bigint) =>
+        function () {
+          beforeAfterSnapshotWrapper()
+
+          let tx: ContractTransactionResponse
+
+          before(async () => {
+            tx = await bitcoinDepositor
+              .connect(governance)
+              .updateBridgeFeesReimbursementThreshold(newValue)
+          })
+
+          it("should emit BridgeFeesReimbursementThresholdUpdated event", async () => {
+            await expect(tx)
+              .to.emit(
+                bitcoinDepositor,
+                "BridgeFeesReimbursementThresholdUpdated",
+              )
+              .withArgs(newValue)
+          })
+
+          it("should update value correctly", async () => {
+            expect(
+              await bitcoinDepositor.bridgeFeesReimbursementThreshold(),
+            ).to.be.eq(newValue)
+          })
+        }
+
+      describe(
+        "when new value is non-zero",
+        testUpdateBridgeFeesReimbursementThreshold(92193n),
+      )
+
+      describe(
+        "when new value is zero",
+        testUpdateBridgeFeesReimbursementThreshold(0n),
+      )
+    })
+  })
+
   const extraDataValidTestData = new Map<
     string,
     {
@@ -784,6 +1242,62 @@ describe("BitcoinDepositor", () => {
         expectedDepositOwner,
       )
       expect(actualReferral, "invalid referral").to.be.equal(expectedReferral)
+    })
+  })
+
+  describe("updateAcreVault", () => {
+    beforeAfterSnapshotWrapper()
+
+    describe("when caller is not owner", () => {
+      it("should revert", async () => {
+        await expect(
+          bitcoinDepositor
+            .connect(thirdParty)
+            .updateAcreVault(thirdParty.address),
+        )
+          .to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "OwnableUnauthorizedAccount",
+          )
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    describe("when caller is owner", () => {
+      describe("when new vault address is zero address", () => {
+        it("should revert", async () => {
+          await expect(
+            bitcoinDepositor.connect(governance).updateAcreVault(ZeroAddress),
+          ).to.be.revertedWithCustomError(
+            bitcoinDepositor,
+            "AcreVaultZeroAddress",
+          )
+        })
+      })
+
+      describe("when new vault address is non-zero address", () => {
+        const newVaultAddress = "0x1234567890123456789012345678901234567890"
+
+        let tx: ContractTransactionResponse
+
+        before(async () => {
+          tx = await bitcoinDepositor
+            .connect(governance)
+            .updateAcreVault(newVaultAddress)
+        })
+
+        it("should emit AcreVaultUpdated event", async () => {
+          await expect(tx)
+            .to.emit(bitcoinDepositor, "AcreVaultUpdated")
+            .withArgs(newVaultAddress)
+        })
+
+        it("should update acre vault address", async () => {
+          expect(await bitcoinDepositor.acreVault()).to.be.equal(
+            newVaultAddress,
+          )
+        })
+      })
     })
   })
 
