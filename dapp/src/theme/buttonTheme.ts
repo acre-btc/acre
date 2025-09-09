@@ -155,8 +155,9 @@ const buttonTheme: ComponentSingleStyleConfig = {
       bg: "initial",
       color: "inherit",
       p: 0,
-      textDecoration: "underline",
       fontWeight: "medium",
+      ":hover": { textDecoration: "underline" },
+      ":focus-visible": { textDecoration: "underline" },
     },
   },
   defaultProps: {

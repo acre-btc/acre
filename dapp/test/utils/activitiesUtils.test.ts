@@ -6,13 +6,13 @@ describe("Utils functions for activities", () => {
     describe("withdraw", () => {
       describe.each([
         // 0.01 BTC
-        { value: 0.01, expectedResult: "6 hours" },
+        { value: 0.01, expectedResult: "72 hours" },
         // 0.1 BTC
-        { value: 0.1, expectedResult: "6 hours" },
+        { value: 0.1, expectedResult: "72 hours" },
         // 1 BTC
-        { value: 1, expectedResult: "6 hours" },
+        { value: 1, expectedResult: "72 hours" },
         // 10 BTC
-        { value: 10, expectedResult: "6 hours" },
+        { value: 10, expectedResult: "72 hours" },
       ])("when it is $value BTC", ({ value, expectedResult }) => {
         it(`should return ${expectedResult}`, () => {
           expect(

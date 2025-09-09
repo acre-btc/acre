@@ -1,63 +1,82 @@
 import React from "react"
 import { featureFlags } from "#/constants"
 import { useTriggerConnectWalletModal } from "#/hooks"
-import { Grid } from "@chakra-ui/react"
+import { Card, Grid, VStack } from "@chakra-ui/react"
+import Vaults from "#/components/Vaults"
+import WithdrawalStatusBanner, {
+  WithdrawStatus,
+} from "#/components/WithdrawalStatusBanner"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
-import BeehiveCard from "./BeehiveCard"
-import AcreTVLProgress from "./AcreTVLProgress"
+import TransactionHistory from "./TransactionHistory"
+import BTCDepositedCard from "./BTCDepositedCard"
+import RewardsEarnedCard from "./RewardsEarnedCard"
+import EstimatedAPRCard from "./EstimatedAPRCard"
+
+const fullWidthGridColumn = { base: "1", md: "span 3" }
+
+const grid = {
+  dashboard: { base: "1", md: "span 2" },
+  points: { base: "1", md: "3 / span 1" },
+  withdrawals: fullWidthGridColumn,
+  stats: { base: "1", md: "auto / span 1" },
+  vaults: fullWidthGridColumn,
+  history: fullWidthGridColumn,
+}
+
+// TODO: Temporary hook. Fetch on-chain data and order by status. `ready` or
+// `pending` first ?
+const useWithdrawals: () => {
+  data: {
+    withdrawnAt: number
+    btcAmount: bigint
+    status: WithdrawStatus
+  }[]
+} = () => ({
+  data: [
+    { withdrawnAt: 1753274685, btcAmount: 30000000n, status: "ready" },
+    { withdrawnAt: 1753533885, btcAmount: 20000000n, status: "pending" },
+  ],
+})
 
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
 
+  const { data } = useWithdrawals()
+
   return (
     <Grid
       gridGap={{ base: 4, "2xl": 8 }}
-      gridTemplateAreas={{
-        base: `
-          ${featureFlags.TVL_ENABLED ? '"tvl"' : ""}
-          "dashboard"
-          "acre-points"
-          "beehive"
-        `,
-        sm: `
-          ${featureFlags.TVL_ENABLED ? '"tvl tvl"' : ""}
-          "dashboard acre-points"
-          "dashboard beehive"
-          `,
-      }}
-      gridTemplateColumns={{
-        base: "1fr",
-        sm: "1fr 1fr",
-        lg: "1fr 31%",
-        "2xl": "1fr 36%",
-      }}
-      gridTemplateRows={{
-        base: `
-          ${featureFlags.TVL_ENABLED ? "auto" : ""}
-          auto
-          auto
-          1fr
-        `,
-        sm: `
-          ${featureFlags.TVL_ENABLED ? "auto" : ""}
-          auto
-          1fr
-          `,
-      }}
+      templateColumns={{ base: "1fr ", md: "repeat(3, 1fr)" }}
     >
-      {featureFlags.TVL_ENABLED && <AcreTVLProgress gridArea="tvl" />}
-
-      <DashboardCard gridArea="dashboard" h="fit-content" />
+      <DashboardCard gridColumn={grid.dashboard} />
 
       {featureFlags.ACRE_POINTS_ENABLED ? (
-        <AcrePointsCard gridArea="acre-points" h="fit-content" />
+        <AcrePointsCard gridColumn={grid.points} />
       ) : (
-        <AcrePointsTemplateCard gridArea="acre-points" h="fit-content" />
+        <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
+      <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
+        {data.map((withdraw) => (
+          <WithdrawalStatusBanner
+            key={withdraw.withdrawnAt}
+            status={withdraw.status}
+            btcAmount={withdraw.btcAmount}
+            withdrawnAt={withdraw.withdrawnAt}
+          />
+        ))}
+      </VStack>
 
-      <BeehiveCard gridArea="beehive" h="fit-content" />
+      <BTCDepositedCard gridColumn={grid.stats} />
+      <RewardsEarnedCard gridColumn={grid.stats} />
+      <EstimatedAPRCard gridColumn={grid.stats} />
+
+      <Vaults gridColumn={grid.vaults} />
+
+      <Card gridColumn={grid.history}>
+        <TransactionHistory />
+      </Card>
     </Grid>
   )
 }

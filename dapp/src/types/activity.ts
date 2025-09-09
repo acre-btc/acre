@@ -11,10 +11,12 @@ type ConditionalActivityData =
       type: "deposit"
       txHash: string
     }
+  // TODO: rename to withdraw-request
   | {
       type: "withdraw"
       txHash?: string
     }
+  | { type: "withdraw-funds"; txHash?: string }
 
 export type ActivityType = ConditionalActivityData["type"]
 

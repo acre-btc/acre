@@ -29,6 +29,7 @@ import tagTheme from "./tagTheme"
 import tokenBalanceInputTheme from "./tokenBalanceInputTheme"
 import tooltipTheme from "./tooltipTheme"
 import textTheme from "./textTheme"
+import tableTheme from "./tableTheme"
 
 const defaultTheme = {
   // TODO: Remove when dark mode is ready
@@ -69,6 +70,7 @@ const defaultTheme = {
     Footer: footerTheme,
     AcreTVLProgress: acreTVLProgressTheme,
     Text: textTheme,
+    Table: tableTheme,
   },
 }
 
