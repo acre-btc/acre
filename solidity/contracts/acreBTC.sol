@@ -10,24 +10,21 @@ import "./lib/ERC4626Fees.sol";
 import "./interfaces/IDispatcher.sol";
 import {ZeroAddress} from "./utils/Errors.sol";
 
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {MezoAllocator} from "./MezoAllocator.sol";
-
-/// @title stBTC
+/// @title acreBTC
 /// @notice This contract implements the ERC-4626 tokenized vault standard. By
-///         staking tBTC, users acquire a liquid staking token called stBTC,
+///         staking tBTC, users acquire a liquid staking token called acreBTC,
 ///         commonly referred to as "shares".
-///         Users have the flexibility to redeem stBTC, enabling them to
+///         Users have the flexibility to redeem acreBTC, enabling them to
 ///         withdraw their deposited tBTC along with the accrued yield.
 /// @dev ERC-4626 is a standard to optimize and unify the technical parameters
 ///      of yield-bearing vaults. This contract facilitates the minting and
-///      burning of shares (stBTC), which are represented as standard ERC20
+///      burning of shares (acreBTC), which are represented as standard ERC20
 ///      tokens, providing a seamless exchange with tBTC tokens.
 // slither-disable-next-line missing-inheritance
-contract stBTC is ERC4626Fees, PausableOwnable {
+contract acreBTC is ERC4626Fees, PausableOwnable {
     using SafeERC20 for IERC20;
 
-    /// Dispatcher contract that routes tBTC from stBTC to a given allocation
+    /// Dispatcher contract that routes tBTC from acreBTC to a given allocation
     /// contract and back.
     IDispatcher public dispatcher;
 
@@ -46,25 +43,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
     /// Exit fee basis points applied to exit fee calculation.
     uint256 public exitFeeBasisPoints;
-
-    /// @notice Returns the maximum amount of the underlying asset for which the
-    ///      shares can be minted without the coverage in deposited assets.
-    mapping(address => uint256) public allowedDebt;
-
-    /// @notice Returns the current debt of the debtor.
-    mapping(address => uint256) public currentDebt;
-
-    /// @notice Total amount of debt across all debtors.
-    /// @dev This is the total amount of assets for which shares have been minted
-    ///      without the coverage in deposited assets. The value is used to
-    ///      adjust the total assets held by the vault.
-    uint256 public totalDebt;
-
-    /// @notice Address of ERC-4626 contract to migrate to.
-    address public migrateTo;
-
-    /// @notice Whether the migration has started.
-    bool public migrationStarted;
 
     /// Emitted when the treasury wallet address is updated.
     /// @param oldTreasury Address of the old treasury wallet.
@@ -88,39 +66,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @param exitFeeBasisPoints New value of the fee basis points.
     event ExitFeeBasisPointsUpdated(uint256 exitFeeBasisPoints);
 
-    /// Emitted when the maximum debt allowance of the debtor is updated.
-    /// @param debtor Address of the debtor.
-    /// @param newAllowance Maximum debt allowance of the debtor.
-    event DebtAllowanceUpdated(address indexed debtor, uint256 newAllowance);
-
-    /// Emitted when debt is minted.
-    /// @param debtor Address of the debtor.
-    /// @param currentDebt Current debt of the debtor.
-    /// @param assets Amount of assets for which debt will be taken.
-    /// @param shares Amount of shares minted.
-    event DebtMinted(
-        address indexed debtor,
-        uint256 currentDebt,
-        uint256 assets,
-        uint256 shares
-    );
-
-    /// Emitted when debt is repaid.
-    /// @param debtor Address of the debtor.
-    /// @param currentDebt Current debt of the debtor.
-    /// @param assets Amount of assets repaying the debt.
-    /// @param shares Amount of shares burned.
-    event DebtRepaid(
-        address indexed debtor,
-        uint256 currentDebt,
-        uint256 assets,
-        uint256 shares
-    );
-
-    /// @notice Emitted when the migration has started.
-    /// @param migrateTo Address of the ERC-4626 contract to migrate to.
-    event MigrationStarted(address migrateTo);
-
     /// Reverts if the amount is less than the minimum deposit amount.
     /// @param amount Amount to check.
     /// @param min Minimum amount to check 'amount' against.
@@ -138,31 +83,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// Reverts if the dispatcher address is the same.
     error SameDispatcher();
 
-    /// @notice Emitted when the debt allowance of a debtor is insufficient.
-    /// @dev Used in the debt minting function.
-    /// @param debtor Address of the debtor.
-    /// @param allowance Maximum debt allowance of the debtor.
-    /// @param needed Requested amount of debt of the debtor.
-    error InsufficientDebtAllowance(
-        address debtor,
-        uint256 allowance,
-        uint256 needed
-    );
-
-    /// @notice Emitted when the debt of the debtor is insufficient - the debtor
-    ///         tries to repay more than they borrowed.
-    /// @dev Used in the debt repayment function.
-    /// @param debtor Address of the debtor.
-    /// @param debt Current debt of the debtor.
-    /// @param needed Requested amount of assets repaying the debt.
-    error ExcessiveDebtRepayment(address debtor, uint256 debt, uint256 needed);
-
-    /// @notice Reverts if the migration has already started.
-    error MigrationAlreadyStarted();
-
-    /// @notice Reverts if the migration has not started.
-    error MigrationNotStarted();
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -170,9 +90,8 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
     function initialize(IERC20 asset, address _treasury) public initializer {
         __ERC4626_init(asset);
-        __ERC20_init("Acre Staked Bitcoin", "stBTC");
+        __ERC20_init("Acre Staked Bitcoin", "acreBTC"); // TODO: Confirm name
         __PausableOwnable_init(msg.sender, msg.sender);
-        __ERC4626NonFungibleWithdrawals_init();
 
         if (address(_treasury) == address(0)) {
             revert ZeroAddress();
@@ -293,110 +212,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         return false;
     }
 
-    /// @notice Disables non-fungible withdrawals.
-    function disableNonFungibleWithdrawals() external onlyOwner {
-        _disableNonFungibleWithdrawals();
-    }
-
-    /// @notice Sets the maximum debt allowance of the debtor.
-    /// @dev The current debt value is intentionally not checked to allow the
-    ///      governance reduce the debt allowance in case the depositor
-    ///      becomes risky or malicious.
-    /// @param debtor Address of the debtor.
-    /// @param newAllowance Maximum debt allowance of the debtor.
-    function updateDebtAllowance(
-        address debtor,
-        uint256 newAllowance
-    ) external onlyOwner {
-        emit DebtAllowanceUpdated(debtor, newAllowance);
-
-        allowedDebt[debtor] = newAllowance;
-    }
-
-    /// @notice Mints the requested amount of shares and registers a debt in
-    ///         asset corresponding to the minted amount of shares.
-    /// @dev The debt is calculated based on the current conversion
-    ///      rate from the shares to assets.
-    /// @param shares The amount of shares to mint.
-    /// @param receiver The receiver of the shares.
-    /// @return assets The debt amount in asset taken for the shares minted.
-    function mintDebt(
-        uint256 shares,
-        address receiver
-    ) public whenNotPaused returns (uint256 assets) {
-        assets = convertToAssets(shares);
-
-        // Increase the debt of the debtor.
-        currentDebt[msg.sender] += assets;
-
-        // Check the maximum debt allowance of the debtor.
-        if (currentDebt[msg.sender] > allowedDebt[msg.sender]) {
-            revert InsufficientDebtAllowance(
-                msg.sender,
-                allowedDebt[msg.sender],
-                currentDebt[msg.sender]
-            );
-        }
-
-        emit DebtMinted(msg.sender, currentDebt[msg.sender], assets, shares);
-
-        // Increase the total debt.
-        totalDebt += assets;
-
-        // Mint the shares to the receiver.
-        super._mint(receiver, shares);
-
-        return shares;
-    }
-
-    /// @dev This function proxies `mintDebt` call and provides compatibility
-    ///      with Mezo IReceiptToken interface.
-    function mintReceipt(address to, uint256 amount) external {
-        mintDebt(amount, to);
-    }
-
-    /// @notice Repay the asset debt, fully of partially with the provided shares.
-    /// @dev The debt to be repaid is calculated based on the current conversion
-    ///      rate from the shares to assets.
-    /// @dev The debtor has to approve the transfer of the shares. To determine
-    ///      the asset debt that is going to be repaid, the caller can use
-    ///      the `previewRepayDebt` function.
-    /// @param shares The amount of shares to return.
-    /// @return assets The amount of debt in asset paid off.
-    function repayDebt(
-        uint256 shares
-    ) public whenNotPaused returns (uint256 assets) {
-        assets = convertToAssets(shares);
-
-        // Check the current debt of the debtor.
-        if (currentDebt[msg.sender] < assets) {
-            revert ExcessiveDebtRepayment(
-                msg.sender,
-                currentDebt[msg.sender],
-                assets
-            );
-        }
-
-        // Decrease the debt of the debtor.
-        currentDebt[msg.sender] -= assets;
-
-        emit DebtRepaid(msg.sender, currentDebt[msg.sender], assets, shares);
-
-        // Decrease the total debt.
-        totalDebt -= assets;
-
-        // Burn the shares from the debtor.
-        super._burn(msg.sender, shares);
-
-        return shares;
-    }
-
-    /// @notice This function proxies `repayDebt` call and provides
-    ///         compatibility with Mezo IReceiptToken interface.
-    function burnReceipt(uint256 amount) external {
-        repayDebt(amount);
-    }
-
     /// @notice Mints shares to receiver by depositing exactly amount of
     ///         tBTC tokens.
     /// @dev Takes into account a deposit parameter, minimum deposit amount,
@@ -454,7 +269,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         address owner
     ) public override returns (uint256) {
         uint256 currentAssetsBalance = IERC20(asset()).balanceOf(address(this));
-        // If there is not enough assets in stBTC to cover user withdrawals and
+        // If there is not enough assets in the vault to cover user withdrawals and
         // withdrawal fees then pull the assets from the dispatcher.
         uint256 assetsWithFees = assets + _feeOnRaw(assets, exitFeeBasisPoints);
         if (assetsWithFees > currentAssetsBalance) {
@@ -486,22 +301,16 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
     /// @notice Returns the total amount of assets held by the vault across all
     ///         allocations and this contract.
-    /// @dev The value contains virtual assets reflecting the debt minted by the
-    ///      debtors. The debt is not backed by the deposited assets, and it is
-    ///      used to adjust the total assets held by the vault, to allow shares
-    ///      and assets conversion calculations.
     function totalAssets() public view override returns (uint256) {
         return
-            IERC20(asset()).balanceOf(address(this)) +
-            dispatcher.totalAssets() +
-            totalDebt;
+            IERC20(asset()).balanceOf(address(this)) + dispatcher.totalAssets();
     }
 
     /// @dev Returns the maximum amount of the underlying asset that can be
     ///      deposited into the Vault for the receiver, through a deposit call.
     ///      If the Vault is paused, returns 0.
     function maxDeposit(address) public view override returns (uint256) {
-        if (paused() || migrationStarted) {
+        if (paused()) {
             return 0;
         }
         return type(uint256).max;
@@ -511,7 +320,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      for the receiver, through a mint call.
     ///      If the Vault is paused, returns 0.
     function maxMint(address) public view override returns (uint256) {
-        if (paused() || migrationStarted) {
+        if (paused()) {
             return 0;
         }
         return type(uint256).max;
@@ -537,81 +346,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
         return super.maxRedeem(owner);
     }
 
-    /// @notice Starts the migration to the new contract.
-    /// @dev This function is called by the owner to start the migration.
-    ///      The migration can be started only once.
-    /// @param _migrateTo Address of the ERC-4626 contract to migrate to.
-    function startMigration(address _migrateTo) external onlyOwner {
-        if (address(_migrateTo) == address(0)) {
-            revert ZeroAddress();
-        }
-        if (migrationStarted) {
-            revert MigrationAlreadyStarted();
-        }
-
-        // Set the new contract address.
-        migrateTo = _migrateTo;
-
-        emit MigrationStarted(_migrateTo);
-
-        // Mark the migration as started.
-        migrationStarted = true;
-
-        // Revoke approval for the dispatcher contract so it can't pull assets
-        // from the vault.
-        IERC20(asset()).forceApprove(address(dispatcher), 0);
-
-        // Release the deposit from the MezoAllocator contract.
-        MezoAllocator(address(dispatcher)).releaseDeposit();
-    }
-
-    /// @notice Migrates a depositor's funds to the new contract.
-    /// @dev This function is called by the contract owner to migrate the deposit
-    ///      of the depositors without their approval.
-    ///      The deposits that are being migrated have to be covered by the
-    ///      assets deposited to the vault, which excludes the shares that were
-    ///      minted as debt.
-    /// @param depositOwner The address of the owner of the deposit to migrate.
-    function migrateDeposit(
-        address depositOwner
-    ) external onlyOwner returns (uint256) {
-        if (migrateTo == address(0)) {
-            revert ZeroAddress();
-        }
-        if (paused()) {
-            revert EnforcedPause();
-        }
-        if (!migrationStarted) {
-            revert MigrationNotStarted();
-        }
-
-        uint256 shares = balanceOf(depositOwner);
-        uint256 assets = convertToAssets(shares);
-
-        // We need to ensure the shares were not minted as debt, so they
-        // are covered by the assets deposited to the vault.
-        if (withdrawableShares[depositOwner] < shares) {
-            shares = withdrawableShares[depositOwner];
-        }
-
-        if (shares == 0) {
-            return 0;
-        }
-
-        // Adjust the withdrawable shares to exclude the shares that are being
-        // migrated and keep the rest of shares associated with debt.
-        withdrawableShares[depositOwner] = 0;
-
-        // Burn the shares that are being migrated.
-        _burn(depositOwner, shares);
-
-        // Approve the assets to be transferred to the new contract.
-        IERC20(asset()).forceApprove(migrateTo, assets);
-
-        // Deposit the assets to the new contract.
-        return IERC4626(migrateTo).deposit(assets, depositOwner);
-    }
-
     /// @notice Returns the number of assets that corresponds to the amount of
     ///         shares held by the specified account.
     /// @dev    This function is used to convert shares to assets position for
@@ -620,12 +354,6 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     /// @return The amount of assets.
     function assetsBalanceOf(address account) public view returns (uint256) {
         return convertToAssets(balanceOf(account));
-    }
-
-    /// @notice Previews the amount of assets that will be burned for the given
-    ///         amount of repaid shares.
-    function previewRepayDebt(uint256 shares) public view returns (uint256) {
-        return convertToAssets(shares);
     }
 
     /// @return Returns entry fee basis point used in deposits.

@@ -1,10 +1,10 @@
 import { BitcoinDepositor } from "./bitcoin-depositor"
-import { StBTC } from "./stbtc"
+import { AcreBTC } from "./acrebtc"
 import { BitcoinRedeemer } from "./bitcoin-redeemer"
 
 export * from "./bitcoin-depositor"
 export * from "./chain-identifier"
-export * from "./stbtc"
+export * from "./acrebtc"
 export * from "./depositor-proxy"
 export * from "./bitcoin-redeemer"
 
@@ -13,6 +13,6 @@ export * from "./bitcoin-redeemer"
  */
 export type AcreContracts = {
   bitcoinDepositor: BitcoinDepositor
-  stBTC: StBTC
+  acreBTC: AcreBTC
   bitcoinRedeemer: BitcoinRedeemer
 }

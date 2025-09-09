@@ -7,6 +7,9 @@ const options: Partial<PostHogConfig> = {
   api_host: env.POSTHOG_API_HOST,
   capture_pageview: false,
   persistence: "memory",
+  session_recording: {
+    maskTextSelector: "[data-sensitive]",
+  },
 }
 
 function PostHogProvider(props: PropsWithChildren) {
