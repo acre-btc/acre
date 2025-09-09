@@ -1,5 +1,5 @@
 {
-  "address": "0x3f836b84c7A46Ae733F89dE26226ce674fc68Bd7",
+  "address": "0xE1d25025835A89C93d56a029C80699BE056584d2",
   "abi": [
     {
       "inputs": [],
@@ -9,33 +9,6 @@
     {
       "inputs": [],
       "name": "AcreBtcZeroAddress",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "target",
-          "type": "address"
-        }
-      ],
-      "name": "AddressEmptyCode",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "AddressInsufficientBalance",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "ApproveAndCallFailed",
       "type": "error"
     },
     {
@@ -56,22 +29,12 @@
     },
     {
       "inputs": [],
-      "name": "FailedInnerCall",
-      "type": "error"
-    },
-    {
-      "inputs": [],
       "name": "InvalidInitialization",
       "type": "error"
     },
     {
       "inputs": [],
       "name": "NotInitializing",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "NotTbtcTokenOwner",
       "type": "error"
     },
     {
@@ -113,39 +76,8 @@
       "type": "error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "token",
-          "type": "address"
-        }
-      ],
-      "name": "SafeERC20FailedOperation",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "StbtcZeroAddress",
-      "type": "error"
-    },
-    {
       "inputs": [],
       "name": "TbtcTokenZeroAddress",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "TbtcVaultZeroAddress",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "UnexpectedTbtcTokenOwner",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "ZeroAddress",
       "type": "error"
     },
     {
@@ -225,25 +157,6 @@
       "type": "event"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "oldTbtcVault",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "newTbtcVault",
-          "type": "address"
-        }
-      ],
-      "name": "TbtcVaultUpdated",
-      "type": "event"
-    },
-    {
       "inputs": [],
       "name": "acceptOwnership",
       "outputs": [],
@@ -268,11 +181,6 @@
         {
           "internalType": "address",
           "name": "_tbtcToken",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_tbtcVault",
           "type": "address"
         },
         {
@@ -361,19 +269,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "tbtcVault",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "address",
@@ -385,23 +280,10 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newTbtcVault",
-          "type": "address"
-        }
-      ],
-      "name": "updateTbtcVault",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
     }
   ],
-  "transactionHash": "0x3c93bfd3c2910b4481959afe2906614d72d9a8b1b61b5dd1849eae31ea3379c6",
+  "transactionHash": "0x5b5c984c86e01c74a510daea4d46ec6f50649d2858204f02a093ea8465b455c6",
   "numDeployments": 1,
-  "implementation": "0x3232fD767E0C3367eAF11b3De467C822094F4641",
+  "implementation": "0xd9eCF33C5Bef761AFEa873c7F9c48CB545EffAcE",
   "devdoc": "Contract deployed as upgradable proxy"
 }

@@ -1,5 +1,5 @@
 {
-  "address": "0xc49AFdB37A0BB26Dfff41A09f97Be141c2b5B75c",
+  "address": "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884",
   "abi": [
     {
       "inputs": [],
@@ -124,6 +124,22 @@
         }
       ],
       "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minimumAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RedemptionAmountTooSmall",
       "type": "error"
     },
     {
@@ -264,13 +280,13 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "midasShares",
+          "name": "exitFeeInTbtc",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "exitFeeInTbtc",
+          "name": "midasSharesWithFee",
           "type": "uint256"
         }
       ],
@@ -505,6 +521,11 @@
           "internalType": "address",
           "name": "_acreBTC",
           "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_tbtcBridge",
+          "type": "address"
         }
       ],
       "name": "initialize",
@@ -578,6 +599,19 @@
     },
     {
       "inputs": [],
+      "name": "minimumBridgeRedemptionTbtcAmount",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "owner",
       "outputs": [
         {
@@ -619,11 +653,6 @@
         },
         {
           "internalType": "uint256",
-          "name": "midasShares",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "tbtcAmount",
           "type": "uint256"
         },
@@ -641,11 +670,6 @@
           "internalType": "bytes32",
           "name": "redeemerOutputScriptHash",
           "type": "bytes32"
-        },
-        {
-          "internalType": "uint256",
-          "name": "midasRequestId",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -749,6 +773,19 @@
     },
     {
       "inputs": [],
+      "name": "tbtcBridge",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "tbtcVault",
       "outputs": [
         {
@@ -800,8 +837,8 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0x9ba644b44e9181a8c74bd59abd6fdf2a43fad0396f68b073df44bcc68e2035e2",
+  "transactionHash": "0x06240a333e882e9d0b72cbb87218893de1130b1a989e78673b782288e4c8578d",
   "numDeployments": 1,
-  "implementation": "0xc380d45A8Ccfb073EB27241dBE995897cA121263",
+  "implementation": "0xed85e9CE72A5Fb9ABa76ab82c074ea5cA87040Ea",
   "devdoc": "Contract deployed as upgradable proxy"
 }

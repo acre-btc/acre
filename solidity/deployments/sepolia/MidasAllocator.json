@@ -1,5 +1,5 @@
 {
-  "address": "0xa54e12C0f5d00F18e8b873Dc70244FA5Cf78c5fC",
+  "address": "0x6075ACf391c74ba4606eD174229bcD1501e9386a",
   "abi": [
     {
       "inputs": [],
@@ -198,6 +198,25 @@
       "type": "event"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldWithdrawalQueue",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newWithdrawalQueue",
+          "type": "address"
+        }
+      ],
+      "name": "WithdrawalQueueUpdated",
+      "type": "event"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -253,7 +272,13 @@
     {
       "inputs": [],
       "name": "emergencyWithdraw",
-      "outputs": [],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -482,8 +507,8 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0x5df4d9c139048724aa095f518ea091b54f3df6c9445807a52192c4fb3756edd5",
+  "transactionHash": "0x0edc2fd7a00964ae2cf9a9a1c089ff9474119f75fdeb39d9c21cd3d40dafdcf9",
   "numDeployments": 1,
-  "implementation": "0x347fE66249CFEF9FeBFCA8561b331B1CB822C460",
+  "implementation": "0x6864A111492B07b0Ad809f1A0cC9d6A258A2000b",
   "devdoc": "Contract deployed as upgradable proxy"
 }
