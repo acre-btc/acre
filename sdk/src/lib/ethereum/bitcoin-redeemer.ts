@@ -43,7 +43,7 @@ export default class EthereumBitcoinRedeemer
       case "sepolia":
         artifact = {
           ...SepoliaBitcoinRedeemer,
-          address: "0x3f836b84c7A46Ae733F89dE26226ce674fc68Bd7",
+          address: "0xE1d25025835A89C93d56a029C80699BE056584d2",
         }
         break
       case "mainnet":

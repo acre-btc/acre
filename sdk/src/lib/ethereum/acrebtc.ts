@@ -33,7 +33,7 @@ class EthereumAcreBTC
       case "sepolia":
         artifact = {
           ...SepoliaAcreBTC,
-          address: "0xCDe758fD91238De4adA89A8Bd754c66204E9CDe7",
+          address: "0xB8ba4B007321e0EB4586De49E59593E0eD66d367",
         }
         break
       case "mainnet":
