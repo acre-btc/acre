@@ -222,7 +222,7 @@ type BigIntDecimals = BigIntToLocaleStringOptions["maximumFractionDigits"]
 
 type FormatNumberToCompactStringOptions<V> = {
   decimals?: V extends bigint ? BigIntDecimals : number
-  withVariableDecimals?: boolean
+  withAutoCompactFormat?: boolean
   currency?: "USD"
 }
 
@@ -232,7 +232,7 @@ type FormatNumberToCompactStringOptions<V> = {
  * @param options Formatting options.
  * @param options.currency If provided, formats the number as currency
  * (e.g., USD).
- * @param options.withVariableDecimals If true, decimal places varies based on
+ * @param options.withAutoCompactFormat If true, decimal places varies based on
  * the size of the number (2 for thousands, 1 for millions or more).
  * @param options.decimals If provided, sets the number of decimal places to
  * a constant value. Defaults to 2 for currency and 4 otherwise.
@@ -245,7 +245,7 @@ export function formatNumberToCompactString<V extends number | bigint>(
   const {
     currency,
     decimals = currency ? 2 : 4,
-    withVariableDecimals = false,
+    withAutoCompactFormat = false,
   } = options
 
   const isBigInt = typeof value === "bigint"
@@ -254,8 +254,8 @@ export function formatNumberToCompactString<V extends number | bigint>(
   const isMillionsOrMore = isBigInt ? value >= 1_000_000n : value >= 1_000_000
 
   let maximumFractionDigits = decimals as BigIntDecimals
-  if (withVariableDecimals && isThousands) maximumFractionDigits = 2
-  if (withVariableDecimals && isMillionsOrMore) maximumFractionDigits = 1
+  if (withAutoCompactFormat && isThousands) maximumFractionDigits = 2
+  if (withAutoCompactFormat && isMillionsOrMore) maximumFractionDigits = 1
 
   return value.toLocaleString("en-US", {
     notation: "compact",
