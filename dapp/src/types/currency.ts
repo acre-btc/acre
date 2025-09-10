@@ -5,6 +5,6 @@ export type Currency = {
   desiredDecimals: number
 }
 
-export type CurrencyType = "bitcoin" | "usd" | "stbtc"
+export type CurrencyType = "bitcoin" | "usd" | "acrebtc"
 
 export type AmountType = string | number | bigint

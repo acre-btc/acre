@@ -34,7 +34,7 @@ export default function AcrePointsCard(props: CardProps) {
     <Card {...props}>
       <CardHeader mb={2} as={HStack} justify="space-between">
         <Text size="md" color="text.primary">
-          {isConnected ? "Your" : "Total"} Acre points
+          {isConnected ? <>Your Acre points</> : <>Acre users earned</>}
         </Text>
 
         <TooltipIcon
