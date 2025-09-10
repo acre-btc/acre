@@ -15,6 +15,8 @@ const ACREBTC: Currency = {
   ...BITCOIN,
   name: "acreBTC",
   symbol: "acreBTC",
+  decimals: 18,
+  desiredDecimals: 4,
 }
 
 const USD: Currency = {
