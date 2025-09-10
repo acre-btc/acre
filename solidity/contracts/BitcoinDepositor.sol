@@ -10,26 +10,6 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@keep-network/tbtc-v2/contracts/integrator/AbstractTBTCDepositor.sol";
 
 import {stBTC} from "./stBTC.sol";
-import {acreBTC} from "./acreBTC.sol";
-import {FeesReimbursementPool} from "./FeesReimbursementPool.sol";
-
-/// @title Acre vault interface.
-/// @notice Interface for the Acre vault contract (acreBTC).
-interface IAcreVault {
-    /// @notice Deposits assets to the vault.
-    /// @param assets Amount of assets to deposit.
-    /// @param receiver Address to which the shares will be minted.
-    /// @return shares Amount of shares minted.
-    function deposit(
-        uint256 assets,
-        address receiver
-    ) external returns (uint256);
-
-    /// @notice Returns the address of the treasury wallet used as a destination
-    ///         for the fees collection.
-    /// @return The address of the treasury wallet.
-    function treasury() external view returns (address);
-}
 
 /// @title Bitcoin Depositor contract.
 /// @notice The contract integrates Acre depositing with tBTC minting.
@@ -53,7 +33,7 @@ interface IAcreVault {
 ///         for sweeping, and when the sweep operation is confirmed on the Bitcoin
 ///         network, the tBTC Bridge and tBTC vault mint the tBTC token to the
 ///         Depositor address. After tBTC is minted to the Depositor, on the deposit
-///         finalization tBTC is deposited in Acre and Acre Vault shares are emitted
+///         finalization tBTC is deposited in Acre and stBTC shares are emitted
 ///         to the deposit owner.
 contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     using SafeERC20 for IERC20;
@@ -64,7 +44,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///           `initializeDeposit` function and is known to this contract.
     ///         - Finalized deposit led to tBTC ERC20 minting and was finalized
     ///           with a call to `finalizeDeposit` function that deposited tBTC
-    ///           to the Acre Vault contract.
+    ///           to the stBTC contract.
     enum DepositState {
         Unknown,
         Initialized,
@@ -80,9 +60,6 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     IERC20 public tbtcToken;
 
     /// @notice stBTC contract.
-    /// @dev DEPRECATED: Use `acreVault` instead. Kept for storage slots backwards
-    ///      compatibility.
-    // slither-disable-next-line constable-states
     stBTC public stbtc;
 
     /// @notice Minimum amount of a single deposit (in tBTC token precision).
@@ -98,19 +75,6 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///       the `depositorFeeDivisor` should be set to `50` because
     ///       `1/50 = 0.02 = 2%`.
     uint64 public depositorFeeDivisor;
-
-    /// @notice Fees reimbursement pool.
-    FeesReimbursementPool public feesReimbursementPool;
-
-    /// @notice Maximum deposit amount threshold for tBTC Bridge fees reimbursement.
-    ///         For deposits below this threshold, the fees will be reimbursed
-    ///         from the fees reimbursement pool.
-    /// @dev If the threshold is set to 0, the fees reimbursement is disabled.
-    ///      The threshold is in tBTC token precision.
-    uint256 public bridgeFeesReimbursementThreshold;
-
-    /// @notice Acre vault contract.
-    IAcreVault public acreVault;
 
     /// @notice Emitted when a deposit is initialized.
     /// @dev Deposit details can be fetched from {{ Bridge.DepositRevealed }}
@@ -153,26 +117,11 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @param depositorFeeDivisor New value of the depositor fee divisor.
     event DepositorFeeDivisorUpdated(uint64 depositorFeeDivisor);
 
-    /// @notice Emitted when a fees reimbursement pool is updated.
-    /// @param newFeesReimbursementPool New value of the fees reimbursement pool.
-    event FeesReimbursementPoolUpdated(address newFeesReimbursementPool);
-
-    /// @notice Emitted when a tBTC Bridge fees reimbursement threshold is updated.
-    /// @param bridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
-    ///        reimbursement threshold.
-    event BridgeFeesReimbursementThresholdUpdated(
-        uint256 bridgeFeesReimbursementThreshold
-    );
-
-    /// @notice Emitted when a acre vault is updated.
-    /// @param newAcreVault New value of the acre vault.
-    event AcreVaultUpdated(address newAcreVault);
-
     /// Reverts if the tBTC Token address is zero.
     error TbtcTokenZeroAddress();
 
-    /// Reverts if the Acre Vault address is zero.
-    error AcreVaultZeroAddress();
+    /// Reverts if the stBTC address is zero.
+    error StbtcZeroAddress();
 
     /// @dev Deposit owner address is zero.
     error DepositOwnerIsZeroAddress();
@@ -196,9 +145,6 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         uint256 bridgeMinDepositAmount
     );
 
-    /// @dev Attempted to set fees reimbursement pool to a zero address.
-    error FeesReimbursementPoolZeroAddress();
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -208,12 +154,12 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @param bridge tBTC Bridge contract instance.
     /// @param tbtcVault tBTC Vault contract instance.
     /// @param _tbtcToken tBTC token contract instance.
-    /// @param _acreVault Acre Vault contract instance.
+    /// @param _stbtc stBTC contract instance.
     function initialize(
         address bridge,
         address tbtcVault,
         address _tbtcToken,
-        address _acreVault
+        address _stbtc
     ) public initializer {
         __AbstractTBTCDepositor_initialize(bridge, tbtcVault);
         __Ownable2Step_init();
@@ -222,12 +168,12 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         if (address(_tbtcToken) == address(0)) {
             revert TbtcTokenZeroAddress();
         }
-        if (address(_acreVault) == address(0)) {
-            revert AcreVaultZeroAddress();
+        if (address(_stbtc) == address(0)) {
+            revert StbtcZeroAddress();
         }
 
         tbtcToken = IERC20(_tbtcToken);
-        acreVault = IAcreVault(_acreVault);
+        stbtc = stBTC(_stbtc);
 
         minDepositAmount = 0.015 * 1e18; // 0.015 BTC
         depositorFeeDivisor = 1000; // 1/1000 == 10bps == 0.1% == 0.001
@@ -248,7 +194,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///        can be revealed only one time.
     /// @param fundingTx Bitcoin funding transaction data, see `IBridgeTypes.BitcoinTxInfo`.
     /// @param reveal Deposit reveal data, see `IBridgeTypes.DepositRevealInfo`.
-    /// @param depositOwner The address to which the Acre Vault shares will be minted.
+    /// @param depositOwner The address to which the stBTC shares will be minted.
     /// @param referral Data used for referral program.
     function initializeDeposit(
         IBridgeTypes.BitcoinTxInfo calldata fundingTx,
@@ -312,25 +258,6 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
             bytes32 extraData
         ) = _finalizeDeposit(depositKey);
 
-        if (
-            bridgeFeesReimbursementThreshold > 0 &&
-            initialAmount <= bridgeFeesReimbursementThreshold
-        ) {
-            uint256 tbtcBridgeFee = initialAmount - tbtcAmount;
-
-            if (tbtcBridgeFee > 0) {
-                if (address(feesReimbursementPool) == address(0)) {
-                    revert FeesReimbursementPoolZeroAddress();
-                }
-
-                uint256 reimbursedAmount = feesReimbursementPool.reimburse(
-                    tbtcBridgeFee
-                );
-
-                tbtcAmount += reimbursedAmount;
-            }
-        }
-
         // Compute depositor fee. The fee is calculated based on the initial funding
         // transaction amount, before the tBTC protocol network fees were taken.
         uint256 depositorFee = depositorFeeDivisor > 0
@@ -345,7 +272,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
 
         // Transfer depositor fee to the treasury wallet.
         if (depositorFee > 0) {
-            tbtcToken.safeTransfer(acreVault.treasury(), depositorFee);
+            tbtcToken.safeTransfer(stbtc.treasury(), depositorFee);
         }
 
         (address depositOwner, uint16 referral) = decodeExtraData(extraData);
@@ -361,10 +288,10 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
 
         uint256 amountToDeposit = tbtcAmount - depositorFee;
 
-        // Deposit tBTC in Acre Vault.
-        tbtcToken.safeIncreaseAllowance(address(acreVault), amountToDeposit);
+        // Deposit tBTC in stBTC.
+        tbtcToken.safeIncreaseAllowance(address(stbtc), amountToDeposit);
         // slither-disable-next-line unused-return
-        acreVault.deposit(amountToDeposit, depositOwner);
+        stbtc.deposit(amountToDeposit, depositOwner);
     }
 
     /// @notice Updates the minimum deposit amount.
@@ -398,49 +325,10 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         emit DepositorFeeDivisorUpdated(newDepositorFeeDivisor);
     }
 
-    /// @notice Updates the fees reimbursement pool contract address.
-    /// @param newFeesReimbursementPool New address of the fees reimbursement pool.
-    function updateFeesReimbursementPool(
-        address newFeesReimbursementPool
-    ) external onlyOwner {
-        if (address(newFeesReimbursementPool) == address(0)) {
-            revert FeesReimbursementPoolZeroAddress();
-        }
-
-        emit FeesReimbursementPoolUpdated(newFeesReimbursementPool);
-
-        feesReimbursementPool = FeesReimbursementPool(newFeesReimbursementPool);
-    }
-
-    /// @notice Updates the tBTC Bridge fees reimbursement threshold.
-    /// @param newBridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
-    ///        reimbursement threshold.
-    function updateBridgeFeesReimbursementThreshold(
-        uint256 newBridgeFeesReimbursementThreshold
-    ) external onlyOwner {
-        emit BridgeFeesReimbursementThresholdUpdated(
-            newBridgeFeesReimbursementThreshold
-        );
-
-        bridgeFeesReimbursementThreshold = newBridgeFeesReimbursementThreshold;
-    }
-
-    /// @notice Updates the acre vault contract address.
-    /// @param newAcreVault New address of the acre vault.
-    function updateAcreVault(address newAcreVault) external onlyOwner {
-        if (address(newAcreVault) == address(0)) {
-            revert AcreVaultZeroAddress();
-        }
-
-        emit AcreVaultUpdated(newAcreVault);
-
-        acreVault = IAcreVault(newAcreVault);
-    }
-
     /// @notice Encodes deposit owner address and referral as extra data.
     /// @dev Packs the data to bytes32: 20 bytes of deposit owner address and
     ///      2 bytes of referral, 10 bytes of trailing zeros.
-    /// @param depositOwner The address to which the Acre Vault shares will be minted.
+    /// @param depositOwner The address to which the stBTC shares will be minted.
     /// @param referral Data used for referral program.
     /// @return Encoded extra data.
     function encodeExtraData(
@@ -454,7 +342,7 @@ contract BitcoinDepositor is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @dev Unpacks the data from bytes32: 20 bytes of deposit owner address and
     ///      2 bytes of referral, 10 bytes of trailing zeros.
     /// @param extraData Encoded extra data.
-    /// @return depositOwner The address to which the Acre Vault shares will be minted.
+    /// @return depositOwner The address to which the stBTC shares will be minted.
     /// @return referral Data used for referral program.
     function decodeExtraData(
         bytes32 extraData
