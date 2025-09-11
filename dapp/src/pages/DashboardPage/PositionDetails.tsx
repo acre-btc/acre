@@ -75,7 +75,7 @@ export default function PositionDetails() {
           <VStack alignItems="start" spacing={0}>
             <CurrencyBalance
               amount={shares}
-              currency="stbtc"
+              currency="acrebtc"
               size="4xl"
               letterSpacing="-0.075rem" // -1.2px
               color="text.primary"
