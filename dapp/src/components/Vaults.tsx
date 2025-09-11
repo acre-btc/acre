@@ -230,7 +230,7 @@ function Vaults(props: VaultsRootProps) {
                     boxSize={5}
                     icon={
                       <Icon
-                        boxSize="100%"
+                        boxSize="full"
                         as={IconChevronRight}
                         color="brown.40"
                       />

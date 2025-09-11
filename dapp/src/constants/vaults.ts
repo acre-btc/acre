@@ -3,7 +3,7 @@ import externalHref from "./externalHref"
 
 const VAULT_PROVIDERS = {
   tbtc: {
-    label: "tBTC DeFi Vault",
+    label: "tBTC DeFi",
     icon: TbtcIcon,
     // TODO: Replace with actual description
     description:

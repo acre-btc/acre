@@ -1,8 +1,18 @@
 import React from "react"
-import { Icon, ModalBody, ModalHeader, Text } from "@chakra-ui/react"
+import {
+  Flex,
+  Icon,
+  List,
+  ListItem,
+  ModalBody,
+  ModalCloseButton,
+  ModalHeader,
+  Text,
+} from "@chakra-ui/react"
 import { BaseModalProps } from "#/types"
 import { vaults } from "#/constants"
 import { formatNumberToCompactString } from "#/utils/numbersUtils"
+import { IconShieldFilled } from "@tabler/icons-react"
 import withBaseModal from "./ModalRoot/withBaseModal"
 
 type VaultDetails = {
@@ -61,24 +71,43 @@ const detailsLabels: Record<VaultDetailsKeys, string | null> = {
   withdrawalDelaysLabel: "Withdrawal delays",
 }
 type VaultDetailsSectionProps = {
-  key?: Extract<VaultDetailsKeys, "apr" | "fees" | "tvl">
+  sectionKey?: Extract<VaultDetailsKeys, "apr" | "fees" | "tvl">
   details: Partial<Record<VaultDetailsKeys, string>>
 }
 
-function VaultDetailsSection({ key, details }: VaultDetailsSectionProps) {
-  const sectionLabel = key ? detailsLabels[key] : null
+function VaultDetailsSection({
+  sectionKey,
+  details,
+}: VaultDetailsSectionProps) {
+  const sectionLabel = sectionKey ? detailsLabels[sectionKey] : null
 
   return (
-    <div>
-      {sectionLabel && <p>{sectionLabel}</p>}
-      <ul>
+    <Flex flexDir="column" bg="surface.1" gap={2} p={5}>
+      {sectionLabel && (
+        <Text textAlign="start" fontWeight="semibold">
+          {sectionLabel}
+        </Text>
+      )}
+
+      <List spacing={1}>
         {Object.entries(details).map(([detailKey, value]) => (
-          <li key={detailKey}>
-            {detailsLabels[detailKey as VaultDetailsKeys]}: {value}
-          </li>
+          <ListItem
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            key={detailKey}
+          >
+            <Text size="md" color="text.primary">
+              {detailsLabels[detailKey as VaultDetailsKeys]}
+            </Text>
+
+            <Text size="md" color="text.primary">
+              {value}
+            </Text>
+          </ListItem>
         ))}
-      </ul>
-    </div>
+      </List>
+    </Flex>
   )
 }
 
@@ -129,29 +158,44 @@ export function VaultDetailsModalBase({
 
   return (
     <>
-      <ModalHeader>
-        <Icon as={icon} boxSize={6} />
+      <ModalCloseButton />
+
+      <ModalHeader px={10} pb={5}>
+        <Icon as={icon} boxSize={10} mb={4} />
         <Text>{label} Staking Vault</Text>
       </ModalHeader>
 
-      <ModalBody>
-        <Text size="md">{description}</Text>
+      <ModalBody px={10}>
+        <Text size="md" textAlign="start" color="text.secondary">
+          {description}
+        </Text>
 
-        <div>
-          <VaultDetailsSection key="apr" details={formattedApr} />
+        <Flex
+          flexDir="column"
+          w="full"
+          gap={1}
+          borderRadius="sm"
+          overflow="hidden"
+        >
+          <VaultDetailsSection sectionKey="apr" details={formattedApr} />
 
-          <VaultDetailsSection key="fees" details={formattedFees} />
+          <VaultDetailsSection sectionKey="fees" details={formattedFees} />
 
-          <VaultDetailsSection key="tvl" details={formattedTvl} />
+          <VaultDetailsSection sectionKey="tvl" details={formattedTvl} />
 
           <VaultDetailsSection details={formattedMisc} />
-        </div>
+        </Flex>
 
-        <Text>Non-custodial. Rewards auto-compound daily.</Text>
+        <Flex alignSelf="start" gap={1} mt={-1} px={6}>
+          <Icon as={IconShieldFilled} color="ink.50" />
+          <Text size="xs">Non-custodial. Rewards auto-compound daily.</Text>
+        </Flex>
       </ModalBody>
     </>
   )
 }
 
-const VaultDetailsModal = withBaseModal(VaultDetailsModalBase)
+const VaultDetailsModal = withBaseModal(VaultDetailsModalBase, {
+  size: "lg",
+})
 export default VaultDetailsModal
