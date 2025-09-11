@@ -19,7 +19,7 @@ export function handleRedemptionRequested(event: RedemptionRequested): void {
 
   redemptionRequestedEvent.activity = withdraw.id
   redemptionRequestedEvent.timestamp = event.block.timestamp
-  redemptionRequestedEvent.type = "Initialized"
+  redemptionRequestedEvent.type = "Requested"
 
   ownerEntity.save()
   withdraw.save()
