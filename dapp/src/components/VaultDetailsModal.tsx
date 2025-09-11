@@ -15,6 +15,7 @@ import { BaseModalProps } from "#/types"
 import { vaults } from "#/constants"
 import numbersUtils, { formatNumberToCompactString } from "#/utils/numbersUtils"
 import { IconArrowUpRight, IconShieldFilled } from "@tabler/icons-react"
+import { addressUtils } from "#/utils"
 import withBaseModal from "./ModalRoot/withBaseModal"
 import TooltipIcon from "./shared/TooltipIcon"
 
@@ -196,7 +197,9 @@ export function VaultDetailsModalBase({
         {vaults.VAULT_CURATORS[misc.curator].label}
       </Button>
     ),
-    vaultAddress: vaults.VAULT_PROVIDERS[provider].address,
+    vaultAddress: addressUtils.truncateAddress(
+      vaults.VAULT_PROVIDERS[provider].address,
+    ),
     depositToken: (
       <Flex align="center" gap={2}>
         {vaults.VAULT_PROVIDERS[provider].depositToken}
