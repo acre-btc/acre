@@ -13,16 +13,16 @@ import {
 } from "@chakra-ui/react"
 import { BaseModalProps } from "#/types"
 import { vaults } from "#/constants"
-import { formatNumberToCompactString } from "#/utils/numbersUtils"
+import numbersUtils, { formatNumberToCompactString } from "#/utils/numbersUtils"
 import { IconArrowUpRight, IconShieldFilled } from "@tabler/icons-react"
 import withBaseModal from "./ModalRoot/withBaseModal"
 import TooltipIcon from "./shared/TooltipIcon"
 
 type VaultDetails = {
   apr: {
-    weeklyAprPercentage?: number
-    monthlyAprPercentage?: number
-    allTimeAprPercentage?: number
+    weeklyAprPercentage?: [number, number]
+    monthlyAprPercentage?: [number, number]
+    allTimeAprPercentage?: [number, number]
   }
   fees: {
     bridgeFee?: number
@@ -157,32 +157,29 @@ export function VaultDetailsModalBase({
   const { label, icon, description } = vaults.VAULT_PROVIDERS[provider]
 
   const formattedApr = Object.entries(apr).reduce(
-    (acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key as keyof typeof apr] = `${value}%`
-      }
-      return acc
-    },
+    (acc, [key, [startValue, endValue]]) => ({
+      ...acc,
+      [key as keyof typeof apr]: `${numbersUtils.getPercentValue(
+        startValue,
+        1,
+      )} - ${numbersUtils.getPercentValue(endValue, 1)}% (est.)`,
+    }),
     {} as Partial<Record<keyof typeof apr, string>>,
   )
 
   const formattedFees = Object.entries(fees).reduce(
-    (acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key as keyof typeof fees] = `${value}%`
-      }
-      return acc
-    },
+    (acc, [key, value]) => ({
+      ...acc,
+      [key as keyof typeof fees]: `${value}%`,
+    }),
     {} as Partial<Record<keyof typeof fees, string>>,
   )
 
   const formattedTvl = Object.entries(tvl).reduce(
-    (acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key as keyof typeof tvl] = formatNumberToCompactString(value, 2)
-      }
-      return acc
-    },
+    (acc, [key, value]) => ({
+      ...acc,
+      [key as keyof typeof tvl]: formatNumberToCompactString(value, 2),
+    }),
     {} as Partial<Record<keyof typeof tvl, string>>,
   )
 

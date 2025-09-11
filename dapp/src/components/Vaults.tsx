@@ -38,6 +38,7 @@ type VaultItem = {
   portfolioWeight: number
   apr: number
   tvl: number
+  tvlCap: number
   curator: keyof typeof vaults.VAULT_CURATORS
 }
 
@@ -135,6 +136,7 @@ function Vaults(props: VaultsRootProps) {
       portfolioWeight: 1,
       apr: 0.09,
       tvl: statistics.data.tvl.usdValue,
+      tvlCap: statistics.data.tvl.cap,
       curator: "re7",
     },
   ]
@@ -144,18 +146,19 @@ function Vaults(props: VaultsRootProps) {
       provider: vault.provider,
       details: {
         apr: {
-          weeklyAprPercentage: vault.apr,
-          monthlyAprPercentage: 0,
-          allTimeAprPercentage: 0,
+          weeklyAprPercentage: [0.03, 0.05],
+          monthlyAprPercentage: [0.03, 0.05],
+          allTimeAprPercentage: [0.03, 0.05],
         },
         fees: {
+          // TODO: Replace with actual fees
           bridgeFee: 0,
           managementFee: 0,
           performanceFee: 0,
         },
         tvl: {
-          activeTvl: 0,
-          tvlCap: 0,
+          activeTvl: vault.tvl,
+          tvlCap: vault.tvlCap,
         },
         misc: {
           curator: vault.curator,
