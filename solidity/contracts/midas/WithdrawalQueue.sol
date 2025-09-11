@@ -125,7 +125,6 @@ contract WithdrawalQueue is Maintainable {
     /// @param tbtcAmount The amount of tBTC to be redeemed (after exit fee).
     /// @param exitFeeInTbtc The exit fee in tBTC.
     /// @param midasSharesWithFee The amount of Midas Vault shares to redeem (including exit fee).
-
     event RedeemAndBridgeRequested(
         uint256 indexed requestId,
         address indexed redeemer,
