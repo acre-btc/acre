@@ -6,7 +6,7 @@
   },
   {
     "inputs": [],
-    "name": "ApproveAndCallFailed",
+    "name": "AcreBtcZeroAddress",
     "type": "error"
   },
   {
@@ -33,11 +33,6 @@
   {
     "inputs": [],
     "name": "NotInitializing",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotTbtcTokenOwner",
     "type": "error"
   },
   {
@@ -80,27 +75,7 @@
   },
   {
     "inputs": [],
-    "name": "StbtcZeroAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "TbtcTokenZeroAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "TbtcVaultZeroAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UnexpectedTbtcTokenOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroAddress",
     "type": "error"
   },
   {
@@ -164,15 +139,15 @@
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
-        "name": "shares",
+        "name": "requestId",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "tbtcAmount",
+        "name": "shares",
         "type": "uint256"
       }
     ],
@@ -180,29 +155,23 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "oldTbtcVault",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newTbtcVault",
-        "type": "address"
-      }
-    ],
-    "name": "TbtcVaultUpdated",
-    "type": "event"
-  },
-  {
     "inputs": [],
     "name": "acceptOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "acreBtc",
+    "outputs": [
+      {
+        "internalType": "contract acreBTC",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -214,12 +183,7 @@
       },
       {
         "internalType": "address",
-        "name": "_stbtc",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_tbtcVault",
+        "name": "_acreBtc",
         "type": "address"
       }
     ],
@@ -291,36 +255,10 @@
   },
   {
     "inputs": [],
-    "name": "stbtc",
-    "outputs": [
-      {
-        "internalType": "contract stBTC",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "tbtcToken",
     "outputs": [
       {
         "internalType": "contract ITBTCToken",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tbtcVault",
-    "outputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -337,19 +275,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newTbtcVault",
-        "type": "address"
-      }
-    ],
-    "name": "updateTbtcVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
