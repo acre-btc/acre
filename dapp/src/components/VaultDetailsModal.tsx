@@ -89,7 +89,7 @@ const tooltipsContents: Partial<Record<VaultDetailsKeys, string>> = {
 
 type VaultDetailsSectionProps = {
   sectionKey?: Extract<VaultDetailsKeys, "apr" | "fees" | "tvl">
-  details: Partial<Record<VaultDetailsKeys, string>>
+  details: Partial<Record<VaultDetailsKeys, ReactNode>>
 }
 
 function VaultDetailsSection({
