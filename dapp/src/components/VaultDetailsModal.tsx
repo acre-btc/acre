@@ -190,6 +190,7 @@ export function VaultDetailsModalBase({
     curator: (
       <Button
         as={Link}
+        fontSize="md"
         variant="link"
         rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
         href={vaults.VAULT_CURATORS[misc.curator].url}
