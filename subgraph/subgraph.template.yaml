@@ -36,6 +36,34 @@ dataSources:
           receipt: true
       file: ./src/bitcoin-depositor.ts
   - kind: ethereum
+    name: BitcoinRedeemer
+    network: {{network}}
+    context:
+      tbtcBridgeAddress:
+        type: Bytes
+        data: "{{tbtcBridge.address}}"
+    source:
+      address: "{{bitcoinRedeemer.address}}"
+      abi: BitcoinRedeemer
+      startBlock: {{bitcoinRedeemer.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Withdraw
+        - Event
+      abis:
+        - name: BitcoinRedeemer
+          file: ./abis/BitcoinRedeemer.json
+      eventHandlers:
+        - event: RedemptionRequested(indexed address,indexed uint256,uint256)
+          handler: handleRedemptionRequested
+          receipt: true
+      file: ./src/bitcoin-redeemer.ts
+  - kind: ethereum
     name: TbtcBridge
     network: {{network}}
     context:
