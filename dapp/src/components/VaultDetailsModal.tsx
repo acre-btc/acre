@@ -120,6 +120,13 @@ export function VaultDetailsModalBase({
     {} as Partial<Record<keyof typeof tvl, string>>,
   )
 
+  const formattedMisc: Record<keyof typeof misc, string | undefined> = {
+    curator: vaults.VAULT_CURATORS[misc.curator].label,
+    vaultAddress: vaults.VAULT_PROVIDERS[provider].address,
+    depositToken: vaults.VAULT_PROVIDERS[provider].depositToken,
+    withdrawalDelaysLabel: misc.withdrawalDelaysLabel,
+  }
+
   return (
     <>
       <ModalHeader>
@@ -137,7 +144,7 @@ export function VaultDetailsModalBase({
 
           <VaultDetailsSection key="tvl" details={formattedTvl} />
 
-          <VaultDetailsSection details={misc} />
+          <VaultDetailsSection details={formattedMisc} />
         </div>
 
         <Text>Non-custodial. Rewards auto-compound daily.</Text>
@@ -146,7 +153,5 @@ export function VaultDetailsModalBase({
   )
 }
 
-const VaultDetailsModal = withBaseModal(VaultDetailsModalBase, {
-  closeOnEsc: false,
-})
+const VaultDetailsModal = withBaseModal(VaultDetailsModalBase)
 export default VaultDetailsModal

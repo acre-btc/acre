@@ -8,6 +8,7 @@ import {
   CardProps,
   CircularProgress,
   Icon,
+  IconButton,
   Link,
   Table,
   TableContainer,
@@ -22,11 +23,13 @@ import {
 import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
+  IconChevronRight,
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
 import { vaults } from "#/constants"
-import { useStatistics } from "#/hooks"
+import { useModal, useStatistics } from "#/hooks"
+import { MODAL_TYPES } from "#/types"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -78,6 +81,7 @@ function VaultsRoot(props: VaultsRootProps) {
 
 function Vaults(props: VaultsRootProps) {
   const statistics = useStatistics()
+  const { openModal } = useModal()
 
   const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
@@ -135,6 +139,32 @@ function Vaults(props: VaultsRootProps) {
     },
   ]
 
+  const handleOpenVaultDetails = (vault: VaultItem) => {
+    openModal(MODAL_TYPES.VAULT_DETAILS, {
+      provider: vault.provider,
+      details: {
+        apr: {
+          weeklyAprPercentage: vault.apr,
+          monthlyAprPercentage: 0,
+          allTimeAprPercentage: 0,
+        },
+        fees: {
+          bridgeFee: 0,
+          managementFee: 0,
+          performanceFee: 0,
+        },
+        tvl: {
+          activeTvl: 0,
+          tvlCap: 0,
+        },
+        misc: {
+          curator: vault.curator,
+          withdrawalDelaysLabel: "2 - 3 days",
+        },
+      },
+    })
+  }
+
   return (
     <VaultsRoot {...props}>
       <Tbody>
@@ -185,6 +215,27 @@ function Vaults(props: VaultsRootProps) {
                   >
                     {curator.label}
                   </Button>
+                </Box>
+              </Td>
+              <Td>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <IconButton
+                    variant="ghost"
+                    aria-label="Show vault details"
+                    onClick={() => handleOpenVaultDetails(vault)}
+                    boxSize={5}
+                    icon={
+                      <Icon
+                        boxSize="100%"
+                        as={IconChevronRight}
+                        color="brown.40"
+                      />
+                    }
+                  />
                 </Box>
               </Td>
             </Tr>
