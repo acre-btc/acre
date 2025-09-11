@@ -64,6 +64,34 @@ dataSources:
           receipt: true
       file: ./src/bitcoin-redeemer.ts
   - kind: ethereum
+    name: WithdrawalQueue
+    network: {{network}}
+    context:
+      tbtcBridgeAddress:
+        type: Bytes
+        data: "{{tbtcBridge.address}}"
+    source:
+      address: "{{withdrawalQueue.address}}"
+      abi: WithdrawalQueue
+      startBlock: {{withdrawalQueue.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Withdraw
+        - Event
+      abis:
+        - name: WithdrawalQueue
+          file: ./abis/WithdrawalQueue.json
+      eventHandlers:
+        - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
+          handler: handleRedeemAndBridgeRequested
+          receipt: true
+      file: ./src/withdrawal-queue.ts
+  - kind: ethereum
     name: TbtcBridge
     network: {{network}}
     context:

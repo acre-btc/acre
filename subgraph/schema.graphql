@@ -34,6 +34,7 @@ type Withdraw implements ActivityData @entity {
   events: [Event!] @derivedFrom(field: "activity")
   # TODO: amount field will be updated when working on withdraw 
   amount: BigInt
+  requestedAmount: BigInt
   bitcoinTransactionId: String
 }
 
