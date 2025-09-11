@@ -1,7 +1,9 @@
-import React from "react"
+import React, { ReactNode } from "react"
 import {
+  Button,
   Flex,
   Icon,
+  Link,
   List,
   ListItem,
   ModalBody,
@@ -12,8 +14,9 @@ import {
 import { BaseModalProps } from "#/types"
 import { vaults } from "#/constants"
 import { formatNumberToCompactString } from "#/utils/numbersUtils"
-import { IconShieldFilled } from "@tabler/icons-react"
+import { IconArrowUpRight, IconShieldFilled } from "@tabler/icons-react"
 import withBaseModal from "./ModalRoot/withBaseModal"
+import TooltipIcon from "./shared/TooltipIcon"
 
 type VaultDetails = {
   apr: {
@@ -53,7 +56,7 @@ type FlattenKeys<T> = {
 
 type VaultDetailsKeys = Exclude<FlattenKeys<VaultDetails>, "misc">
 
-const detailsLabels: Record<VaultDetailsKeys, string | null> = {
+const detailsLabels: Record<VaultDetailsKeys, string> = {
   apr: "APR",
   fees: "Fees",
   tvl: "TVL",
@@ -70,6 +73,20 @@ const detailsLabels: Record<VaultDetailsKeys, string | null> = {
   depositToken: "Deposit token",
   withdrawalDelaysLabel: "Withdrawal delays",
 }
+
+const tooltipsContents: Partial<Record<VaultDetailsKeys, string>> = {
+  apr: "Annual Percentage Rate (APR) is the annual rate of return earned on an investment.",
+  fees: "Fees are charged to cover the costs of managing and operating the vault.",
+  tvl: "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
+  curator: "The curator is the entity responsible for managing the vault.",
+  vaultAddress:
+    "The vault address is the unique identifier for the vault on the blockchain.",
+  depositToken:
+    "The deposit token is the type of asset that can be deposited into the vault.",
+  withdrawalDelaysLabel:
+    "Withdrawal delays refer to the time period that must pass before a user can withdraw their funds from the vault.",
+}
+
 type VaultDetailsSectionProps = {
   sectionKey?: Extract<VaultDetailsKeys, "apr" | "fees" | "tvl">
   details: Partial<Record<VaultDetailsKeys, string>>
@@ -80,14 +97,24 @@ function VaultDetailsSection({
   details,
 }: VaultDetailsSectionProps) {
   const sectionLabel = sectionKey ? detailsLabels[sectionKey] : null
+  const sectionTooltip = sectionKey ? tooltipsContents[sectionKey] : null
 
   return (
     <Flex flexDir="column" bg="surface.1" gap={2} p={5}>
-      {sectionLabel && (
-        <Text textAlign="start" fontWeight="semibold">
-          {sectionLabel}
-        </Text>
-      )}
+      <Flex align="center" gap={1}>
+        {sectionLabel && (
+          <Text textAlign="start" fontWeight="semibold">
+            {sectionLabel}
+          </Text>
+        )}
+        {sectionTooltip && (
+          <TooltipIcon
+            placement="right"
+            iconColor="text.tertiary"
+            label={sectionTooltip}
+          />
+        )}
+      </Flex>
 
       <List spacing={1}>
         {Object.entries(details).map(([detailKey, value]) => (
@@ -97,9 +124,19 @@ function VaultDetailsSection({
             alignItems="center"
             key={detailKey}
           >
-            <Text size="md" color="text.primary">
-              {detailsLabels[detailKey as VaultDetailsKeys]}
-            </Text>
+            <Flex align="center" gap={1}>
+              <Text size="md" color="text.primary">
+                {detailsLabels[detailKey as VaultDetailsKeys]}
+              </Text>
+
+              {tooltipsContents[detailKey as VaultDetailsKeys] && (
+                <TooltipIcon
+                  placement="right"
+                  iconColor="text.tertiary"
+                  label={tooltipsContents[detailKey as VaultDetailsKeys]}
+                />
+              )}
+            </Flex>
 
             <Text size="md" color="text.primary">
               {value}
@@ -149,10 +186,25 @@ export function VaultDetailsModalBase({
     {} as Partial<Record<keyof typeof tvl, string>>,
   )
 
-  const formattedMisc: Record<keyof typeof misc, string | undefined> = {
-    curator: vaults.VAULT_CURATORS[misc.curator].label,
+  const formattedMisc: Record<keyof typeof misc, ReactNode> = {
+    curator: (
+      <Button
+        as={Link}
+        variant="link"
+        rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
+        href={vaults.VAULT_CURATORS[misc.curator].url}
+        isExternal
+      >
+        {vaults.VAULT_CURATORS[misc.curator].label}
+      </Button>
+    ),
     vaultAddress: vaults.VAULT_PROVIDERS[provider].address,
-    depositToken: vaults.VAULT_PROVIDERS[provider].depositToken,
+    depositToken: (
+      <Flex align="center" gap={2}>
+        {vaults.VAULT_PROVIDERS[provider].depositToken}
+        <Icon as={icon} boxSize={5} />
+      </Flex>
+    ),
     withdrawalDelaysLabel: misc.withdrawalDelaysLabel,
   }
 
