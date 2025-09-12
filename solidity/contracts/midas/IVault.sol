@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
 /**
@@ -40,18 +40,6 @@ interface IVault {
     );
 
     /**
-     * @notice Emitted when a redeem request is finalized.
-     * @param requestId The request ID.
-     * @param shares The amount of shares that would be redeemed.
-     * @param assets The amount of assets that would be released.
-     */
-    event RedeemFinalize(
-        uint256 indexed requestId,
-        uint256 shares,
-        uint256 assets
-    );
-
-    /**
      * @dev Returns the address of the share token. The address MAY be the same
      *      as the vault address.
      *
@@ -59,6 +47,14 @@ interface IVault {
      * - MUST NOT revert.
      */
     function share() external view returns (address shareTokenAddress);
+
+    /**
+     * @dev Returns the address of the asset token.
+     *
+     * - MUST be an ERC-20 token contract.
+     * - MUST NOT revert.
+     */
+    function asset() external view returns (address assetTokenAddress);
 
     /**
      * @dev Returns the amount of shares that the Vault would exchange for the amount of assets provided, in an ideal
@@ -98,6 +94,9 @@ interface IVault {
      * @dev Mints Vault shares to receiver by depositing exactly amount of underlying tokens.
      *
      * - MUST emit the Deposit event.
+     *
+     * @param assets The amount of assets to be deposited.
+     * @param receiver The address that will received the shares.
      *
      * NOTE: Implementation requires pre-approval of the Vault with the Vault’s underlying asset token.
      */

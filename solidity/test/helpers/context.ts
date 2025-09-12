@@ -15,6 +15,9 @@ import type {
   FeesReimbursementPool,
   MidasAllocator,
   MidasVaultStub,
+  WithdrawalQueue,
+  BitcoinRedeemerV2,
+  BitcoinDepositorV2,
 } from "../../typechain"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -47,6 +50,14 @@ export async function deployment() {
     await getDeployedContract("MidasAllocator")
   const midasVault: MidasVaultStub = await getDeployedContract("MidasVault")
 
+  const withdrawalQueue: WithdrawalQueue =
+    await getDeployedContract("WithdrawalQueue")
+
+  const bitcoinDepositorV2: BitcoinDepositorV2 =
+    await getDeployedContract("BitcoinDepositorV2")
+  const bitcoinRedeemerV2: BitcoinRedeemerV2 =
+    await getDeployedContract("BitcoinRedeemerV2")
+
   return {
     tbtc,
     stbtc,
@@ -61,5 +72,8 @@ export async function deployment() {
     acreBtc,
     midasAllocator,
     midasVault,
+    withdrawalQueue,
+    bitcoinDepositorV2,
+    bitcoinRedeemerV2,
   }
 }

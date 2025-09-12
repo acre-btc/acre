@@ -23,12 +23,12 @@ import {
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
 async function fixture() {
-  const { bitcoinDepositor, feesReimbursementPool, tbtc } = await deployment()
+  const { bitcoinDepositorV2, feesReimbursementPool, tbtc } = await deployment()
   const { governance } = await getNamedSigners()
   const [_, thirdParty] = await getUnnamedSigners()
 
   return {
-    bitcoinDepositor,
+    bitcoinDepositor: bitcoinDepositorV2,
     feesReimbursementPool,
     tbtc,
     governance,

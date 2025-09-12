@@ -1,5 +1,5 @@
 {
-  "address": "0x6c2c643c90383Cba125E4b8DD01344eA35A75F27",
+  "address": "0x4030348c63e1c8EdDc4485d05Ed6FCE5eB2d35b2",
   "abi": [
     {
       "inputs": [],
@@ -131,12 +131,12 @@
     {
       "inputs": [
         {
-          "internalType": "enum BitcoinDepositor.DepositState",
+          "internalType": "enum BitcoinDepositorV2.DepositState",
           "name": "actualState",
           "type": "uint8"
         },
         {
-          "internalType": "enum BitcoinDepositor.DepositState",
+          "internalType": "enum BitcoinDepositorV2.DepositState",
           "name": "expectedState",
           "type": "uint8"
         }
@@ -441,7 +441,7 @@
       "name": "deposits",
       "outputs": [
         {
-          "internalType": "enum BitcoinDepositor.DepositState",
+          "internalType": "enum BitcoinDepositorV2.DepositState",
           "name": "",
           "type": "uint8"
         }
@@ -657,19 +657,6 @@
     },
     {
       "inputs": [],
-      "name": "stbtc",
-      "outputs": [
-        {
-          "internalType": "contract stBTC",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "tbtcToken",
       "outputs": [
         {
@@ -773,8 +760,8 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0x290113c31036422c5d19ec62189059667fe895b67cda247a848cfbeea3ee2d35",
-  "numDeployments": 3,
-  "implementation": "0x151cc22dcf98efDAa767731256Ecd24a57Be027A",
+  "transactionHash": "0x33208cf6cd3a4f327e081aba5cd4076d6b7f1635d52cfda3cca3a64f9f3bde2c",
+  "numDeployments": 1,
+  "implementation": "0x54c00968c18C5e169c4d38a0b13ee1f930B2FCF4",
   "devdoc": "Contract deployed as upgradable proxy"
 }

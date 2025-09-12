@@ -9,9 +9,6 @@ import {IBridgeTypes} from "@keep-network/tbtc-v2/contracts/integrator/IBridge.s
 
 import {TestERC20} from "./TestERC20.sol";
 
-/// @dev A test contract to stub tBTC Bridge contract.
-contract BridgeStub is MockBridge {}
-
 /// @dev A test contract to stub tBTC Vault contract.
 contract TBTCVaultStub is MockTBTCVault {
     TestERC20 public immutable tbtc;

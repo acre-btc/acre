@@ -18,7 +18,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log("deploying Midas Vault contract stub")
 
     await deployments.deploy("MidasVaultShares", {
-      contract: "TestERC20",
+      contract: "MidasVaultSharesStub",
       args: ["MidasVaultShares", "MVS"],
       from: deployer,
       log: true,

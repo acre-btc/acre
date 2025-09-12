@@ -21,6 +21,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["MidasAllocatorAddMaintainer"]
-func.dependencies = ["MidasAllocator"]
+// func.dependencies = ["MidasAllocator"]
 func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
   Promise.resolve(hre.network.name === "integration")

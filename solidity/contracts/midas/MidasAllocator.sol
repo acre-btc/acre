@@ -5,11 +5,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Maintainable} from "../utils/Maintainable.sol";
 import {ZeroAddress} from "../utils/Errors.sol";
-import "../interfaces/IDispatcher.sol";
+import "../interfaces/IDispatcherV2.sol";
 import {IVault} from "./IVault.sol";
+import {WithdrawalQueue} from "./WithdrawalQueue.sol";
 
 /// @notice MidasAllocator routes tBTC to/from Midas Vault.
-contract MidasAllocator is IDispatcher, Maintainable {
+contract MidasAllocator is IDispatcherV2, Maintainable {
     using SafeERC20 for IERC20;
 
     /// @notice tBTC token contract.
@@ -24,8 +25,20 @@ contract MidasAllocator is IDispatcher, Maintainable {
     /// @notice Address of the VaultReceiptToken contract.
     IERC20 public vaultSharesToken;
 
+    /// @notice Address of the WithdrawalQueue contract.
+    WithdrawalQueue public withdrawalQueue;
+
     /// @notice Emitted when tBTC is deposited to Midas Vault.
     event DepositAllocated(uint256 addedAmount, uint256 shares);
+
+    /// @notice Emitted when the withdrawal queue address is updated.
+    event WithdrawalQueueUpdated(
+        address oldWithdrawalQueue,
+        address newWithdrawalQueue
+    );
+
+    /// @notice Not withdrawal queue.
+    error NotWithdrawalQueue();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -74,9 +87,7 @@ contract MidasAllocator is IDispatcher, Maintainable {
             tbtc.balanceOf(address(acreVault))
         );
 
-        // TODO: Revisit when working on queued withdrawals as part of the balance
-        // may be held to satisfy the withdrawal requests.
-        uint256 idleAmount = uint96(tbtc.balanceOf(address(this)));
+        uint256 idleAmount = tbtc.balanceOf(address(this));
 
         // Deposit tBTC to Midas Vault.
         tbtc.forceApprove(address(midasVault), idleAmount);
@@ -86,8 +97,15 @@ contract MidasAllocator is IDispatcher, Maintainable {
         emit DepositAllocated(idleAmount, shares);
     }
 
-    function withdraw(uint256 amount) external {
-        revert("not implemented");
+    /// @notice Withdraw Midas Vault shares from the allocator to the withdrawal
+    ///         queue. This function is called by the withdrawal queue as a
+    ///         preparation for requesting a redemption from the Midas Vault.
+    function withdrawShares(uint256 midasShares) external {
+        if (msg.sender != address(withdrawalQueue)) {
+            revert NotWithdrawalQueue();
+        }
+
+        vaultSharesToken.safeTransfer(address(withdrawalQueue), midasShares);
     }
 
     /// @notice Returns the total amount of tBTC allocated to Midas Vault including
@@ -104,7 +122,17 @@ contract MidasAllocator is IDispatcher, Maintainable {
     ///         Acre Vault contract.
     /// @dev This is a special function that can be used to migrate funds during
     ///      allocator upgrade or in case of emergencies.
-    function emergencyWithdraw() external onlyOwner {
-        revert("not implemented");
+    function emergencyWithdraw() external onlyOwner returns (uint256) {
+        uint256 shares = vaultSharesToken.balanceOf(address(this));
+        vaultSharesToken.forceApprove(address(midasVault), shares);
+        return midasVault.requestRedeem(shares, address(acreVault));
+    }
+
+    /// @notice Sets the withdrawal queue address.
+    /// @param _withdrawalQueue Address of the withdrawal queue.
+    function setWithdrawalQueue(address _withdrawalQueue) external onlyOwner {
+        emit WithdrawalQueueUpdated(address(withdrawalQueue), _withdrawalQueue);
+
+        withdrawalQueue = WithdrawalQueue(_withdrawalQueue);
     }
 }
