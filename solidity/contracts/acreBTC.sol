@@ -398,8 +398,13 @@ contract acreBTC is ERC4626Fees, PausableOwnable {
     /// @notice Returns the total amount of assets held by the vault across all
     ///         allocations and this contract.
     function totalAssets() public view override returns (uint256) {
-        return
-            IERC20(asset()).balanceOf(address(this)) + dispatcher.totalAssets();
+        uint256 thisBalance = IERC20(asset()).balanceOf(address(this));
+
+        if (address(dispatcher) == address(0)) {
+            return thisBalance;
+        }
+
+        return thisBalance + dispatcher.totalAssets();
     }
 
     /// @dev Returns the maximum amount of the underlying asset that can be

@@ -4,7 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers"
 import { expect } from "chai"
 import { ContractTransactionResponse, MaxUint256, ZeroAddress } from "ethers"
-import { ethers, helpers } from "hardhat"
+import { ethers, helpers, upgrades } from "hardhat"
 
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
 import type { SnapshotRestorer } from "@nomicfoundation/hardhat-toolbox/network-helpers"
@@ -15,6 +15,7 @@ import { to1e18, feeOnTotal, feeOnRaw } from "./utils"
 import {
   AcreBTC as acreBTC,
   TestERC20,
+  type AcreBTC,
   type MidasAllocator,
   type WithdrawalQueue,
 } from "../typechain"
@@ -2321,139 +2322,192 @@ describe("acreBTC", () => {
     const firstDeposit = to1e18(2)
     const secondDeposit = to1e18(3)
 
-    context("when there are no deposits", () => {
-      it("should return 0", async () => {
-        expect(await acreBtc.totalAssets()).to.be.eq(0)
+    context("when there is a dispatcher", () => {
+      beforeAfterSnapshotWrapper()
+
+      // Dispatcher is set by the deployment scripts.
+
+      context("when there are no deposits", () => {
+        it("should return 0", async () => {
+          expect(await acreBtc.totalAssets()).to.be.eq(0)
+        })
+      })
+
+      context("when there are deposits", () => {
+        context("when there is a first deposit made", () => {
+          beforeAfterSnapshotWrapper()
+
+          before(async () => {
+            await tbtc.mint(depositor1.address, firstDeposit)
+            await tbtc
+              .connect(depositor1)
+              .approve(await acreBtc.getAddress(), firstDeposit)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(firstDeposit, depositor1.address)
+          })
+
+          it("should return the total assets", async () => {
+            const expectedAssets =
+              firstDeposit - feeOnTotal(firstDeposit, entryFeeBasisPoints)
+            expect(await acreBtc.totalAssets()).to.be.eq(expectedAssets)
+          })
+
+          it("should be equal to tBTC balance of the contract", async () => {
+            expect(await acreBtc.totalAssets()).to.be.eq(
+              await tbtc.balanceOf(await acreBtc.getAddress()),
+            )
+          })
+        })
+
+        context("when there are two deposits made", () => {
+          beforeAfterSnapshotWrapper()
+
+          before(async () => {
+            await tbtc.mint(depositor1.address, firstDeposit + secondDeposit)
+            await tbtc
+              .connect(depositor1)
+              .approve(await acreBtc.getAddress(), firstDeposit + secondDeposit)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(firstDeposit, depositor1.address)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(secondDeposit, depositor1.address)
+          })
+
+          it("should return the total assets", async () => {
+            const expectedAssetsFirstDeposit =
+              firstDeposit - feeOnTotal(firstDeposit, entryFeeBasisPoints)
+            const expectedAssetsSecondDeposit =
+              secondDeposit - feeOnTotal(secondDeposit, entryFeeBasisPoints)
+            expect(await acreBtc.totalAssets()).to.be.eq(
+              expectedAssetsFirstDeposit + expectedAssetsSecondDeposit,
+            )
+          })
+        })
+
+        context("when the funds were allocated after deposits", () => {
+          beforeAfterSnapshotWrapper()
+
+          before(async () => {
+            await tbtc.mint(depositor1.address, firstDeposit + secondDeposit)
+            await tbtc
+              .connect(depositor1)
+              .approve(await acreBtc.getAddress(), firstDeposit + secondDeposit)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(firstDeposit, depositor1.address)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(secondDeposit, depositor1.address)
+            await midasAllocator.connect(maintainer).allocate()
+          })
+
+          it("should return the total assets", async () => {
+            const deposits = firstDeposit + secondDeposit
+            const expectedAssets =
+              deposits - feeOnTotal(deposits, entryFeeBasisPoints)
+            expect(await acreBtc.totalAssets()).to.be.eq(expectedAssets)
+          })
+        })
+
+        context("when there is a donation made", () => {
+          beforeAfterSnapshotWrapper()
+
+          let totalAssetsBeforeDonation: bigint
+
+          before(async () => {
+            await tbtc.mint(depositor1.address, firstDeposit)
+            await tbtc
+              .connect(depositor1)
+              .approve(await acreBtc.getAddress(), firstDeposit)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(firstDeposit, depositor1.address)
+            totalAssetsBeforeDonation = await acreBtc.totalAssets()
+            await tbtc.mint(await acreBtc.getAddress(), donation)
+          })
+
+          it("should return the total assets", async () => {
+            expect(await acreBtc.totalAssets()).to.be.eq(
+              totalAssetsBeforeDonation + donation,
+            )
+          })
+        })
+
+        context("when there was a withdrawal", () => {
+          beforeAfterSnapshotWrapper()
+
+          let totalAssetsBeforeWithdrawal: bigint
+
+          before(async () => {
+            await tbtc.mint(depositor1.address, firstDeposit)
+            await tbtc
+              .connect(depositor1)
+              .approve(await acreBtc.getAddress(), firstDeposit)
+            await acreBtc
+              .connect(depositor1)
+              .deposit(firstDeposit, depositor1.address)
+            totalAssetsBeforeWithdrawal = await acreBtc.totalAssets()
+            await acreBtc
+              .connect(depositor1)
+              .withdraw(to1e18(1), depositor1, depositor1)
+          })
+
+          it("should return the total assets", async () => {
+            const actualWithdrawnAssets =
+              to1e18(1) + feeOnRaw(to1e18(1), exitFeeBasisPoints)
+            expect(await acreBtc.totalAssets()).to.be.eq(
+              totalAssetsBeforeWithdrawal - actualWithdrawnAssets,
+            )
+          })
+        })
       })
     })
 
-    context("when there are deposits", () => {
-      context("when there is a first deposit made", () => {
-        beforeAfterSnapshotWrapper()
+    context("when there is no dispatcher", () => {
+      beforeAfterSnapshotWrapper()
 
-        before(async () => {
+      let acreBtcWithoutDispatcher: AcreBTC
+
+      before(async () => {
+        const acreBtcFactory = await ethers.getContractFactory("acreBTC")
+
+        acreBtcWithoutDispatcher = (await upgrades.deployProxy(
+          acreBtcFactory,
+          [await tbtc.getAddress(), treasury.address],
+          {
+            kind: "transparent",
+            initialOwner: governance.address,
+          },
+        )) as unknown as AcreBTC
+      })
+
+      context("when there are no deposits", () => {
+        it("should return 0", async () => {
+          expect(await acreBtcWithoutDispatcher.totalAssets()).to.be.eq(0)
+        })
+      })
+
+      context("when there are deposits", () => {
+        it("should return the total assets", async () => {
           await tbtc.mint(depositor1.address, firstDeposit)
           await tbtc
             .connect(depositor1)
-            .approve(await acreBtc.getAddress(), firstDeposit)
-          await acreBtc
+            .approve(await acreBtcWithoutDispatcher.getAddress(), firstDeposit)
+          await acreBtcWithoutDispatcher
             .connect(depositor1)
             .deposit(firstDeposit, depositor1.address)
-        })
 
-        it("should return the total assets", async () => {
-          const expectedAssets =
-            firstDeposit - feeOnTotal(firstDeposit, entryFeeBasisPoints)
-          expect(await acreBtc.totalAssets()).to.be.eq(expectedAssets)
-        })
-
-        it("should be equal to tBTC balance of the contract", async () => {
-          expect(await acreBtc.totalAssets()).to.be.eq(
-            await tbtc.balanceOf(await acreBtc.getAddress()),
+          expect(await acreBtcWithoutDispatcher.totalAssets()).to.be.eq(
+            firstDeposit,
           )
-        })
-      })
 
-      context("when there are two deposits made", () => {
-        beforeAfterSnapshotWrapper()
+          await tbtc.mint(await acreBtcWithoutDispatcher.getAddress(), donation)
 
-        before(async () => {
-          await tbtc.mint(depositor1.address, firstDeposit + secondDeposit)
-          await tbtc
-            .connect(depositor1)
-            .approve(await acreBtc.getAddress(), firstDeposit + secondDeposit)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(firstDeposit, depositor1.address)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(secondDeposit, depositor1.address)
-        })
-
-        it("should return the total assets", async () => {
-          const expectedAssetsFirstDeposit =
-            firstDeposit - feeOnTotal(firstDeposit, entryFeeBasisPoints)
-          const expectedAssetsSecondDeposit =
-            secondDeposit - feeOnTotal(secondDeposit, entryFeeBasisPoints)
-          expect(await acreBtc.totalAssets()).to.be.eq(
-            expectedAssetsFirstDeposit + expectedAssetsSecondDeposit,
-          )
-        })
-      })
-
-      context("when the funds were allocated after deposits", () => {
-        beforeAfterSnapshotWrapper()
-
-        before(async () => {
-          await tbtc.mint(depositor1.address, firstDeposit + secondDeposit)
-          await tbtc
-            .connect(depositor1)
-            .approve(await acreBtc.getAddress(), firstDeposit + secondDeposit)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(firstDeposit, depositor1.address)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(secondDeposit, depositor1.address)
-          await midasAllocator.connect(maintainer).allocate()
-        })
-
-        it("should return the total assets", async () => {
-          const deposits = firstDeposit + secondDeposit
-          const expectedAssets =
-            deposits - feeOnTotal(deposits, entryFeeBasisPoints)
-          expect(await acreBtc.totalAssets()).to.be.eq(expectedAssets)
-        })
-      })
-
-      context("when there is a donation made", () => {
-        beforeAfterSnapshotWrapper()
-
-        let totalAssetsBeforeDonation: bigint
-
-        before(async () => {
-          await tbtc.mint(depositor1.address, firstDeposit)
-          await tbtc
-            .connect(depositor1)
-            .approve(await acreBtc.getAddress(), firstDeposit)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(firstDeposit, depositor1.address)
-          totalAssetsBeforeDonation = await acreBtc.totalAssets()
-          await tbtc.mint(await acreBtc.getAddress(), donation)
-        })
-
-        it("should return the total assets", async () => {
-          expect(await acreBtc.totalAssets()).to.be.eq(
-            totalAssetsBeforeDonation + donation,
-          )
-        })
-      })
-
-      context("when there was a withdrawal", () => {
-        beforeAfterSnapshotWrapper()
-
-        let totalAssetsBeforeWithdrawal: bigint
-
-        before(async () => {
-          await tbtc.mint(depositor1.address, firstDeposit)
-          await tbtc
-            .connect(depositor1)
-            .approve(await acreBtc.getAddress(), firstDeposit)
-          await acreBtc
-            .connect(depositor1)
-            .deposit(firstDeposit, depositor1.address)
-          totalAssetsBeforeWithdrawal = await acreBtc.totalAssets()
-          await acreBtc
-            .connect(depositor1)
-            .withdraw(to1e18(1), depositor1, depositor1)
-        })
-
-        it("should return the total assets", async () => {
-          const actualWithdrawnAssets =
-            to1e18(1) + feeOnRaw(to1e18(1), exitFeeBasisPoints)
-          expect(await acreBtc.totalAssets()).to.be.eq(
-            totalAssetsBeforeWithdrawal - actualWithdrawnAssets,
+          expect(await acreBtcWithoutDispatcher.totalAssets()).to.be.eq(
+            firstDeposit + donation,
           )
         })
       })
