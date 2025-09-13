@@ -34,7 +34,7 @@ dataSources:
         - event: DepositFinalized(indexed uint256,indexed address,indexed uint16,uint256,uint256,uint256)
           handler: handleDepositFinalized
           receipt: true
-  #     file: ./src/bitcoin-depositor.ts
+      file: ./src/bitcoin-depositor.ts
   # - kind: ethereum
   #   name: TbtcBridge
   #   network: {{network}}
