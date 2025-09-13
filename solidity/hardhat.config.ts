@@ -64,10 +64,22 @@ const config: HardhatUserConfig = {
               // https://etherscan.io/tx/0x2ae30e59643e70aa074bdef089b2cd76dc2a4bf5ee5fa671c8fca9d5f37e022f
               blockNumber: 20971177,
             }
-          : undefined,
+          : process.env.SEPOLIA_FORKING === "true"
+            ? {
+                url: SEPOLIA_RPC_URL,
+                // Use a recent Sepolia block for testing
+                blockNumber: process.env.SEPOLIA_BLOCK_NUMBER
+                  ? parseInt(process.env.SEPOLIA_BLOCK_NUMBER)
+                  : undefined,
+              }
+            : undefined,
     },
     integration: {
       url: "http://localhost:8545",
+    },
+    "sepolia-integration": {
+      url: "http://localhost:8545",
+      chainId: 11155111,
     },
     sepolia: {
       url: SEPOLIA_RPC_URL,
@@ -95,6 +107,7 @@ const config: HardhatUserConfig = {
       sepolia: ["./external/sepolia"],
       mainnet: ["./external/mainnet"],
       integration: ["./external/mainnet", "./deployments/mainnet"],
+      "sepolia-integration": ["./external/sepolia", "./deployments/sepolia"],
     },
   },
 

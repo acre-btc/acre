@@ -10,14 +10,19 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signer
 import type { SnapshotRestorer } from "@nomicfoundation/hardhat-toolbox/network-helpers"
 import { beforeAfterSnapshotWrapper, deployment } from "./helpers"
 
-import { to1e18 } from "./utils"
+import { to1e18, feeOnTotal, feeOnRaw } from "./utils"
 
-import { StBTC as stBTC, TestERC20, MezoAllocator } from "../typechain"
+import {
+  StBTC as stBTC,
+  AcreBTC as acreBTC,
+  TestERC20,
+  MezoAllocator,
+} from "../typechain"
 
 const { getNamedSigners, getUnnamedSigners } = helpers.signers
 
 async function fixture() {
-  const { tbtc, stbtc, mezoAllocator } = await deployment()
+  const { tbtc, stbtc, mezoAllocator, acreBtc } = await deployment()
   const { governance, treasury, pauseAdmin, maintainer } =
     await getNamedSigners()
 
@@ -40,6 +45,7 @@ async function fixture() {
   return {
     stbtc,
     tbtc,
+    acreBtc,
     depositor1,
     depositor2,
     depositor3,
@@ -59,11 +65,11 @@ async function fixture() {
 describe("stBTC", () => {
   const entryFeeBasisPoints = 5n // Used only for the tests.
   const exitFeeBasisPoints = 10n // Used only for the tests.
-  const basisPointScale = 10000n // Matches the contract.
 
   let stbtc: stBTC
   let tbtc: TestERC20
   let mezoAllocator: MezoAllocator
+  let acreBtc: acreBTC
 
   let governance: HardhatEthersSigner
   let depositor1: HardhatEthersSigner
@@ -84,6 +90,7 @@ describe("stBTC", () => {
     ;({
       stbtc,
       tbtc,
+      acreBtc,
       depositor1,
       depositor2,
       depositor3,
@@ -3769,30 +3776,230 @@ describe("stBTC", () => {
     })
   })
 
-  // Calculates the fee when it's included in the amount.
-  // One is added to the result if there is a remainder to match the Solidity
-  // mulDiv() math which rounds up towards infinity (Ceil) when fees are
-  // calculated.
-  function feeOnTotal(amount: bigint, feeBasisPoints: bigint) {
-    const result =
-      (amount * feeBasisPoints) / (feeBasisPoints + basisPointScale)
-    if ((amount * feeBasisPoints) % (feeBasisPoints + basisPointScale) > 0) {
-      return result + 1n
-    }
-    return result
-  }
+  describe("migrateDeposit", () => {
+    beforeAfterSnapshotWrapper()
 
-  // Calculates the fee when it's not included in the amount.
-  // One is added to the result if there is a remainder to match the Solidity
-  // mulDiv() math which rounds up towards infinity (Ceil) when fees are
-  // calculated.
-  function feeOnRaw(amount: bigint, feeBasisPoints: bigint) {
-    const result = (amount * feeBasisPoints) / basisPointScale
-    if ((amount * feeBasisPoints) % basisPointScale > 0) {
-      return result + 1n
-    }
-    return result
-  }
+    context("when caller is not governance", () => {
+      beforeAfterSnapshotWrapper()
+
+      it("should revert", async () => {
+        await expect(
+          stbtc.connect(thirdParty).migrateDeposit(depositor1.address),
+        )
+          .to.be.revertedWithCustomError(stbtc, "OwnableUnauthorizedAccount")
+          .withArgs(thirdParty.address)
+      })
+    })
+
+    context("when caller is governance", () => {
+      beforeAfterSnapshotWrapper()
+
+      const depositAmount = to1e18(10)
+      const debtAmount = to1e18(5)
+
+      const expectedDepositAssets =
+        depositAmount - feeOnTotal(depositAmount, entryFeeBasisPoints)
+      const expectedDepositShares = expectedDepositAssets
+      const expectedDebtAssets = debtAmount
+      const expectedDebtShares = expectedDebtAssets
+
+      let onlyDebtDepositor: HardhatEthersSigner
+      let onlyDepositDepositor: HardhatEthersSigner
+      let mixedDepositor: HardhatEthersSigner
+
+      before(async () => {
+        onlyDepositDepositor = depositor1
+        onlyDebtDepositor = depositor2
+        mixedDepositor = depositor3
+
+        // Depositor with only debt shares
+        await stbtc
+          .connect(governance)
+          .updateDebtAllowance(onlyDebtDepositor.address, debtAmount)
+
+        await stbtc
+          .connect(onlyDebtDepositor)
+          .mintDebt(to1e18(5), onlyDebtDepositor.address)
+
+        // Depositor with only deposit shares
+        await tbtc.mint(onlyDepositDepositor.address, depositAmount)
+        await tbtc
+          .connect(onlyDepositDepositor)
+          .approve(await stbtc.getAddress(), depositAmount)
+
+        await stbtc
+          .connect(onlyDepositDepositor)
+          .deposit(depositAmount, onlyDepositDepositor.address)
+
+        // Depositor with mixed shares
+        await tbtc.mint(mixedDepositor.address, depositAmount)
+        await tbtc
+          .connect(mixedDepositor)
+          .approve(await stbtc.getAddress(), depositAmount)
+
+        await stbtc
+          .connect(mixedDepositor)
+          .deposit(depositAmount, mixedDepositor.address)
+
+        await stbtc
+          .connect(governance)
+          .updateDebtAllowance(mixedDepositor.address, debtAmount)
+
+        await stbtc
+          .connect(mixedDepositor)
+          .mintDebt(debtAmount, mixedDepositor.address)
+      })
+
+      context("when contract is paused", () => {
+        beforeAfterSnapshotWrapper()
+
+        before(async () => {
+          const newVault = await ethers.Wallet.createRandom().getAddress()
+          await stbtc.connect(governance).startMigration(newVault)
+          await stbtc.connect(pauseAdmin).pause()
+        })
+
+        it("should revert", async () => {
+          await expect(
+            stbtc.connect(governance).migrateDeposit(depositor1.address),
+          ).to.be.revertedWithCustomError(stbtc, "EnforcedPause")
+        })
+      })
+
+      context("when migration has not started", () => {
+        it("should revert", async () => {
+          await expect(
+            stbtc.connect(governance).migrateDeposit(depositor1.address),
+          ).to.be.revertedWithCustomError(stbtc, "MigrateToNotSet")
+        })
+      })
+
+      context("when migration has started", () => {
+        beforeAfterSnapshotWrapper()
+
+        let newVault: string
+
+        before(async () => {
+          newVault = await acreBtc.getAddress()
+          await stbtc.connect(governance).startMigration(newVault)
+        })
+
+        context("when depositor has no shares", () => {
+          it("should return 0 and not perform migration", async () => {
+            const result = await stbtc
+              .connect(governance)
+              .migrateDeposit.staticCall(thirdParty.address)
+            expect(result).to.equal(0)
+          })
+        })
+
+        context("when depositor has only debt shares", () => {
+          beforeAfterSnapshotWrapper()
+
+          it("should return 0 as no withdrawable shares exist", async () => {
+            const result = await stbtc
+              .connect(governance)
+              .migrateDeposit.staticCall(onlyDebtDepositor.address)
+            expect(result).to.equal(0)
+          })
+        })
+
+        context("when depositor has regular deposit shares", () => {
+          beforeAfterSnapshotWrapper()
+
+          let tx: ContractTransactionResponse
+
+          before(async () => {
+            tx = await stbtc
+              .connect(governance)
+              .migrateDeposit(onlyDepositDepositor.address)
+          })
+
+          it("should burn all shares from depositor", async () => {
+            await expect(tx).to.changeTokenBalances(
+              stbtc,
+              [onlyDepositDepositor.address],
+              [-expectedDepositShares],
+            )
+          })
+
+          it("should reset withdrawable shares to 0", async () => {
+            expect(
+              await stbtc.withdrawableShares(onlyDepositDepositor.address),
+            ).to.equal(0)
+          })
+
+          it("should return the expected shares amount", async () => {
+            const result = await stbtc
+              .connect(governance)
+              .migrateDeposit.staticCall(onlyDepositDepositor.address)
+            expect(result).to.equal(0) // Returns 0 because shares were already migrated
+          })
+
+          it("should emit a DepositMigrated event", async () => {
+            await expect(tx)
+              .to.emit(stbtc, "DepositMigrated")
+              .withArgs(
+                onlyDepositDepositor.address,
+                expectedDepositAssets,
+                expectedDepositShares,
+                expectedDepositShares,
+              )
+          })
+        })
+
+        context("when depositor has mixed shares (regular + debt)", () => {
+          beforeAfterSnapshotWrapper()
+
+          let tx: ContractTransactionResponse
+
+          before(async () => {
+            tx = await stbtc
+              .connect(governance)
+              .migrateDeposit(mixedDepositor.address)
+          })
+
+          it("should only burn withdrawable shares", async () => {
+            await expect(tx).to.changeTokenBalances(
+              stbtc,
+              [mixedDepositor.address],
+              [-expectedDepositShares],
+            )
+          })
+
+          it("should leave debt shares intact", async () => {
+            const remainingShares = await stbtc.balanceOf(
+              mixedDepositor.address,
+            )
+            expect(remainingShares).to.equal(expectedDebtShares)
+          })
+
+          it("should reset withdrawable shares to 0", async () => {
+            expect(
+              await stbtc.withdrawableShares(mixedDepositor.address),
+            ).to.equal(0)
+          })
+
+          it("should preserve debt amount", async () => {
+            expect(await stbtc.currentDebt(mixedDepositor.address)).to.equal(
+              debtAmount,
+            )
+          })
+
+          it("should emit a DepositMigrated event", async () => {
+            await expect(tx)
+              .to.emit(stbtc, "DepositMigrated")
+              .withArgs(
+                mixedDepositor.address,
+                expectedDepositAssets,
+                expectedDepositShares,
+                expectedDepositShares,
+              )
+          })
+        })
+      })
+    })
+  })
 
   // 10 is added or subtracted to/from the expected value to match the Solidity
   // math which rounds up or down depending on the modulo remainder. It is a very
