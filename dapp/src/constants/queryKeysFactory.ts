@@ -9,6 +9,7 @@ const userKeys = {
     ...userKeys.all,
     "registerAcreEthereumAddressInLedgerLive",
   ],
+  positionStats: () => [...userKeys.all, "position-stats"] as const,
 }
 
 const acreKeys = {

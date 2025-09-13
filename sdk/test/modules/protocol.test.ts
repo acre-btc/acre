@@ -23,7 +23,7 @@ const data = {
       },
     },
     // 0.001 in 1e18 precision.
-    stBTCDepositFee: 1000000000000000n,
+    acreBTCDepositFee: 1000000000000000n,
     expectedDepositFeesInSatoshi: {
       tbtc: { fee: 124990n, isReimbursable: false },
       acre: { fee: 110000n, isReimbursable: false },
@@ -41,7 +41,7 @@ const data = {
       },
     },
     // 0.00025 in 1e18 precision.
-    stBTCWithdrawalFee: 250000000000000n,
+    acreBTCWithdrawalFee: 250000000000000n,
     expectedWithdrawalFeesInSatoshi: {
       tbtc: { fee: 5000n, isReimbursable: false },
       acre: { fee: 25000n, isReimbursable: false },
@@ -64,7 +64,7 @@ describe("Protocol", () => {
 
     beforeAll(async () => {
       spyOnToSatoshi.mockClear()
-      contracts.stBTC.totalAssets = jest.fn().mockResolvedValue(mockedResult)
+      contracts.acreBTC.totalAssets = jest.fn().mockResolvedValue(mockedResult)
       result = await protocol.totalAssets()
     })
 
@@ -110,7 +110,7 @@ describe("Protocol", () => {
         amountIn1e18,
         mockedDepositFees,
         expectedDepositFeesInSatoshi,
-        stBTCDepositFee,
+        acreBTCDepositFee,
       },
     } = data
 
@@ -122,9 +122,9 @@ describe("Protocol", () => {
     beforeAll(() => {
       spyOnToSatoshi.mockClear()
 
-      contracts.stBTC.calculateDepositFee = jest
+      contracts.acreBTC.calculateDepositFee = jest
         .fn()
-        .mockResolvedValue(stBTCDepositFee)
+        .mockResolvedValue(acreBTCDepositFee)
     })
 
     describe("when tBTC bridge fees are not reimbursable", () => {
@@ -152,8 +152,8 @@ describe("Protocol", () => {
         ).toHaveBeenCalledWith(amountIn1e18)
       })
 
-      it("should get the stBTC deposit fee", () => {
-        expect(contracts.stBTC.calculateDepositFee).toHaveBeenCalledWith(
+      it("should get the acreBTC deposit fee", () => {
+        expect(contracts.acreBTC.calculateDepositFee).toHaveBeenCalledWith(
           amountIn1e18,
         )
       })
@@ -243,7 +243,7 @@ describe("Protocol", () => {
         amountIn1e18,
         mockedWithdrawalFees,
         expectedWithdrawalFeesInSatoshi,
-        stBTCWithdrawalFee,
+        acreBTCWithdrawalFee,
       },
     } = data
 
@@ -257,9 +257,9 @@ describe("Protocol", () => {
         .fn()
         .mockResolvedValue(mockedWithdrawalFees)
 
-      contracts.stBTC.calculateWithdrawalFee = jest
+      contracts.acreBTC.calculateWithdrawalFee = jest
         .fn()
-        .mockResolvedValue(stBTCWithdrawalFee)
+        .mockResolvedValue(acreBTCWithdrawalFee)
 
       result = await protocol.estimateWithdrawalFee(amount)
     })
@@ -274,8 +274,8 @@ describe("Protocol", () => {
       ).toHaveBeenCalledWith(amountIn1e18)
     })
 
-    it("should get the stBTC withdrawal fee", () => {
-      expect(contracts.stBTC.calculateWithdrawalFee).toHaveBeenCalledWith(
+    it("should get the acreBTC withdrawal fee", () => {
+      expect(contracts.acreBTC.calculateWithdrawalFee).toHaveBeenCalledWith(
         amountIn1e18,
       )
     })

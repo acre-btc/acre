@@ -61,7 +61,7 @@ export default class OrangeKitTbtcRedeemerProxy implements TbtcRedeemerProxy {
   }
 
   async requestRedemption(redemptionData: Hex): Promise<Hex> {
-    const safeTxData = this.#contracts.stBTC.encodeApproveAndCallFunctionData(
+    const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
       this.#contracts.bitcoinRedeemer.getChainIdentifier(),
       this.#sharesAmount,
       redemptionData,
@@ -69,7 +69,7 @@ export default class OrangeKitTbtcRedeemerProxy implements TbtcRedeemerProxy {
     await this.#dataBuiltStepCallback?.(safeTxData)
 
     const transactionHash = await this.#orangeKitSdk.sendTransaction(
-      `0x${this.#contracts.stBTC.getChainIdentifier().identifierHex}`,
+      `0x${this.#contracts.acreBTC.getChainIdentifier().identifierHex}`,
       "0x0",
       safeTxData.toPrefixedString(),
       this.#account.bitcoinAddress,
