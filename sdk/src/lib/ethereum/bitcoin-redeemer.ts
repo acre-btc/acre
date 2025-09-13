@@ -1,5 +1,5 @@
-import { BitcoinRedeemer as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemer"
-import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
+import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemerV2"
+import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
 
 import {
@@ -38,6 +38,7 @@ export default class EthereumBitcoinRedeemer
         artifact = SepoliaBitcoinRedeemer
         break
       case "mainnet":
+        // TODO: set the new mainnet address
         artifact = MainnetBitcoinRedeemer
         break
       default:

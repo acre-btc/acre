@@ -35,38 +35,38 @@ dataSources:
           handler: handleDepositFinalized
           receipt: true
       file: ./src/bitcoin-depositor.ts
-  - kind: ethereum
-    name: TbtcBridge
-    network: {{network}}
-    context:
-      bitcoinRedeemerAddress:
-        type: Bytes
-        data: "{{bitcoinRedeemer.address}}"
-    source:
-      abi: TbtcBridge
-      address: "{{tbtcBridge.address}}"
-      # We can start indexing from the same block where the BitcoinRedeemer
-      # contract was deployed since we only want to index Acre redemptions.
-      startBlock: {{bitcoinRedeemer.startBlock}}
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      entities:
-        - Withdraw
-        - Event
-        - RedemptionKeyCounter
-        - RedemptionsCompletedEvent
-      abis:
-        - name: TbtcBridge
-          file: ./abis/TbtcBridge.json
-      eventHandlers:
-        - event: RedemptionRequested(indexed bytes20,bytes,indexed address,uint64,uint64,uint64)
-          handler: handleRedemptionRequested
-          receipt: true
-        - event: RedemptionsCompleted(indexed bytes20,bytes32)
-          handler: handleRedemptionsCompleted
-      callHandlers:
-        - function: submitRedemptionProof((bytes4,bytes,bytes,bytes4),(bytes,uint256,bytes,bytes32,bytes),(bytes32,uint32,uint64),bytes20)
-          handler: handleSubmitRedemptionProofCall
-      file: ./src/tbtc-bridge.ts
+  # - kind: ethereum
+  #   name: TbtcBridge
+  #   network: {{network}}
+  #   context:
+  #     bitcoinRedeemerAddress:
+  #       type: Bytes
+  #       data: "{{bitcoinRedeemer.address}}"
+  #   source:
+  #     abi: TbtcBridge
+  #     address: "{{tbtcBridge.address}}"
+  #     # We can start indexing from the same block where the BitcoinRedeemer
+  #     # contract was deployed since we only want to index Acre redemptions.
+  #     startBlock: {{bitcoinRedeemer.startBlock}}
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.9
+  #     language: wasm/assemblyscript
+  #     entities:
+  #       - Withdraw
+  #       - Event
+  #       - RedemptionKeyCounter
+  #       - RedemptionsCompletedEvent
+  #     abis:
+  #       - name: TbtcBridge
+  #         file: ./abis/TbtcBridge.json
+  #     eventHandlers:
+  #       - event: RedemptionRequested(indexed bytes20,bytes,indexed address,uint64,uint64,uint64)
+  #         handler: handleRedemptionRequested
+  #         receipt: true
+  #       - event: RedemptionsCompleted(indexed bytes20,bytes32)
+  #         handler: handleRedemptionsCompleted
+  #     callHandlers:
+  #       - function: submitRedemptionProof((bytes4,bytes,bytes,bytes4),(bytes,uint256,bytes,bytes32,bytes),(bytes32,uint32,uint64),bytes20)
+  #         handler: handleSubmitRedemptionProofCall
+  #     file: ./src/tbtc-bridge.ts
