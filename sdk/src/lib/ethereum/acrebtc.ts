@@ -1,6 +1,6 @@
 import { AcreBTC as AcreBTCTypechain } from "@acre-btc/contracts/typechain/contracts"
 import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
-import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/stBTC.json"
+import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/acreBTC.json"
 
 import {
   EthersContractConfig,
@@ -33,10 +33,7 @@ class EthereumAcreBTC
         artifact = SepoliaAcreBTC
         break
       case "mainnet":
-        artifact = {
-          ...MainnetAcreBTC,
-          address: "0x19531C886339dd28b9923d903F6B235C45396ded",
-        }
+        artifact = MainnetAcreBTC
         break
       default:
         throw new Error("Unsupported network")
