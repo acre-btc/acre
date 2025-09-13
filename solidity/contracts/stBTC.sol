@@ -583,6 +583,11 @@ contract stBTC is ERC4626Fees, PausableOwnable {
     ///      The deposits that are being migrated have to be covered by the
     ///      assets deposited to the vault, which excludes the shares that were
     ///      minted as debt.
+    /// @dev Before the migration, ensure that the entry fee in the new vault
+    ///      is set to 0, to avoid depositor being charged the entry fee.
+    /// @dev The implementation assumes the stBTC token won't be made fungible
+    ///      before the migration and the migrated shares are limited to the
+    ///      withdrawable shares.
     /// @param depositOwner The address of the owner of the deposit to migrate.
     function migrateDeposit(
         address depositOwner

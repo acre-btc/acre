@@ -9,7 +9,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { log } = deployments
 
   const tbtcToken = await deployments.get("TBTC")
-  const bitcoinDepositor = await deployments.get("BitcoinDepositor")
+  const bitcoinDepositor = await deployments.get("BitcoinDepositorV2")
 
   let deployment = await deployments.getOrNull("FeesReimbursementPool")
   if (deployment && helpers.address.isValid(deployment.address)) {
@@ -40,4 +40,4 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 export default func
 
 func.tags = ["FeesReimbursementPool"]
-func.dependencies = ["BitcoinDepositor", "TBTC"]
+func.dependencies = ["BitcoinDepositorV2", "TBTC"]

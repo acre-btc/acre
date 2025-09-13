@@ -214,4 +214,79 @@ describe("MidasAllocator", () => {
       })
     })
   })
+
+  describe("withdrawShares", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the withdrawal queue", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator.connect(thirdParty).withdrawShares(to1e18(1)),
+        ).to.be.revertedWithCustomError(midasAllocator, "NotWithdrawalQueue")
+      })
+    })
+  })
+
+  describe("emergencyWithdraw", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the owner", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator.connect(thirdParty).emergencyWithdraw(),
+        ).to.be.revertedWithCustomError(
+          midasAllocator,
+          "OwnableUnauthorizedAccount",
+        )
+      })
+    })
+  })
+
+  describe("setWithdrawalQueue", () => {
+    beforeAfterSnapshotWrapper()
+
+    context("when a caller is not the owner", () => {
+      it("should revert", async () => {
+        await expect(
+          midasAllocator
+            .connect(thirdParty)
+            .setWithdrawalQueue(thirdParty.address),
+        ).to.be.revertedWithCustomError(
+          midasAllocator,
+          "OwnableUnauthorizedAccount",
+        )
+      })
+    })
+
+    context("when a caller is the owner", () => {
+      beforeAfterSnapshotWrapper()
+
+      context("when the new withdrawal queue address is zero address", () => {
+        it("should revert", async () => {
+          await midasAllocator
+            .connect(governance)
+            .setWithdrawalQueue(ethers.ZeroAddress)
+
+          expect(await midasAllocator.withdrawalQueue()).to.equal(
+            ethers.ZeroAddress,
+          )
+        })
+      })
+
+      context(
+        "when the new withdrawal queue address is not zero address",
+        () => {
+          it("should update the withdrawal queue address", async () => {
+            await midasAllocator
+              .connect(governance)
+              .setWithdrawalQueue(thirdParty.address)
+
+            expect(await midasAllocator.withdrawalQueue()).to.equal(
+              thirdParty.address,
+            )
+          })
+        },
+      )
+    })
+  })
 })

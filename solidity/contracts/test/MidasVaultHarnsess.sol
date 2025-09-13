@@ -15,7 +15,9 @@ contract MidasVaultStub is IVault {
     address public immutable asset;
     address public immutable share;
 
-    uint256 public redeemRequestId;
+    uint256 public redeemRequestId = 100;
+
+    event MidasVaultRedeemRequested(uint256 shares, address receiver);
 
     constructor(address _asset, address _share) {
         asset = _asset;
@@ -36,7 +38,13 @@ contract MidasVaultStub is IVault {
         uint256 shares,
         address receiver
     ) external returns (uint256) {
+        uint256 assets = convertToAssets(shares);
+
         MidasVaultSharesStub(share).burn(msg.sender, shares);
+
+        emit MidasVaultRedeemRequested(shares, receiver);
+
+        IERC20(asset).safeTransfer(receiver, assets);
 
         return ++redeemRequestId;
     }
