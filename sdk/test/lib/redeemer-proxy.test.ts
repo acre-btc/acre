@@ -55,7 +55,7 @@ describe("OrangeKitTbtcRedeemerProxy", () => {
     const mockedBitcoinRedeemerIdentifier = EthereumAddress.from(
       "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b",
     )
-    const mockedStBTCIdentifier = EthereumAddress.from(
+    const mockedAcreBTCIdentifier = EthereumAddress.from(
       "0x8FF2A98c1F08FD5a4D12bED447b90d4de045C10b",
     )
     const mockedMessageToSign = "test"
@@ -78,7 +78,7 @@ describe("OrangeKitTbtcRedeemerProxy", () => {
     >
     let spyOnBitcoinRedeemerIdentifier: jest.SpyInstance<ChainIdentifier, []>
 
-    let spyOnStBTCIdentifier: jest.SpyInstance<ChainIdentifier, []>
+    let spyOnAcreBTCIdentifier: jest.SpyInstance<ChainIdentifier, []>
 
     let spyOnEncodeData: jest.SpyInstance<
       Hex,
@@ -115,17 +115,17 @@ describe("OrangeKitTbtcRedeemerProxy", () => {
         spyOnBitcoinRedeemerIdentifier = jest
           .spyOn(contracts.bitcoinRedeemer, "getChainIdentifier")
           .mockReturnValueOnce(mockedBitcoinRedeemerIdentifier)
-        spyOnStBTCIdentifier = jest
-          .spyOn(contracts.stBTC, "getChainIdentifier")
-          .mockReturnValueOnce(mockedStBTCIdentifier)
+        spyOnAcreBTCIdentifier = jest
+          .spyOn(contracts.acreBTC, "getChainIdentifier")
+          .mockReturnValueOnce(mockedAcreBTCIdentifier)
         spyOnEncodeData = jest
-          .spyOn(contracts.stBTC, "encodeApproveAndCallFunctionData")
+          .spyOn(contracts.acreBTC, "encodeApproveAndCallFunctionData")
           .mockReturnValueOnce(mockedEncodedApproveAndCallData)
 
         spies = [
           spyOnSendTransaction,
           spyOnBitcoinRedeemerIdentifier,
-          spyOnStBTCIdentifier,
+          spyOnAcreBTCIdentifier,
           spyOnEncodeData,
         ]
 
@@ -157,13 +157,13 @@ describe("OrangeKitTbtcRedeemerProxy", () => {
         )
       })
 
-      it("should get the stBTC contract's address", () => {
-        expect(spyOnStBTCIdentifier).toHaveBeenCalled()
+      it("should get the acreBTC contract's address", () => {
+        expect(spyOnAcreBTCIdentifier).toHaveBeenCalled()
       })
 
       it("should send transaction via orange kit", () => {
         expect(spyOnSendTransaction).toHaveBeenCalledWith(
-          `0x${mockedStBTCIdentifier.identifierHex}`,
+          `0x${mockedAcreBTCIdentifier.identifierHex}`,
           "0x0",
           mockedEncodedApproveAndCallData.toPrefixedString(),
           account.bitcoinAddress,

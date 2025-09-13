@@ -2,14 +2,14 @@ import {
   AcreContracts,
   BitcoinDepositor,
   BitcoinRedeemer,
-  StBTC,
+  AcreBTC,
 } from "../../src/lib/contracts"
 
 // eslint-disable-next-line import/prefer-default-export
 export class MockAcreContracts implements AcreContracts {
   public readonly bitcoinDepositor: BitcoinDepositor
 
-  public readonly stBTC: StBTC
+  public readonly acreBTC: AcreBTC
 
   public readonly bitcoinRedeemer: BitcoinRedeemer
 
@@ -25,7 +25,7 @@ export class MockAcreContracts implements AcreContracts {
       bridgeFeesReimbursementThreshold: jest.fn(),
     } as BitcoinDepositor
 
-    this.stBTC = {
+    this.acreBTC = {
       totalAssets: jest.fn(),
       balanceOf: jest.fn(),
       assetsBalanceOf: jest.fn(),
@@ -35,7 +35,7 @@ export class MockAcreContracts implements AcreContracts {
       getChainIdentifier: jest.fn(),
       convertToShares: jest.fn(),
       encodeApproveAndCallFunctionData: jest.fn(),
-    } as StBTC
+    } as AcreBTC
 
     this.bitcoinRedeemer = {
       getChainIdentifier: jest.fn(),
