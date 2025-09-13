@@ -1,7 +1,7 @@
 import ethers, { Contract } from "ethers"
-// import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
+import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import {
-  // EthereumAddress,
+  EthereumAddress,
   EthereumContractRunner,
   EthereumBitcoinRedeemer,
 } from "../../../src/lib/ethereum"
@@ -14,7 +14,7 @@ jest.mock("ethers", (): object => ({
 }))
 
 jest.mock(
-  "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json",
+  "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json",
   () => ({
     address: "0xEa887C9de098BD7110EA638cEc91cc8d345b06C0",
     abi: [],
@@ -47,16 +47,15 @@ describe("BitcoinRedeemer", () => {
     )
   })
 
-  // TODO: Uncomment once the deployment artifacts are available.
-  // describe("getChainIdentifier", () => {
-  //   it("should return contract address", () => {
-  //     const result = bitcoinRedeemer.getChainIdentifier()
+  describe("getChainIdentifier", () => {
+    it("should return contract address", () => {
+      const result = bitcoinRedeemer.getChainIdentifier()
 
-  //     expect(
-  //       result.equals(EthereumAddress.from(BitcoinRedeemer.address)),
-  //     ).toBeTruthy()
-  //   })
-  // })
+      expect(
+        result.equals(EthereumAddress.from(BitcoinRedeemer.address)),
+      ).toBeTruthy()
+    })
+  })
 
   describe("calculateWithdrawalFee", () => {
     const mockedBridgeContractInstance = {

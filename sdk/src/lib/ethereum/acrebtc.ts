@@ -1,6 +1,5 @@
-// TODO: Update imports when AcreBTC is ready
-import { StBTC as AcreBTCTypechain } from "@acre-btc/contracts/typechain/contracts/StBTC"
-import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/stBTC.json"
+import { AcreBTC as AcreBTCTypechain } from "@acre-btc/contracts/typechain/contracts"
+import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
 import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/stBTC.json"
 
 import {
@@ -31,10 +30,7 @@ class EthereumAcreBTC
 
     switch (network) {
       case "sepolia":
-        artifact = {
-          ...SepoliaAcreBTC,
-          address: "0xB8ba4B007321e0EB4586De49E59593E0eD66d367",
-        }
+        artifact = SepoliaAcreBTC
         break
       case "mainnet":
         artifact = {
