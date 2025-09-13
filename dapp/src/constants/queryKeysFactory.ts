@@ -5,6 +5,7 @@ const userKeys = {
   activities: () => [...userKeys.all, "activities"] as const,
   pointsData: () => [...userKeys.all, "points-data"] as const,
   estimateFee: () => [...userKeys.all, "estimateFee"] as const,
+  positionStats: () => [...userKeys.all, "position-stats"] as const,
 }
 
 const acreKeys = {
@@ -13,7 +14,6 @@ const acreKeys = {
   statistics: () => [...acreKeys.all, "statistics"] as const,
   mats: () => [...acreKeys.all, "mats"] as const,
   pointsData: () => [...acreKeys.all, "points-data"] as const,
-  vaultsData: () => [...acreKeys.all, "vaults-data"] as const,
 }
 
 export default {

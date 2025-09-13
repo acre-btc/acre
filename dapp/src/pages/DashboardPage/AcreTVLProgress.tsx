@@ -19,7 +19,9 @@ const STEP_COUNT = 5
 
 export default function AcreTVLProgress(props: AcreTVLProgressProps) {
   const styles = useMultiStyleConfig("AcreTVLProgress")
-  const { tvl } = useStatistics()
+  const statistics = useStatistics()
+
+  const { tvl } = statistics.data
 
   const steps = useMemo(
     () =>

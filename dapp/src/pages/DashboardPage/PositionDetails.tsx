@@ -1,5 +1,4 @@
 import React from "react"
-import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
 import {
   useActivitiesCount,
   useBitcoinPosition,
@@ -24,6 +23,7 @@ import { featureFlags } from "#/constants"
 import { IconClockHour5Filled } from "@tabler/icons-react"
 import TooltipIcon from "#/components/shared/TooltipIcon"
 import { activitiesUtils } from "#/utils"
+import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import AcreTVLMessage from "./AcreTVLMessage"
 
 const isWithdrawalFlowEnabled = featureFlags.WITHDRAWALS_ENABLED
@@ -40,7 +40,7 @@ const buttonStyles: ButtonProps = {
 
 export default function PositionDetails() {
   const { data: bitcoinPosition } = useBitcoinPosition()
-  const bitcoinAmount = bitcoinPosition?.estimatedBitcoinBalance ?? 0n
+  const shares = bitcoinPosition?.sharesBalance ?? 0n
 
   const openDepositModal = useTransactionModal(ACTION_FLOW_TYPES.STAKE)
   const openWithdrawModal = useTransactionModal(ACTION_FLOW_TYPES.UNSTAKE)
@@ -48,7 +48,9 @@ export default function PositionDetails() {
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
 
-  const { tvl } = useStatistics()
+  const statistics = useStatistics()
+
+  const { tvl } = statistics.data
 
   const { isConnected } = useWallet()
 
@@ -71,19 +73,12 @@ export default function PositionDetails() {
         </HStack>
         <UserDataSkeleton>
           <VStack alignItems="start" spacing={0}>
-            <CurrencyBalanceWithConversion
-              from={{
-                amount: bitcoinAmount,
-                currency: "bitcoin",
-                size: "4xl",
-                letterSpacing: "-0.075rem", // -1.2px
-                color: "text.primary",
-              }}
-              to={{
-                currency: "usd",
-                color: "text.tertiary",
-                fontWeight: "medium",
-              }}
+            <CurrencyBalance
+              amount={shares}
+              currency="acrebtc"
+              size="4xl"
+              letterSpacing="-0.075rem" // -1.2px
+              color="text.primary"
             />
           </VStack>
         </UserDataSkeleton>

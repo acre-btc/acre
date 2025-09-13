@@ -41,7 +41,7 @@ const sizes = {
     },
     td: {
       p: 5,
-      lineHeight: 6,
+      fontSize: "sm",
       ":first-of-type": { roundedLeft: "sm" },
       ":last-of-type": { roundedRight: "sm" },
     },

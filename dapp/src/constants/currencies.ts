@@ -11,10 +11,12 @@ const BITCOIN: Currency = {
   desiredDecimals: 4,
 }
 
-const STBTC: Currency = {
+const ACREBTC: Currency = {
   ...BITCOIN,
-  name: "stBTC",
-  symbol: "stBTC",
+  name: "acreBTC",
+  symbol: "acreBTC",
+  decimals: 18,
+  desiredDecimals: 4,
 }
 
 const USD: Currency = {
@@ -29,12 +31,12 @@ const CURRENCY_ID_BITCOIN = env.USE_TESTNET ? "bitcoin_testnet" : "bitcoin"
 const CURRENCIES_BY_TYPE: Record<CurrencyType, Currency> = {
   bitcoin: BITCOIN,
   usd: USD,
-  stbtc: STBTC,
+  acrebtc: ACREBTC,
 }
 
 export default {
   BITCOIN,
-  STBTC,
+  ACREBTC,
   USD,
   CURRENCY_ID_BITCOIN,
   CURRENCIES_BY_TYPE,
