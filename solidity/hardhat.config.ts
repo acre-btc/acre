@@ -53,26 +53,29 @@ const config: HardhatUserConfig = {
       // Set fixed initialBaseFeePerGas to avoid issues with maxFeePerGas
       // being too low fo the next block.
       initialBaseFeePerGas: 1000000000,
-      forking:
-        process.env.FORKING === "true"
-          ? {
-              url: MAINNET_RPC_URL,
-              // Points to the mainnet block that has a state important for the
-              // integration tests:
-              // 20971177 - the block where AcreMultiAssetVault was deployed in
-              // transaction:
-              // https://etherscan.io/tx/0x2ae30e59643e70aa074bdef089b2cd76dc2a4bf5ee5fa671c8fca9d5f37e022f
-              blockNumber: 20971177,
-            }
-          : process.env.SEPOLIA_FORKING === "true"
-            ? {
-                url: SEPOLIA_RPC_URL,
-                // Use a recent Sepolia block for testing
-                blockNumber: process.env.SEPOLIA_BLOCK_NUMBER
-                  ? parseInt(process.env.SEPOLIA_BLOCK_NUMBER)
-                  : undefined,
-              }
-            : undefined,
+      forking: (() => {
+        if (process.env.FORKING === "true") {
+          return {
+            url: MAINNET_RPC_URL,
+            // Points to the mainnet block that has a state important for the
+            // integration tests:
+            // 20971177 - the block where AcreMultiAssetVault was deployed in
+            // transaction:
+            // https://etherscan.io/tx/0x2ae30e59643e70aa074bdef089b2cd76dc2a4bf5ee5fa671c8fca9d5f37e022f
+            blockNumber: 20971177,
+          }
+        }
+        if (process.env.SEPOLIA_FORKING === "true") {
+          return {
+            url: SEPOLIA_RPC_URL,
+            // Use a recent Sepolia block for testing
+            blockNumber: process.env.SEPOLIA_BLOCK_NUMBER
+              ? parseInt(process.env.SEPOLIA_BLOCK_NUMBER, 10)
+              : undefined,
+          }
+        }
+        return undefined
+      })(),
     },
     integration: {
       url: "http://localhost:8545",
