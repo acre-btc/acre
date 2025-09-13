@@ -145,7 +145,14 @@ function Vaults(props: VaultsRootProps) {
             1,
           )
           const aprPercentage = getPercentValue(vault.apr, 1)
-          const formattedTvl = formatNumberToCompactString(vault.tvl, 2)
+          const formattedTvlCap = formatNumberToCompactString(
+            statistics.data.tvl.cap,
+            { currency: "USD", withAutoCompactFormat: true },
+          )
+          const formattedTvl = formatNumberToCompactString(vault.tvl, {
+            currency: "USD",
+            withAutoCompactFormat: true,
+          })
           const curator = vaults.VAULT_CURATORS[vault.curator]
 
           return (
@@ -169,7 +176,12 @@ function Vaults(props: VaultsRootProps) {
                 </Box>
               </Td>
               <Td>{aprPercentage}% (est.)</Td>
-              <Td>{formattedTvl}</Td>
+              <Td letterSpacing="-0.5px">
+                <Box as="span" fontWeight="bold">
+                  {formattedTvlCap}
+                </Box>{" "}
+                / {formattedTvl}
+              </Td>
               <Td>
                 <Box
                   display="flex"
