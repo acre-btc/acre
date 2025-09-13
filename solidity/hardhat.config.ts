@@ -125,7 +125,7 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 1,
       sepolia: 0,
-      mainnet: "0x123694886DBf5Ac94DDA07135349534536D14cAf",
+      mainnet: "0x2B56435eD740C555573fB5CE60840E1E74a7cDC4",
     },
     governance: {
       default: 2,

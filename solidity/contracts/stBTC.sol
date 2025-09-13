@@ -618,7 +618,7 @@ contract stBTC is ERC4626Fees, PausableOwnable {
 
         // Adjust the withdrawable shares to exclude the shares that are being
         // migrated and keep the rest of shares associated with debt.
-        withdrawableShares[depositOwner] = 0;
+        withdrawableShares[depositOwner] -= shares;
 
         // Burn the shares that are being migrated.
         _burn(depositOwner, shares);
