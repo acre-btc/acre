@@ -60,16 +60,18 @@ export default function DashboardPage() {
       ) : (
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
-      <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
-        {withdrawals.map((withdrawal) => (
-          <WithdrawalStatusBanner
-            key={withdrawal.withdrawnAt}
-            status={withdrawal.status}
-            btcAmount={withdrawal.btcAmount}
-            withdrawnAt={withdrawal.withdrawnAt}
-          />
-        ))}
-      </VStack>
+      {featureFlags.WITHDRAWALS_ENABLED && (
+        <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
+          {withdrawals.map((withdrawal) => (
+            <WithdrawalStatusBanner
+              key={withdrawal.withdrawnAt}
+              status={withdrawal.status}
+              btcAmount={withdrawal.btcAmount}
+              withdrawnAt={withdrawal.withdrawnAt}
+            />
+          ))}
+        </VStack>
+      )}
 
       {isConnected && (
         <>
