@@ -35,9 +35,13 @@ export default class EthereumBitcoinRedeemer
 
     switch (network) {
       case "sepolia":
-        artifact = SepoliaBitcoinRedeemer
+        artifact = {
+          ...SepoliaBitcoinRedeemer,
+          address: "0xE1d25025835A89C93d56a029C80699BE056584d2",
+        }
         break
       case "mainnet":
+        // TODO: set the new mainnet address
         artifact = MainnetBitcoinRedeemer
         break
       default:
