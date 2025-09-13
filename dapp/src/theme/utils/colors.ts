@@ -144,6 +144,7 @@ const functional = {
   green: {
     10: "#D9F6D5",
     30: "#A1EA95",
+    30: "#A1EA95",
     50: "#33A321",
   },
   yellow: {

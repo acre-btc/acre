@@ -8,6 +8,7 @@ import {
   CardProps,
   CircularProgress,
   Icon,
+  IconButton,
   Link,
   Table,
   TableContainer,
@@ -22,11 +23,13 @@ import {
 import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
+  IconChevronRight,
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
 import { vaults } from "#/constants"
-import { useStatistics } from "#/hooks"
+import { useModal, useStatistics } from "#/hooks"
+import { MODAL_TYPES } from "#/types"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -35,6 +38,7 @@ type VaultItem = {
   portfolioWeight: number
   apr: number
   tvl: number
+  tvlCap: number
   curator: keyof typeof vaults.VAULT_CURATORS
 }
 
@@ -78,6 +82,7 @@ function VaultsRoot(props: VaultsRootProps) {
 
 function Vaults(props: VaultsRootProps) {
   const statistics = useStatistics()
+  const { openModal } = useModal()
 
   const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
@@ -131,9 +136,37 @@ function Vaults(props: VaultsRootProps) {
       portfolioWeight: 1,
       apr: 0.09,
       tvl: statistics.data.tvl.usdValue,
+      tvlCap: statistics.data.tvl.cap,
       curator: "re7",
     },
   ]
+
+  const handleOpenVaultDetails = (vault: VaultItem) => {
+    openModal(MODAL_TYPES.VAULT_DETAILS, {
+      provider: vault.provider,
+      details: {
+        apr: {
+          weeklyAprPercentage: [0.03, 0.05],
+          monthlyAprPercentage: [0.03, 0.05],
+          allTimeAprPercentage: [0.03, 0.05],
+        },
+        fees: {
+          // TODO: Replace with actual fees
+          bridgeFee: 0,
+          managementFee: 0,
+          performanceFee: 0,
+        },
+        tvl: {
+          activeTvl: vault.tvl,
+          tvlCap: vault.tvlCap,
+        },
+        misc: {
+          curator: vault.curator,
+          withdrawalDelaysLabel: "2 - 3 days",
+        },
+      },
+    })
+  }
 
   return (
     <VaultsRoot {...props}>
@@ -197,6 +230,27 @@ function Vaults(props: VaultsRootProps) {
                   >
                     {curator.label}
                   </Button>
+                </Box>
+              </Td>
+              <Td>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <IconButton
+                    variant="ghost"
+                    aria-label="Show vault details"
+                    onClick={() => handleOpenVaultDetails(vault)}
+                    boxSize={5}
+                    icon={
+                      <Icon
+                        boxSize="full"
+                        as={IconChevronRight}
+                        color="brown.40"
+                      />
+                    }
+                  />
                 </Box>
               </Td>
             </Tr>

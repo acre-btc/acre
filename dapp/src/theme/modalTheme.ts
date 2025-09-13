@@ -91,6 +91,10 @@ const sizeXl = multiStyleConfig.definePartsStyle({
 })
 
 const sizeLg = multiStyleConfig.definePartsStyle({
+  dialog: { maxW: "41.5rem" },
+})
+
+const sizeMd = multiStyleConfig.definePartsStyle({
   dialog: { w: "30rem" },
 })
 
@@ -102,6 +106,7 @@ const sizes = {
   full: sizeFull,
   xl: sizeXl,
   lg: sizeLg,
+  md: sizeMd,
 }
 
 export default multiStyleConfig.defineMultiStyleConfig({
