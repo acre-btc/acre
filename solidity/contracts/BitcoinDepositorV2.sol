@@ -273,11 +273,9 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         // the amount of tBTC minted.
         // The depositor contract should have some safety buffer with tBTC
         // donated to not block the system when this no longer holds.
-        (
-            uint256 initialAmount,
-            ,
-            bytes32 extraData
-        ) = _finalizeDeposit(depositKey);
+        (uint256 initialAmount, , bytes32 extraData) = _finalizeDeposit(
+            depositKey
+        );
 
         // Compute depositor fee. The fee is calculated based on the initial funding
         // transaction amount, before the tBTC protocol network fees were taken.
