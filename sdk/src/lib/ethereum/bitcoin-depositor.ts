@@ -1,7 +1,7 @@
 import { packRevealDepositParameters } from "@keep-network/tbtc-v2.ts"
 import { BitcoinDepositorV2 as BitcoinDepositorTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinDepositorV2.sol"
 import SepoliaBitcoinDepositor from "@acre-btc/contracts/deployments/sepolia/BitcoinDepositorV2.json"
-import MainnetBitcoinDepositor from "@acre-btc/contracts/deployments/mainnet/BitcoinDepositor.json"
+import MainnetBitcoinDepositor from "@acre-btc/contracts/deployments/mainnet/BitcoinDepositorV2.json"
 
 import {
   ZeroAddress,
@@ -68,7 +68,6 @@ class EthereumBitcoinDepositor
         artifact = SepoliaBitcoinDepositor
         break
       case "mainnet":
-        // TODO: set the new mainnet address
         artifact = MainnetBitcoinDepositor
         break
       default:
