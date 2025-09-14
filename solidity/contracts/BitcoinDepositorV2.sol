@@ -10,7 +10,6 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@keep-network/tbtc-v2/contracts/integrator/AbstractTBTCDepositor.sol";
 
 import {acreBTC} from "./acreBTC.sol";
-import {FeesReimbursementPool} from "./FeesReimbursementPool.sol";
 
 /// @title Acre vault interface.
 /// @notice Interface for the Acre vault contract (acreBTC).
@@ -92,16 +91,6 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     ///       `1/50 = 0.02 = 2%`.
     uint64 public depositorFeeDivisor;
 
-    /// @notice Fees reimbursement pool.
-    FeesReimbursementPool public feesReimbursementPool;
-
-    /// @notice Maximum deposit amount threshold for tBTC Bridge fees reimbursement.
-    ///         For deposits below this threshold, the fees will be reimbursed
-    ///         from the fees reimbursement pool.
-    /// @dev If the threshold is set to 0, the fees reimbursement is disabled.
-    ///      The threshold is in tBTC token precision.
-    uint256 public bridgeFeesReimbursementThreshold;
-
     /// @notice Acre vault contract.
     IAcreVault public acreVault;
 
@@ -146,17 +135,6 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
     /// @param depositorFeeDivisor New value of the depositor fee divisor.
     event DepositorFeeDivisorUpdated(uint64 depositorFeeDivisor);
 
-    /// @notice Emitted when a fees reimbursement pool is updated.
-    /// @param newFeesReimbursementPool New value of the fees reimbursement pool.
-    event FeesReimbursementPoolUpdated(address newFeesReimbursementPool);
-
-    /// @notice Emitted when a tBTC Bridge fees reimbursement threshold is updated.
-    /// @param bridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
-    ///        reimbursement threshold.
-    event BridgeFeesReimbursementThresholdUpdated(
-        uint256 bridgeFeesReimbursementThreshold
-    );
-
     /// @notice Emitted when a acre vault is updated.
     /// @param newAcreVault New value of the acre vault.
     event AcreVaultUpdated(address newAcreVault);
@@ -176,21 +154,12 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         DepositState expectedState
     );
 
-    /// @dev Calculated depositor fee exceeds the amount of minted tBTC tokens.
-    error DepositorFeeExceedsBridgedAmount(
-        uint256 depositorFee,
-        uint256 bridgedAmount
-    );
-
     /// @dev Attempted to set minimum deposit amount to a value lower than the
     ///      tBTC Bridge deposit dust threshold.
     error MinDepositAmountLowerThanBridgeMinDeposit(
         uint256 minDepositAmount,
         uint256 bridgeMinDepositAmount
     );
-
-    /// @dev Attempted to set fees reimbursement pool to a zero address.
-    error FeesReimbursementPoolZeroAddress();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -299,42 +268,20 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         // Transition to a new state.
         deposits[depositKey] = DepositState.Finalized;
 
-        (
-            uint256 initialAmount,
-            uint256 tbtcAmount,
-            bytes32 extraData
-        ) = _finalizeDeposit(depositKey);
-
-        if (
-            bridgeFeesReimbursementThreshold > 0 &&
-            initialAmount <= bridgeFeesReimbursementThreshold
-        ) {
-            uint256 tbtcBridgeFee = initialAmount - tbtcAmount;
-
-            if (tbtcBridgeFee > 0) {
-                if (address(feesReimbursementPool) == address(0)) {
-                    revert FeesReimbursementPoolZeroAddress();
-                }
-
-                uint256 reimbursedAmount = feesReimbursementPool.reimburse(
-                    tbtcBridgeFee
-                );
-
-                tbtcAmount += reimbursedAmount;
-            }
-        }
+        // Assume the deposit is minted via optimistic minting and that tBTC
+        // bridge fees are zero. This allows us to treat the initialAmount as
+        // the amount of tBTC minted.
+        // The depositor contract should have some safety buffer with tBTC
+        // donated to not block the system when this no longer holds.
+        (uint256 initialAmount, , bytes32 extraData) = _finalizeDeposit(
+            depositKey
+        );
 
         // Compute depositor fee. The fee is calculated based on the initial funding
         // transaction amount, before the tBTC protocol network fees were taken.
         uint256 depositorFee = depositorFeeDivisor > 0
             ? Math.ceilDiv(initialAmount, depositorFeeDivisor)
             : 0;
-
-        // Ensure the depositor fee does not exceed the approximate minted tBTC
-        // amount.
-        if (depositorFee >= tbtcAmount) {
-            revert DepositorFeeExceedsBridgedAmount(depositorFee, tbtcAmount);
-        }
 
         // Transfer depositor fee to the treasury wallet.
         if (depositorFee > 0) {
@@ -348,11 +295,11 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
             msg.sender,
             referral,
             initialAmount,
-            tbtcAmount,
+            initialAmount,
             depositorFee
         );
 
-        uint256 amountToDeposit = tbtcAmount - depositorFee;
+        uint256 amountToDeposit = initialAmount - depositorFee;
 
         // Deposit tBTC in Acre Vault.
         tbtcToken.safeIncreaseAllowance(address(acreVault), amountToDeposit);
@@ -389,33 +336,6 @@ contract BitcoinDepositorV2 is AbstractTBTCDepositor, Ownable2StepUpgradeable {
         depositorFeeDivisor = newDepositorFeeDivisor;
 
         emit DepositorFeeDivisorUpdated(newDepositorFeeDivisor);
-    }
-
-    /// @notice Updates the fees reimbursement pool contract address.
-    /// @param newFeesReimbursementPool New address of the fees reimbursement pool.
-    function updateFeesReimbursementPool(
-        address newFeesReimbursementPool
-    ) external onlyOwner {
-        if (address(newFeesReimbursementPool) == address(0)) {
-            revert FeesReimbursementPoolZeroAddress();
-        }
-
-        emit FeesReimbursementPoolUpdated(newFeesReimbursementPool);
-
-        feesReimbursementPool = FeesReimbursementPool(newFeesReimbursementPool);
-    }
-
-    /// @notice Updates the tBTC Bridge fees reimbursement threshold.
-    /// @param newBridgeFeesReimbursementThreshold New value of the tBTC Bridge fees
-    ///        reimbursement threshold.
-    function updateBridgeFeesReimbursementThreshold(
-        uint256 newBridgeFeesReimbursementThreshold
-    ) external onlyOwner {
-        emit BridgeFeesReimbursementThresholdUpdated(
-            newBridgeFeesReimbursementThreshold
-        );
-
-        bridgeFeesReimbursementThreshold = newBridgeFeesReimbursementThreshold;
     }
 
     /// @notice Updates the acre vault contract address.
