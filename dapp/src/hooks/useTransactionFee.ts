@@ -21,11 +21,15 @@ export default function useTransactionFee(
       flow,
       amount?.toString(),
     ],
-    queryFn: () => {
+    queryFn: async () => {
       if (!acre || !amount) return initialFee
 
       if (flow === ACTION_FLOW_TYPES.STAKE) {
-        return acre.protocol.estimateDepositFee(amount)
+        const fees = await acre.protocol.estimateDepositFee(amount)
+        return {
+          ...fees,
+          tbtc: { fee: 0n, isReimbursable: false },
+        }
       }
 
       return acre.protocol.estimateWithdrawalFee(amount)
