@@ -6,7 +6,7 @@ import {
   EthereumBitcoinRedeemer,
 } from "../../../src/lib/ethereum"
 import TbtcBridge from "../../../src/lib/ethereum/tbtc-bridge"
-import { WithdrawalFees } from "../../../src/lib/contracts"
+import { RedeemerWithdrawalFees } from "../../../src/lib/contracts"
 
 jest.mock("ethers", (): object => ({
   Contract: jest.fn(),
@@ -79,7 +79,7 @@ describe("BitcoinRedeemer", () => {
     })
 
     describe("when network fees are not yet cached", () => {
-      let result: WithdrawalFees
+      let result: RedeemerWithdrawalFees
 
       beforeAll(async () => {
         result = await bitcoinRedeemer.calculateWithdrawalFee(amountToWithdraw)
@@ -97,7 +97,7 @@ describe("BitcoinRedeemer", () => {
     })
 
     describe("when network fees are already cached", () => {
-      let result: WithdrawalFees
+      let result: RedeemerWithdrawalFees
 
       beforeAll(async () => {
         mockedBridgeContractInstance.redemptionParameters.mockClear()
