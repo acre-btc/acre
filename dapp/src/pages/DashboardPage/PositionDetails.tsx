@@ -110,9 +110,23 @@ export default function PositionDetails() {
           <UserDataSkeleton>
             <ArrivingSoonTooltip
               label={
-                isMobileMode
-                  ? "This option is not available on mobile yet. Please use the desktop app to withdraw."
-                  : "This option is currently not available."
+                isMobileMode ? (
+                  "This option is not available on mobile yet. Please use the desktop app to withdraw."
+                ) : (
+                  // TODO: Update to another copy once withdrawals are released.
+                  <Text>
+                    <b>Notice: Temporary Pause on Withdrawals</b>
+                    <br />
+                    <br />
+                    Withdrawals from the acreBTC vault are temporarily paused
+                    while we complete an update. Your funds remain fully secure
+                    and under your control. Withdrawals will be re-enabled
+                    within the next 72 hours.
+                    <br />
+                    <br />
+                    Thank you for your patience as we finalize this upgrade.
+                  </Text>
+                )
               }
               shouldDisplayTooltip={
                 !isWithdrawalFlowEnabled || isDisabledForMobileMode
