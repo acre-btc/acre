@@ -7,7 +7,11 @@ import {
   EthersContractDeployment,
   EthersContractWrapper,
 } from "./contract"
-import { ChainIdentifier, BitcoinRedeemer, WithdrawalFees } from "../contracts"
+import {
+  ChainIdentifier,
+  BitcoinRedeemer,
+  RedeemerWithdrawalFees,
+} from "../contracts"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
 
@@ -67,7 +71,7 @@ export default class EthereumBitcoinRedeemer
    */
   async calculateWithdrawalFee(
     amountToWithdraw: bigint,
-  ): Promise<WithdrawalFees> {
+  ): Promise<RedeemerWithdrawalFees> {
     const { redemptionTreasuryFeeDivisor } =
       await this.#getTbtcBridgeRedemptionParameters()
 
