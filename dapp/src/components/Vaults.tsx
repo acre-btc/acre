@@ -14,7 +14,6 @@ import {
   Tbody,
   Td,
   Text,
-  Tfoot,
   Th,
   Thead,
   Tr,
@@ -46,7 +45,7 @@ function VaultsRoot(props: VaultsRootProps) {
   return (
     <Card {...restProps}>
       <CardHeader as={Text} size="md" mb={3}>
-        Acre Vaults
+        Acre Bitcoin Vault
       </CardHeader>
 
       <CardBody as={TableContainer}>
@@ -65,7 +64,7 @@ function VaultsRoot(props: VaultsRootProps) {
               <Th>Portfolio weight</Th>
               <Th>APR</Th>
               <Th>TVL</Th>
-              <Th>Curator</Th>
+              <Th>Risk Manager</Th>
             </Tr>
           </Thead>
 
@@ -129,7 +128,7 @@ function Vaults(props: VaultsRootProps) {
     {
       provider: "tbtc",
       portfolioWeight: 1,
-      apr: 0.09,
+      apr: 0.14,
       tvl: statistics.data.tvl.usdValue,
       curator: "re7",
     },
@@ -203,12 +202,6 @@ function Vaults(props: VaultsRootProps) {
           )
         })}
       </Tbody>
-
-      <Tfoot>
-        <Tr>
-          <Td colSpan={5}>More vaults coming soon</Td>
-        </Tr>
-      </Tfoot>
     </VaultsRoot>
   )
 }
