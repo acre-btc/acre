@@ -48,12 +48,12 @@ function FeaturedMetricsCard({
 
       <CardBody as={Flex} flexDirection="column" gap={1}>
         <Text size="2xl" fontWeight="semibold">
-          {isLoading ? <Skeleton height="1em" /> : primaryValue}
+          {isLoading ? <Skeleton as="span" height="1em" /> : primaryValue}
         </Text>
 
         {secondaryValue && (
           <Text fontSize="sm" color="neutral.60">
-            {isLoading ? <Skeleton height="1em" /> : secondaryValue}
+            {isLoading ? <Skeleton as="span" height="1em" /> : secondaryValue}
           </Text>
         )}
       </CardBody>
