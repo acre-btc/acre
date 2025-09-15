@@ -128,7 +128,7 @@ function Vaults(props: VaultsRootProps) {
     {
       provider: "tbtc",
       portfolioWeight: 1,
-      apr: 0.14,
+      apr: 14,
       tvl: statistics.data.tvl.usdValue,
       curator: "re7",
     },
@@ -143,7 +143,7 @@ function Vaults(props: VaultsRootProps) {
             vault.portfolioWeight,
             1,
           )
-          const aprPercentage = getPercentValue(vault.apr, 1)
+          const aprPercentage = getPercentValue(vault.apr, 100)
           const formattedTvlCap = formatNumberToCompactString(
             statistics.data.tvl.cap,
             { currency: "USD", withAutoCompactFormat: true },
