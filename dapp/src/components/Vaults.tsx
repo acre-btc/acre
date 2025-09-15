@@ -177,9 +177,9 @@ function Vaults(props: VaultsRootProps) {
               <Td>{aprPercentage}% (est.)</Td>
               <Td letterSpacing="-0.5px">
                 <Box as="span" fontWeight="bold">
-                  {formattedTvlCap}
+                  {formattedTvl}
                 </Box>{" "}
-                / {formattedTvl}
+                / {formattedTvlCap}
               </Td>
               <Td>
                 <Box
