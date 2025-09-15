@@ -97,8 +97,8 @@ class Acre {
 
     const acreSubgraphApiUrl =
       network === BitcoinNetwork.Mainnet
-        ? `https://gateway-arbitrum.network.thegraph.com/api/${subgraphApiKey}/subgraphs/id/DJfS9X5asHtFEdAPikBcSLw8jtKmFcbReQVEa2iY9C9`
-        : "https://api.studio.thegraph.com/query/73600/acre-sepolia/version/latest"
+        ? `https://gateway-arbitrum.network.thegraph.com/api/${subgraphApiKey}/deployments/id/QmV6sggovteHAj7KHSbmqB5MXotp3XBbdjZeakKjbcunCp`
+        : "https://api.studio.thegraph.com/query/73600/acre-sepolia/v0.0.5"
 
     const subgraph = new AcreSubgraphApi(acreSubgraphApiUrl)
 
