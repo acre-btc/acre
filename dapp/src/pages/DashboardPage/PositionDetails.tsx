@@ -1,6 +1,6 @@
 import React from "react"
 import {
-  useActivitiesCount,
+  // useActivitiesCount,
   useBitcoinPosition,
   useTransactionModal,
   useStatistics,
@@ -44,7 +44,7 @@ export default function PositionDetails() {
 
   const openDepositModal = useTransactionModal(ACTION_FLOW_TYPES.STAKE)
   const openWithdrawModal = useTransactionModal(ACTION_FLOW_TYPES.UNSTAKE)
-  const activitiesCount = useActivitiesCount()
+  // const activitiesCount = useActivitiesCount()
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
 
@@ -102,7 +102,11 @@ export default function PositionDetails() {
             </Button>
           </ArrivingSoonTooltip>
         </UserDataSkeleton>
-        {isConnected && activitiesCount > 0 && (
+        {/* TODO: Uncomment when withdrawals are supported. Right now we want to
+         * show the withdraw button to all users so they are aware we are in the phased launch.
+         */}
+        {/* {isConnected && activitiesCount > 0 && ( */}
+        {isConnected && (
           <UserDataSkeleton>
             <ArrivingSoonTooltip
               label={
