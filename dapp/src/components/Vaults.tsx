@@ -29,6 +29,8 @@ import {
 import { vaults } from "#/constants"
 import { useModal, useStatistics } from "#/hooks"
 import { MODAL_TYPES } from "#/types"
+import { getMidasVaultDetails } from "./MidasVaultDetails"
+import { VaultDetails } from "./VaultDetailsModal"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -39,6 +41,7 @@ type VaultItem = {
   tvl: number
   tvlCap: number
   curator: keyof typeof vaults.VAULT_CURATORS
+  details: VaultDetails
 }
 
 type VaultsRootProps = CardProps
@@ -137,33 +140,13 @@ function Vaults(props: VaultsRootProps) {
       tvl: statistics.data.tvl.usdValue,
       tvlCap: statistics.data.tvl.cap,
       curator: "re7",
+      details: getMidasVaultDetails({ tvlCap: statistics.data.tvl.cap }),
     },
   ]
 
   const handleOpenVaultDetails = (vault: VaultItem) => {
     openModal(MODAL_TYPES.VAULT_DETAILS, {
-      provider: vault.provider,
-      details: {
-        apr: {
-          weeklyAprPercentage: [0.03, 0.05],
-          monthlyAprPercentage: [0.03, 0.05],
-          allTimeAprPercentage: [0.03, 0.05],
-        },
-        fees: {
-          // TODO: Replace with actual fees
-          bridgeFee: 0,
-          managementFee: 0,
-          performanceFee: 0,
-        },
-        tvl: {
-          activeTvl: vault.tvl,
-          tvlCap: vault.tvlCap,
-        },
-        misc: {
-          curator: vault.curator,
-          withdrawalDelaysLabel: "2 - 3 days",
-        },
-      },
+      details: vault.details,
     })
   }
 

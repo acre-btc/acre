@@ -9,4 +9,9 @@ export default {
   PRIVACY_POLICY: "https://acre.fi/privacy-policy",
   X: "https://x.com/AcreBTC",
   RE7: "https://www.re7labs.xyz/",
+  MIDAS: "https://midas.app/team",
+  ACRE_DEPLOYMENT_POLICY: "https://docs.acre.fi/acre-deployment-policy",
+  AAVE: "https://aave.com/",
+  GIZA: "https://www.gizatech.xyz/",
+  RE7_CAPITAL: "https://re7.capital/",
 }
