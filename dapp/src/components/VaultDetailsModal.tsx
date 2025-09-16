@@ -13,8 +13,10 @@ import {
 } from "@chakra-ui/react"
 import { BaseModalProps } from "#/types"
 import { IconShieldFilled } from "@tabler/icons-react"
+import { vaults } from "#/constants"
 import withBaseModal from "./ModalRoot/withBaseModal"
 import TooltipIcon from "./shared/TooltipIcon"
+import { getMidasVaultDetails } from "./MidasVaultDetails"
 
 export type VaultDetailsSectionItem = {
   key?: string
@@ -37,9 +39,14 @@ export type VaultDetails = {
   sections: Array<VaultDetailsLabeledSection>
 }
 
-export type VaultDetailsModalBaseProps = BaseModalProps & {
-  details: VaultDetails
+type VaultParamDetails = {
+  tvlCapInUsd: number
+  vaultTvlInUsd: number
 }
+
+export type VaultDetailsModalBaseProps = BaseModalProps & {
+  provider: keyof typeof vaults.VAULT_PROVIDERS
+} & VaultParamDetails
 
 function VaultDetailsSection({
   label,
@@ -99,7 +106,23 @@ function VaultDetailsSection({
   )
 }
 
-export function VaultDetailsModalBase({ details }: VaultDetailsModalBaseProps) {
+const VAULT_PROVIDER_TO_DETAILS: Record<
+  VaultDetailsModalBaseProps["provider"],
+  (options: VaultParamDetails) => VaultDetails
+> = {
+  tbtc: getMidasVaultDetails,
+}
+
+export function VaultDetailsModalBase({
+  provider,
+  tvlCapInUsd,
+  vaultTvlInUsd,
+}: VaultDetailsModalBaseProps) {
+  const details = VAULT_PROVIDER_TO_DETAILS[provider]({
+    tvlCapInUsd,
+    vaultTvlInUsd,
+  })
+
   return (
     <>
       <ModalCloseButton />

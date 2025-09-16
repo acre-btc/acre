@@ -1,10 +1,10 @@
 import React from "react"
 import { externalHref, vaults } from "#/constants"
-import { Button, Icon, Link } from "@chakra-ui/react"
+import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { formatNumberToCompactString } from "#/utils/numbersUtils"
 import { IconArrowUpRight } from "@tabler/icons-react"
 import { addressUtils } from "#/utils"
+import BlockExplorerLink from "./shared/BlockExplorerLink"
 
 export default function MidasVaultDetailsDescription() {
   return (
@@ -14,7 +14,7 @@ export default function MidasVaultDetailsDescription() {
       <Link
         fontWeight="bold"
         textDecoration="underline"
-        href={externalHref.MIDAS}
+        href={externalHref.MIDAS_TEAM}
         isExternal
       >
         Midas
@@ -75,7 +75,15 @@ export default function MidasVaultDetailsDescription() {
   )
 }
 
-export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
+export function getMidasVaultDetails({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  tvlCapInUsd: tvlCap,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  vaultTvlInUsd,
+}: {
+  tvlCapInUsd: number
+  vaultTvlInUsd: number
+}) {
   return {
     vaultName: "Market-Neutral Bitcoin DeFi Vault",
     description: <MidasVaultDetailsDescription />,
@@ -99,30 +107,36 @@ export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
           "Fees are charged to cover the costs of managing and operating the vault.",
         items: [
           { label: "Deposit Fee", value: "0.10%" },
-          {
-            label: "Withdrawal Fee",
-            value: "0.45% (0.25% protocol fee, 0.20% tBTC bridge fee)",
-          },
+          // {
+          //   label: "Withdrawal Fee",
+          //   value: "0.45% (0.25% protocol fee, 0.20% tBTC bridge fee)",
+          // },
           { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],
       },
-      {
-        sectionKey: "tvl",
-        label: "Total Value Locked",
-        tooltip:
-          "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
-        items: [
-          { label: "Active Bitcoin Earning", value: "TODO" },
-          {
-            label: "TVL Cap",
-            value: formatNumberToCompactString(tvlCap, {
-              currency: "USD",
-              withAutoCompactFormat: true,
-            }),
-          },
-          { label: "Protocol Fee", value: "20% of Earned Rewards" },
-        ],
-      },
+      // {
+      //   sectionKey: "tvl",
+      //   label: "Total Value Locked",
+      //   tooltip:
+      //     "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
+      //   items: [
+      //     {
+      //       label: "Active Bitcoin Earning",
+      //       value: formatNumberToCompactString(vaultTvlInUsd, {
+      //         currency: "USD",
+      //         withAutoCompactFormat: true,
+      //       }),
+      //     },
+      //     {
+      //       label: "TVL Cap",
+      //       value: formatNumberToCompactString(tvlCap, {
+      //         currency: "USD",
+      //         withAutoCompactFormat: true,
+      //       }),
+      //     },
+      //     { label: "Protocol Fee", value: "20% of Earned Rewards" },
+      //   ],
+      // },
       {
         sectionKey: "misc",
         items: [
@@ -149,7 +163,7 @@ export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
                 fontSize="md"
                 variant="link"
                 rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
-                href={externalHref.RE7}
+                href={externalHref.MIDAS}
                 isExternal
               >
                 Midas
@@ -158,8 +172,25 @@ export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
           },
           {
             label: "Vault Address",
-            value: addressUtils.truncateAddress(
-              vaults.VAULT_PROVIDERS.tbtc.address,
+            value: (
+              <BlockExplorerLink
+                type="address"
+                chain="ethereum"
+                id={vaults.VAULT_PROVIDERS.tbtc.address}
+              >
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    vaults.VAULT_PROVIDERS.tbtc.address,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </BlockExplorerLink>
             ),
           },
           {
