@@ -107,10 +107,10 @@ export function getMidasVaultDetails({
           "Fees are charged to cover the costs of managing and operating the vault.",
         items: [
           { label: "Deposit Fee", value: "0.10%" },
-          // {
-          //   label: "Withdrawal Fee",
-          //   value: "0.45% (0.25% protocol fee, 0.20% tBTC bridge fee)",
-          // },
+          {
+            label: "Withdrawal Fee",
+            value: "0.45%",
+          },
           { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],
       },
