@@ -5,6 +5,8 @@ const VAULT_PROVIDERS = {
   tbtc: {
     label: "Market-Neutral BTCFi Vault",
     icon: TbtcIcon,
+    address: "0x6A6092d9c47A7E4C085f2ED9FD4a376124587Ae0",
+    depositToken: "tBTC",
   },
 }
 
