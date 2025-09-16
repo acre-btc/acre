@@ -1,10 +1,11 @@
 import React from "react"
 import { externalHref, vaults } from "#/constants"
-import { Button, Icon, Link } from "@chakra-ui/react"
+import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
 import { formatNumberToCompactString } from "#/utils/numbersUtils"
 import { IconArrowUpRight } from "@tabler/icons-react"
 import { addressUtils } from "#/utils"
+import BlockExplorerLink from "./shared/BlockExplorerLink"
 
 export default function MidasVaultDetailsDescription() {
   return (
@@ -170,8 +171,25 @@ export function getMidasVaultDetails({
           },
           {
             label: "Vault Address",
-            value: addressUtils.truncateAddress(
-              vaults.VAULT_PROVIDERS.tbtc.address,
+            value: (
+              <BlockExplorerLink
+                type="address"
+                chain="ethereum"
+                id={vaults.VAULT_PROVIDERS.tbtc.address}
+              >
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    vaults.VAULT_PROVIDERS.tbtc.address,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </BlockExplorerLink>
             ),
           },
           {
