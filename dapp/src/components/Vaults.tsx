@@ -85,12 +85,6 @@ function VaultsRoot(props: VaultsRootProps) {
 function VaultTableRow({ vault }: { vault: VaultItem }) {
   const { openModal } = useModal()
 
-  const handleOpenVaultDetails = () => {
-    openModal(MODAL_TYPES.VAULT_DETAILS, {
-      details: vault.details,
-    })
-  }
-
   const provider = vaults.VAULT_PROVIDERS[vault.provider]
   const portfolioWeightPercentage = getPercentValue(vault.portfolioWeight, 1)
   const aprPercentage = getPercentValue(vault.apr, 100)
@@ -102,14 +96,22 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
     8,
   )
 
-  const tvlCapAsUsd = useCurrencyConversion({
+  const tvlCapInUsd = useCurrencyConversion({
     from: {
       currency: "bitcoin",
       amount: tvlCapAsSatoshi,
     },
     to: { currency: "usd" },
   })
-  const formattedTvlCap = formatNumberToCompactString(tvlCapAsUsd ?? 0, {
+
+  const handleOpenVaultDetails = () => {
+    openModal(MODAL_TYPES.VAULT_DETAILS, {
+      provider: vault.provider,
+      tvlCapInUsd,
+      vaultTvlInUsd: vault.tvl,
+    })
+  }
+  const formattedTvlCap = formatNumberToCompactString(tvlCapInUsd ?? 0, {
     currency: "USD",
     withAutoCompactFormat: true,
   })
@@ -233,7 +235,10 @@ function Vaults(props: VaultsRootProps) {
       tvl: statistics.data.tvl.usdValue,
       tvlCap: statistics.data.tvl.cap,
       curator: "re7",
-      details: getMidasVaultDetails({ tvlCap: statistics.data.tvl.cap }),
+      details: getMidasVaultDetails({
+        tvlCapInUsd: statistics.data.tvl.cap,
+        vaultTvlInUsd: statistics.data.tvl.usdValue,
+      }),
     },
   ]
 

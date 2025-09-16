@@ -14,7 +14,7 @@ export default function MidasVaultDetailsDescription() {
       <Link
         fontWeight="bold"
         textDecoration="underline"
-        href={externalHref.MIDAS}
+        href={externalHref.MIDAS_TEAM}
         isExternal
       >
         Midas
@@ -75,7 +75,13 @@ export default function MidasVaultDetailsDescription() {
   )
 }
 
-export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
+export function getMidasVaultDetails({
+  tvlCapInUsd: tvlCap,
+  vaultTvlInUsd,
+}: {
+  tvlCapInUsd: number
+  vaultTvlInUsd: number
+}) {
   return {
     vaultName: "Market-Neutral Bitcoin DeFi Vault",
     description: <MidasVaultDetailsDescription />,
@@ -112,7 +118,13 @@ export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
         tooltip:
           "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
         items: [
-          { label: "Active Bitcoin Earning", value: "TODO" },
+          {
+            label: "Active Bitcoin Earning",
+            value: formatNumberToCompactString(vaultTvlInUsd, {
+              currency: "USD",
+              withAutoCompactFormat: true,
+            }),
+          },
           {
             label: "TVL Cap",
             value: formatNumberToCompactString(tvlCap, {
@@ -149,7 +161,7 @@ export function getMidasVaultDetails({ tvlCap }: { tvlCap: number }) {
                 fontSize="md"
                 variant="link"
                 rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
-                href={externalHref.RE7}
+                href={externalHref.MIDAS}
                 isExternal
               >
                 Midas
