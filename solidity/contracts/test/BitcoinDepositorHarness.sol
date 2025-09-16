@@ -9,9 +9,6 @@ import {IBridgeTypes} from "@keep-network/tbtc-v2/contracts/integrator/IBridge.s
 
 import {TestERC20} from "./TestERC20.sol";
 
-/// @dev A test contract to stub tBTC Bridge contract.
-contract BridgeStub is MockBridge {}
-
 /// @dev A test contract to stub tBTC Vault contract.
 contract TBTCVaultStub is MockTBTCVault {
     TestERC20 public immutable tbtc;
@@ -39,13 +36,7 @@ contract TBTCVaultStub is MockTBTCVault {
             ? (amountSubTreasury / optimisticMintingFeeDivisor)
             : 0;
 
-        // The deposit transaction max fee is in the 1e8 satoshi precision.
-        // We need to convert them to the 1e18 TBTC precision.
-        // slither-disable-next-line unused-return
-        (, , uint64 depositTxMaxFee, ) = bridge.depositParameters();
-        uint256 txMaxFee = depositTxMaxFee * SATOSHI_MULTIPLIER;
-
-        uint256 amountToMint = amountSubTreasury - omFee - txMaxFee;
+        uint256 amountToMint = amountSubTreasury - omFee;
 
         finalizeOptimisticMintingRequestWithAmount(depositKey, amountToMint);
     }

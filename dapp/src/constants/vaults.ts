@@ -3,7 +3,7 @@ import externalHref from "./externalHref"
 
 const VAULT_PROVIDERS = {
   tbtc: {
-    label: "tBTC DeFi",
+    label: "Market-Neutral BTCFi Vault",
     icon: TbtcIcon,
     // TODO: Replace with actual description
     description:
@@ -17,7 +17,7 @@ const VAULT_PROVIDERS = {
 const VAULT_CURATORS = {
   re7: {
     label: "Re7",
-    url: externalHref.MIDAS,
+    url: externalHref.RE7,
   },
 }
 

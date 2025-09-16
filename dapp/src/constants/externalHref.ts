@@ -8,5 +8,5 @@ export default {
   TERMS_OF_USE: "https://acre.fi/terms-of-use",
   PRIVACY_POLICY: "https://acre.fi/privacy-policy",
   X: "https://x.com/AcreBTC",
-  MIDAS: "https://midas.app/", // TODO
+  RE7: "https://www.re7labs.xyz/",
 }

@@ -6,7 +6,7 @@ export default function ArrivingSoonTooltip({
   shouldDisplayTooltip,
   children,
 }: {
-  label?: string
+  label?: ReactNode
   shouldDisplayTooltip: boolean
   children: ReactNode
 }) {
