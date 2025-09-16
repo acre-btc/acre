@@ -27,7 +27,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react"
 import { vaults } from "#/constants"
-import { useModal, useStatistics } from "#/hooks"
+import { useCurrencyConversion, useModal, useStatistics } from "#/hooks"
 import { MODAL_TYPES } from "#/types"
 import { getMidasVaultDetails } from "./MidasVaultDetails"
 import { VaultDetails } from "./VaultDetailsModal"
@@ -82,9 +82,102 @@ function VaultsRoot(props: VaultsRootProps) {
   )
 }
 
+function VaultTableRow({ vault }: { vault: VaultItem }) {
+  const { openModal } = useModal()
+
+  const handleOpenVaultDetails = () => {
+    openModal(MODAL_TYPES.VAULT_DETAILS, {
+      details: vault.details,
+    })
+  }
+
+  const provider = vaults.VAULT_PROVIDERS[vault.provider]
+  const portfolioWeightPercentage = getPercentValue(vault.portfolioWeight, 1)
+  const aprPercentage = getPercentValue(vault.apr, 100)
+  const tvlCapAsSatoshi = numbersUtils.userAmountToBigInt(
+    // The TVL cap is in Bitcoin, and to convert it to USD, we first need to
+    // convert it to Satoshis because of how our `useCurrencyConversion` hook
+    // works.
+    vault.tvlCap.toString(),
+    8,
+  )
+
+  const tvlCapAsUsd = useCurrencyConversion({
+    from: {
+      currency: "bitcoin",
+      amount: tvlCapAsSatoshi,
+    },
+    to: { currency: "usd" },
+  })
+  const formattedTvlCap = formatNumberToCompactString(tvlCapAsUsd ?? 0, {
+    currency: "USD",
+    withAutoCompactFormat: true,
+  })
+  const formattedTvl = formatNumberToCompactString(vault.tvl, {
+    currency: "USD",
+    withAutoCompactFormat: true,
+  })
+  const curator = vaults.VAULT_CURATORS[vault.curator]
+
+  return (
+    <Tr key={vault.portfolioWeight}>
+      <Td>
+        <Box display="flex" gap={2} alignItems="center">
+          <Icon as={provider.icon} boxSize={6} />
+          {provider.label}
+        </Box>
+      </Td>
+      <Td>
+        <Box display="flex" gap={2} alignItems="center">
+          <CircularProgress
+            size={5}
+            thickness={40}
+            clipPath="circle(50%)"
+            color="green.50"
+            value={portfolioWeightPercentage}
+          />
+          {portfolioWeightPercentage}%
+        </Box>
+      </Td>
+      <Td>{aprPercentage}% (est.)</Td>
+      <Td letterSpacing="-0.5px">
+        <Box as="span" fontWeight="bold">
+          {formattedTvl}
+        </Box>{" "}
+        / {formattedTvlCap}
+      </Td>
+      <Td>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Button
+            as={Link}
+            variant="link"
+            leftIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
+            href={curator.url}
+            isExternal
+          >
+            {curator.label}
+          </Button>
+        </Box>
+      </Td>
+      <Td>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <IconButton
+            variant="ghost"
+            aria-label="Show vault details"
+            onClick={handleOpenVaultDetails}
+            boxSize={5}
+            icon={
+              <Icon boxSize="full" as={IconChevronRight} color="brown.40" />
+            }
+          />
+        </Box>
+      </Td>
+    </Tr>
+  )
+}
+
 function Vaults(props: VaultsRootProps) {
   const statistics = useStatistics()
-  const { openModal } = useModal()
 
   const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
@@ -144,100 +237,12 @@ function Vaults(props: VaultsRootProps) {
     },
   ]
 
-  const handleOpenVaultDetails = (vault: VaultItem) => {
-    openModal(MODAL_TYPES.VAULT_DETAILS, {
-      details: vault.details,
-    })
-  }
-
   return (
     <VaultsRoot {...props}>
       <Tbody>
-        {vaultsItems.map((vault) => {
-          const provider = vaults.VAULT_PROVIDERS[vault.provider]
-          const portfolioWeightPercentage = getPercentValue(
-            vault.portfolioWeight,
-            1,
-          )
-          const aprPercentage = getPercentValue(vault.apr, 100)
-          const formattedTvlCap = formatNumberToCompactString(
-            statistics.data.tvl.cap,
-            { currency: "USD", withAutoCompactFormat: true },
-          )
-          const formattedTvl = formatNumberToCompactString(vault.tvl, {
-            currency: "USD",
-            withAutoCompactFormat: true,
-          })
-          const curator = vaults.VAULT_CURATORS[vault.curator]
-
-          return (
-            <Tr key={vault.portfolioWeight}>
-              <Td>
-                <Box display="flex" gap={2} alignItems="center">
-                  <Icon as={provider.icon} boxSize={6} />
-                  {provider.label}
-                </Box>
-              </Td>
-              <Td>
-                <Box display="flex" gap={2} alignItems="center">
-                  <CircularProgress
-                    size={5}
-                    thickness={40}
-                    clipPath="circle(50%)"
-                    color="green.50"
-                    value={portfolioWeightPercentage}
-                  />
-                  {portfolioWeightPercentage}%
-                </Box>
-              </Td>
-              <Td>{aprPercentage}% (est.)</Td>
-              <Td letterSpacing="-0.5px">
-                <Box as="span" fontWeight="bold">
-                  {formattedTvl}
-                </Box>{" "}
-                / {formattedTvlCap}
-              </Td>
-              <Td>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Button
-                    as={Link}
-                    variant="link"
-                    leftIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
-                    href={curator.url}
-                    isExternal
-                  >
-                    {curator.label}
-                  </Button>
-                </Box>
-              </Td>
-              <Td>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <IconButton
-                    variant="ghost"
-                    aria-label="Show vault details"
-                    onClick={() => handleOpenVaultDetails(vault)}
-                    boxSize={5}
-                    icon={
-                      <Icon
-                        boxSize="full"
-                        as={IconChevronRight}
-                        color="brown.40"
-                      />
-                    }
-                  />
-                </Box>
-              </Td>
-            </Tr>
-          )
-        })}
+        {vaultsItems.map((vault) => (
+          <VaultTableRow key={vault.portfolioWeight} vault={vault} />
+        ))}
       </Tbody>
     </VaultsRoot>
   )
