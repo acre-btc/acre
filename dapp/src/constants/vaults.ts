@@ -12,7 +12,7 @@ const VAULT_PROVIDERS = {
 
 const VAULT_CURATORS = {
   re7: {
-    label: "Re7",
+    label: "Re7 Labs",
     url: externalHref.RE7,
   },
 }
