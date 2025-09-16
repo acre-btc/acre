@@ -2,7 +2,6 @@ import React from "react"
 import { externalHref, vaults } from "#/constants"
 import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { formatNumberToCompactString } from "#/utils/numbersUtils"
 import { IconArrowUpRight } from "@tabler/icons-react"
 import { addressUtils } from "#/utils"
 import BlockExplorerLink from "./shared/BlockExplorerLink"
@@ -77,7 +76,9 @@ export default function MidasVaultDetailsDescription() {
 }
 
 export function getMidasVaultDetails({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   tvlCapInUsd: tvlCap,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   vaultTvlInUsd,
 }: {
   tvlCapInUsd: number
@@ -106,36 +107,36 @@ export function getMidasVaultDetails({
           "Fees are charged to cover the costs of managing and operating the vault.",
         items: [
           { label: "Deposit Fee", value: "0.10%" },
-          {
-            label: "Withdrawal Fee",
-            value: "0.45% (0.25% protocol fee, 0.20% tBTC bridge fee)",
-          },
+          // {
+          //   label: "Withdrawal Fee",
+          //   value: "0.45% (0.25% protocol fee, 0.20% tBTC bridge fee)",
+          // },
           { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],
       },
-      {
-        sectionKey: "tvl",
-        label: "Total Value Locked",
-        tooltip:
-          "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
-        items: [
-          {
-            label: "Active Bitcoin Earning",
-            value: formatNumberToCompactString(vaultTvlInUsd, {
-              currency: "USD",
-              withAutoCompactFormat: true,
-            }),
-          },
-          {
-            label: "TVL Cap",
-            value: formatNumberToCompactString(tvlCap, {
-              currency: "USD",
-              withAutoCompactFormat: true,
-            }),
-          },
-          { label: "Protocol Fee", value: "20% of Earned Rewards" },
-        ],
-      },
+      // {
+      //   sectionKey: "tvl",
+      //   label: "Total Value Locked",
+      //   tooltip:
+      //     "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
+      //   items: [
+      //     {
+      //       label: "Active Bitcoin Earning",
+      //       value: formatNumberToCompactString(vaultTvlInUsd, {
+      //         currency: "USD",
+      //         withAutoCompactFormat: true,
+      //       }),
+      //     },
+      //     {
+      //       label: "TVL Cap",
+      //       value: formatNumberToCompactString(tvlCap, {
+      //         currency: "USD",
+      //         withAutoCompactFormat: true,
+      //       }),
+      //     },
+      //     { label: "Protocol Fee", value: "20% of Earned Rewards" },
+      //   ],
+      // },
       {
         sectionKey: "misc",
         items: [
