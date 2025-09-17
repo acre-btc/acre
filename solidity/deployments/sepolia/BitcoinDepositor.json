@@ -7,6 +7,11 @@
       "type": "constructor"
     },
     {
+      "inputs": [],
+      "name": "AcreVaultZeroAddress",
+      "type": "error"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -120,11 +125,6 @@
     },
     {
       "inputs": [],
-      "name": "StbtcZeroAddress",
-      "type": "error"
-    },
-    {
-      "inputs": [],
       "name": "TbtcTokenZeroAddress",
       "type": "error"
     },
@@ -143,6 +143,19 @@
       ],
       "name": "UnexpectedDepositState",
       "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newAcreVault",
+          "type": "address"
+        }
+      ],
+      "name": "AcreVaultUpdated",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -343,6 +356,19 @@
     },
     {
       "inputs": [],
+      "name": "acreVault",
+      "outputs": [
+        {
+          "internalType": "contract IAcreVault",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "bridge",
       "outputs": [
         {
@@ -492,7 +518,7 @@
         },
         {
           "internalType": "address",
-          "name": "_stbtc",
+          "name": "_acreVault",
           "type": "address"
         }
       ],
@@ -684,6 +710,19 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "newAcreVault",
+          "type": "address"
+        }
+      ],
+      "name": "updateAcreVault",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "newBridgeFeesReimbursementThreshold",
           "type": "uint256"
@@ -735,7 +774,7 @@
     }
   ],
   "transactionHash": "0x290113c31036422c5d19ec62189059667fe895b67cda247a848cfbeea3ee2d35",
-  "numDeployments": 2,
-  "implementation": "0x6a7CF37080ABC3Cc811fB2aC8445F555C5CB19cB",
+  "numDeployments": 3,
+  "implementation": "0x151cc22dcf98efDAa767731256Ecd24a57Be027A",
   "devdoc": "Contract deployed as upgradable proxy"
 }

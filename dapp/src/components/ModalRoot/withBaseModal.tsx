@@ -3,7 +3,7 @@ import { Modal, ModalContent, ModalOverlay, ModalProps } from "@chakra-ui/react"
 import { BaseModalProps } from "#/types"
 import { useAppNavigate } from "#/hooks"
 
-const MODAL_BASE_SIZE = "lg"
+const MODAL_BASE_SIZE = "md"
 
 function withBaseModal<T extends BaseModalProps>(
   WrappedModalContent: ComponentType<T>,
