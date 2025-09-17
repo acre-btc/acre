@@ -111,10 +111,11 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
       vaultTvlInUsd: vault.tvl,
     })
   }
-  const formattedTvlCap = formatNumberToCompactString(tvlCapInUsd ?? 0, {
-    currency: "USD",
-    withAutoCompactFormat: true,
-  })
+  // TODO: Uncomment when the TVL cap is expected to be displayed
+  // const formattedTvlCap = formatNumberToCompactString(tvlCapInUsd ?? 0, {
+  //   currency: "USD",
+  //   withAutoCompactFormat: true,
+  // })
   const formattedTvl = formatNumberToCompactString(vault.tvl, {
     currency: "USD",
     withAutoCompactFormat: true,
@@ -145,8 +146,9 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
       <Td letterSpacing="-0.5px">
         <Box as="span" fontWeight="bold">
           {formattedTvl}
-        </Box>{" "}
-        / {formattedTvlCap}
+        </Box>
+        {/* TODO: Uncomment when the TVL cap is expected to be displayed */}
+        {/* {" "} / {formattedTvlCap} */}
       </Td>
       <Td>
         <Box display="flex" justifyContent="space-between" alignItems="center">
