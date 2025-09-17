@@ -11,6 +11,7 @@ const ACRE_BTC_CONTRACT_ADDRESS =
   env.NETWORK_TYPE === "mainnet"
     ? "0x19531C886339dd28b9923d903F6B235C45396ded"
     : "0xB8ba4B007321e0EB4586De49E59593E0eD66d367"
+const TOKEN_TICKER = env.NETWORK_TYPE === "mainnet" ? "acreBTC" : "tacreBTC"
 
 const useRegisterAcreEthereumAddressInLedgerLive = () => {
   const { embeddedApp } = useIsEmbed()
@@ -39,8 +40,7 @@ const useRegisterAcreEthereumAddressInLedgerLive = () => {
       return bitcoinProvider.registerYieldBearingEthereumAddress({
         ethereumAddress: ethAddress,
         tokenContractAddress: ACRE_BTC_CONTRACT_ADDRESS,
-        tokenTicker: "acreBTC",
-        // TODO: Do we need this?
+        tokenTicker: TOKEN_TICKER,
         meta: {
           protocol: "ACRE",
           apy: "4.8%",
