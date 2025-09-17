@@ -73,6 +73,19 @@ const oldPalette = {
       "05": "rgba(0, 0, 0, 0.05)",
       15: "rgba(0, 0, 0, 0.15)",
     },
+    green: {
+      50: {
+        15: "rgba(51, 163, 33, 0.15)",
+      },
+    },
+    orange: {
+      50: {
+        15: "rgba(255, 122, 0, 0.15)",
+      },
+    },
+    blue: {
+      "01": "rgba(14, 97, 254, 0.1)",
+    },
   },
 }
 
@@ -131,6 +144,7 @@ const functional = {
   green: {
     10: "#D9F6D5",
     30: "#A1EA95",
+    30: "#A1EA95",
     50: "#33A321",
   },
   yellow: {
@@ -168,5 +182,4 @@ export default {
     5: secondary.ivoire["40"],
     6: secondary.ivoire["50"],
   },
-  mezo: "#FF004D",
 }

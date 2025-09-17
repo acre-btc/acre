@@ -19,7 +19,7 @@
     "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.sepolia.yaml",
     "codegen:sepolia": "npm run codegen subgraph.sepolia.yaml",
     "build:sepolia": "npm run build subgraph.sepolia.yaml",
-    "deploy:sepolia": "graph deploy --studio acre subgraph.sepolia.yaml",
+    "deploy:sepolia": "graph deploy --studio acre-sepolia subgraph.sepolia.yaml",
     "prepare:mainnet": "mustache config/mainnet.json subgraph.template.yaml > subgraph.mainnet.yaml",
     "codegen:mainnet": "npm run codegen subgraph.mainnet.yaml",
     "build:mainnet": "npm run build subgraph.mainnet.yaml",

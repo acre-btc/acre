@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React from "react"
 import {
   Button,
   ModalBody,
@@ -15,31 +15,14 @@ import {
   Highlight,
   Text,
 } from "@chakra-ui/react"
-import { BaseModalProps, DappMode } from "#/types"
-import { EmbedApp } from "#/utils/referralProgram"
-import { useIsEmbed, useMobileMode } from "#/hooks"
+import { BaseModalProps } from "#/types"
+import { useMobileMode } from "#/hooks"
 import {
   step1Video,
   step2Video,
   step3Video,
 } from "#/assets/videos/welcome-steps"
 import withBaseModal from "./ModalRoot/withBaseModal"
-
-const dappModeToContent: Record<DappMode, () => ReactElement> = {
-  standalone: () => (
-    <>
-      Acre makes earning rewards with your BTC simple and secure. Dedicated to
-      everyone, it&apos;s fun and easy to use. No advanced knowledge required.
-    </>
-  ),
-  "ledger-live": () => (
-    <Highlight query="Ledger Live">
-      Acre makes earning rewards with your BTC simple and secure. Tailored for
-      Ledger Live, it&apos;s fun and easy to use. No advanced knowledge
-      required.
-    </Highlight>
-  ),
-}
 
 const steps = [
   {
@@ -52,9 +35,14 @@ const steps = [
         </Box>
       </Text>
     ),
-    content: (embeddedApp?: EmbedApp) =>
-      dappModeToContent[embeddedApp ?? "standalone"](),
-
+    content: () => (
+      <>
+        When you deposit BTC, Acre&apos;s dispatcher routes it into audited,
+        risk-reviewed vaults run by independent risk managers. Your bitcoin
+        stays under your control while it compounds on-chain. Simple, secure,
+        transparent.
+      </>
+    ),
     video: step1Video,
   },
   {
@@ -87,9 +75,9 @@ const steps = [
     ),
     content: () => (
       <Highlight query="Acre Points Program">
-        As a depositor, you&apos;re automatically in the Acre Points Program.
-        Enjoy daily points drops and exclusive partner rewards. Start stacking
-        those points!
+        Deposit BTC to start earning. Monitor your position, review the vaults,
+        earn with the Acre Points Program automatically, and redeem back into
+        Bitcoin at any time. Your bitcoin, on-chain, working for you.
       </Highlight>
     ),
     video: step3Video,
@@ -122,7 +110,6 @@ function WelcomeModalBase({ closeModal }: BaseModalProps) {
     index: 0,
     count: steps.length,
   }) as UseStepsReturn & { goToNext: () => void }
-  const { embeddedApp } = useIsEmbed()
   const isMobileMode = useMobileMode()
 
   const isLastStep = activeStep + 1 === steps.length
@@ -138,7 +125,7 @@ function WelcomeModalBase({ closeModal }: BaseModalProps) {
           {activeStepData.title}
         </ModalHeader>
         <ModalBody textAlign="left" display="block" color="text.secondary">
-          {activeStepData.content(embeddedApp)}
+          {activeStepData.content()}
         </ModalBody>
         <ModalFooter
           display="flex"

@@ -9,13 +9,12 @@ export default function Header() {
     <HStack
       as="header"
       w="full"
-      maxW="120rem" // 1920px
       mx="auto"
       justify="space-between"
       zIndex="header"
-      pt={{ base: 4, md: 12 }}
+      pt="6"
+      px="6"
       pb={{ base: 4, xl: 12 }}
-      px={{ base: 4, md: "2.5rem", xl: 30 }}
     >
       <Link href={externalHref.WEBSITE} isExternal>
         <Icon as={AcreLogoIcon} w={20} h={12} />

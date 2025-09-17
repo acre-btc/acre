@@ -223,13 +223,13 @@ describe("Account", () => {
     let result: bigint
 
     beforeAll(async () => {
-      contracts.stBTC.balanceOf = jest.fn().mockResolvedValue(expectedResult)
+      contracts.acreBTC.balanceOf = jest.fn().mockResolvedValue(expectedResult)
 
       result = await account.sharesBalance()
     })
 
-    it("should get balance of stBTC", () => {
-      expect(contracts.stBTC.balanceOf).toHaveBeenCalledWith(depositor)
+    it("should get balance of acreBTC", () => {
+      expect(contracts.acreBTC.balanceOf).toHaveBeenCalledWith(depositor)
     })
 
     it("should return value of the basis for calculating final BTC balance", () => {
@@ -246,7 +246,7 @@ describe("Account", () => {
     let result: bigint
 
     beforeAll(async () => {
-      contracts.stBTC.assetsBalanceOf = jest
+      contracts.acreBTC.assetsBalanceOf = jest
         .fn()
         .mockResolvedValue(mockedAssetsBalance)
 
@@ -254,7 +254,7 @@ describe("Account", () => {
     })
 
     it("should get staker's balance of tBTC tokens in vault", () => {
-      expect(contracts.stBTC.assetsBalanceOf).toHaveBeenCalledWith(depositor)
+      expect(contracts.acreBTC.assetsBalanceOf).toHaveBeenCalledWith(depositor)
     })
 
     it("should convert to satoshi", () => {
@@ -359,12 +359,15 @@ describe("Account", () => {
     const btcAmountIn1e18 = 100000000000000000n
     const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
 
-    const mockedShares = 90000000000000000n // 0.09 stBTC in 1e18 precision
-    const spyOnConvertToShares = jest.spyOn(contracts.stBTC, "convertToShares")
+    const mockedShares = 90000000000000000n // 0.09 acreBTC in 1e18 precision
+    const spyOnConvertToShares = jest.spyOn(
+      contracts.acreBTC,
+      "convertToShares",
+    )
 
     // 0.08 tBTC in 1e18 precision
     const mockedTbtcAmountToRedeem = 80000000000000000n
-    const spyOnPreviewRedeem = jest.spyOn(contracts.stBTC, "previewRedeem")
+    const spyOnPreviewRedeem = jest.spyOn(contracts.acreBTC, "previewRedeem")
 
     const mockedRedeemer = {} as RedeemerProxyModule.default
     const spyOnInitRedeemer = jest.spyOn(RedeemerProxyModule, "default")

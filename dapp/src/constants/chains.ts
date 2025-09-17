@@ -4,10 +4,12 @@ import env from "./env"
 
 const BLOCK_EXPLORER_TESTNET = {
   bitcoin: { title: "Mempool", url: "https://mempool.space/testnet" },
+  ethereum: { title: "Etherscan", url: "https://sepolia.etherscan.io/" },
 }
 
 const BLOCK_EXPLORER_MAINNET = {
   bitcoin: { title: "Mempool", url: "https://mempool.space" },
+  ethereum: { title: "Etherscan", url: "https://etherscan.io/" },
 }
 
 const BLOCK_EXPLORER: Record<Chain, { title: string; url: string }> =

@@ -1,8 +1,8 @@
 {
   "network": "mainnet",
   "bitcoinDepositor": {
-    "address": "0x2Ba614a598Cffa5a19d683cDCA97bac3a49313d1",
-    "startBlock": 20235512
+    "address": "0xe5F48D3d31baf15dfF89fb394F10A5362711c777",
+    "startBlock": 23357093
   },
   "bitcoinRedeemer": {
     "address": "0x7e184B0cC12572D12Db6dA248322A0e3618fc756",
