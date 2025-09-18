@@ -1,16 +1,10 @@
-import {
-  Address,
-  BigInt,
-  ByteArray,
-  ethereum,
-  Bytes,
-} from "@graphprotocol/graph-ts"
+import { Address, ByteArray, ethereum, Bytes } from "@graphprotocol/graph-ts"
 import {
   DepositOwner,
   Deposit,
   Event,
   Withdraw,
-  RedemptionKeyCounter,
+  RedemptionKeyToPendingWithdrawal,
 } from "../generated/schema"
 
 export function getOrCreateDepositOwner(depositOwnerId: Address): DepositOwner {
@@ -44,40 +38,19 @@ export function getOrCreateEvent(eventId: string): Event {
   return event
 }
 
-export function getOrCreateRedemptionKeyCounter(
+export function getOrCreateRedemptionKeyToPendingWithdrawal(
   redemptionKey: string,
-): RedemptionKeyCounter {
-  let redemptionKeyCounter = RedemptionKeyCounter.load(redemptionKey)
+): RedemptionKeyToPendingWithdrawal {
+  let redemptionKeyToPendingWithdrawal =
+    RedemptionKeyToPendingWithdrawal.load(redemptionKey)
 
-  if (!redemptionKeyCounter) {
-    redemptionKeyCounter = new RedemptionKeyCounter(redemptionKey)
-    redemptionKeyCounter.counter = BigInt.zero()
+  if (!redemptionKeyToPendingWithdrawal) {
+    redemptionKeyToPendingWithdrawal = new RedemptionKeyToPendingWithdrawal(
+      redemptionKey,
+    )
   }
 
-  return redemptionKeyCounter
-}
-
-function buildWithdrawId(redemptionKey: string, counter: BigInt): string {
-  return redemptionKey.concat("-").concat(counter.toString())
-}
-
-export function getLastWithdrawId(redemptionKey: string): string | null {
-  const redemptionKeyCounter = getOrCreateRedemptionKeyCounter(redemptionKey)
-
-  if (BigInt.zero().equals(redemptionKeyCounter.counter)) {
-    return null
-  }
-
-  return buildWithdrawId(redemptionKey, redemptionKeyCounter.counter)
-}
-
-export function getNextWithdrawId(redemptionKey: string): string {
-  const redemptionKeyCounter = getOrCreateRedemptionKeyCounter(redemptionKey)
-
-  return buildWithdrawId(
-    redemptionKey,
-    redemptionKeyCounter.counter.plus(BigInt.fromI32(1)),
-  )
+  return redemptionKeyToPendingWithdrawal
 }
 
 export function getOrCreateWithdraw(id: string): Withdraw {

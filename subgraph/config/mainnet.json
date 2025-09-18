@@ -8,6 +8,10 @@
     "address": "0x7e184B0cC12572D12Db6dA248322A0e3618fc756",
     "startBlock": 20235530
   },
+  "withdrawalQueue": {
+    "address": "0x0",
+    "startBlock": 0
+  },
   "tbtcBridge": {
     "address": "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
   }
