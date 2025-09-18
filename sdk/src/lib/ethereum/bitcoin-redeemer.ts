@@ -2,7 +2,9 @@ import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contrac
 import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
 
+import { ethers } from "ethers"
 import {
+  EthereumContractRunner,
   EthersContractConfig,
   EthersContractDeployment,
   EthersContractWrapper,
@@ -14,6 +16,7 @@ import {
 } from "../contracts"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
+import { Hex } from "../utils"
 
 type TbtcBridgeRedemptionParameters = {
   redemptionTreasuryFeeDivisor: bigint
@@ -34,12 +37,17 @@ export default class EthereumBitcoinRedeemer
 
   #tbtcBridge: TbtcBridge | undefined
 
+  #runner: EthereumContractRunner
+
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
     switch (network) {
       case "sepolia":
-        artifact = SepoliaBitcoinRedeemer
+        artifact = {
+          ...SepoliaBitcoinRedeemer,
+          address: "0xE1d25025835A89C93d56a029C80699BE056584d2",
+        }
         break
       case "mainnet":
         // TODO: set the new mainnet address
@@ -50,6 +58,7 @@ export default class EthereumBitcoinRedeemer
     }
 
     super(config, artifact)
+    this.#runner = config.runner
     this.#cache = {
       tbtcBridgeRedemptionParameters: undefined,
     }
@@ -104,5 +113,70 @@ export default class EthereumBitcoinRedeemer
       redemptionTreasuryFeeDivisor,
     }
     return this.#cache.tbtcBridgeRedemptionParameters
+  }
+
+  /**
+   * @see {BitcoinRedeemer#encodeReceiveApprovalExtraData}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  encodeReceiveApprovalExtraData(
+    redeemer: ChainIdentifier,
+    redeemerOutputScript: Hex,
+  ): Hex {
+    // We only need encode `redeemer` and `redeemerOutputScript`. Other values
+    // can be empty because the are not used in the contract.
+    return Hex.from(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
+        [
+          `0x${redeemer.identifierHex}`,
+          // The Ethereum address is 20 bytes so we can use it as "empty" ` bytes20`
+          // type.
+          ethers.ZeroAddress,
+          ethers.encodeBytes32String(""),
+          0,
+          0,
+          redeemerOutputScript.toPrefixedString(),
+        ],
+      ),
+    )
+  }
+
+  /**
+   * @see {BitcoinRedeemer#findRedemptionRequestIdFromTransaction}
+   */
+  async findRedemptionRequestIdFromTransaction(
+    transactionHash: Hex,
+  ): Promise<bigint> {
+    const receipt = await this.#runner.provider?.getTransactionReceipt(
+      transactionHash.toPrefixedString(),
+    )
+
+    if (!receipt)
+      throw new Error(
+        `Cannot find the redemption request id. Transaction with hash ${transactionHash.toPrefixedString()} not found`,
+      )
+
+    const eventTopic = this.instance.interface.getEvent(
+      "RedemptionRequested",
+    ).topicHash
+
+    // We assume only one redemption was requested in this transaction.
+    const log = receipt.logs.find(
+      (receiptLog) => receiptLog.topics[0] === eventTopic,
+    )
+
+    if (!log)
+      throw new Error(
+        "Cannot find the redemption request id. The RedemptionRequested event not found",
+      )
+
+    // @ts-expect-error Something is off with types.
+    const parsedLog = this.instance.interface.parseLog(log)
+
+    if (!parsedLog)
+      throw new Error("Cannot find the redemption request id. Cannot parse log")
+
+    return parsedLog.args[1] as bigint
   }
 }

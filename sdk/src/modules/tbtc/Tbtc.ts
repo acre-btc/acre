@@ -1,11 +1,4 @@
-import {
-  ChainIdentifier,
-  TBTC as TbtcSdk,
-  RedeemerProxy,
-  EthereumBridge,
-  BitcoinAddressConverter,
-  BitcoinHashUtils,
-} from "@keep-network/tbtc-v2.ts"
+import { ChainIdentifier, TBTC as TbtcSdk } from "@keep-network/tbtc-v2.ts"
 
 import { ethers, ZeroAddress } from "ethers"
 import { getDefaultProvider, VoidSigner } from "ethers-v5"
@@ -26,18 +19,14 @@ export default class Tbtc {
 
   readonly #bitcoinDepositor: BitcoinDepositor
 
-  readonly #network: BitcoinNetwork
-
   constructor(
     tbtcApi: TbtcApi,
     tbtcSdk: TbtcSdk,
     bitcoinDepositor: BitcoinDepositor,
-    network: BitcoinNetwork,
   ) {
     this.#tbtcApi = tbtcApi
     this.#tbtcSdk = tbtcSdk
     this.#bitcoinDepositor = bitcoinDepositor
-    this.#network = network
   }
 
   /**
@@ -66,7 +55,7 @@ export default class Tbtc {
         ? await TbtcSdk.initializeMainnet(signer)
         : await TbtcSdk.initializeSepolia(signer)
 
-    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor, network)
+    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor)
   }
 
   /**
@@ -154,45 +143,5 @@ export default class Tbtc {
       txHash: deposit.txHash,
       initializedAt: deposit.createdAt,
     }))
-  }
-
-  /**
-   * Requests a redemption of TBTC v2 token into BTC. It builds the redemption
-   * data and handles the redemption request through the provided redeemer
-   * proxy.
-   * @param bitcoinRedeemerAddress Bitcoin address the redeemed BTC should be
-   *        sent to. Only P2PKH, P2WPKH, P2SH, and P2WSH address types are
-   *        supported.
-   * @param amount The amount to be redeemed in 1e18 tBTC token precision.
-   * @param redeemerProxy Object implementing functions required to route tBTC
-   *        redemption requests through the tBTC bridge.
-   * @returns The transaction hash and redemption key.
-   */
-  async initiateRedemption(
-    destinationBitcoinAddress: string,
-    tbtcAmount: bigint,
-    redeemerProxy: RedeemerProxy,
-  ): Promise<{ transactionHash: string; redemptionKey: string }> {
-    const { targetChainTxHash, walletPublicKey } =
-      await this.#tbtcSdk.redemptions.requestRedemptionWithProxy(
-        destinationBitcoinAddress,
-        tbtcAmount,
-        redeemerProxy,
-      )
-
-    const redeemerOutputScript = BitcoinAddressConverter.addressToOutputScript(
-      destinationBitcoinAddress,
-      this.#network,
-    )
-
-    const redemptionKey = EthereumBridge.buildRedemptionKey(
-      BitcoinHashUtils.computeHash160(walletPublicKey),
-      redeemerOutputScript,
-    )
-
-    return {
-      transactionHash: targetChainTxHash.toPrefixedString(),
-      redemptionKey,
-    }
   }
 }

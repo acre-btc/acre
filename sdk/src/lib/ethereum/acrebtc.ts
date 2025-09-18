@@ -30,7 +30,10 @@ class EthereumAcreBTC
 
     switch (network) {
       case "sepolia":
-        artifact = SepoliaAcreBTC
+        artifact = {
+          ...SepoliaAcreBTC,
+          address: "0xB8ba4B007321e0EB4586De49E59593E0eD66d367",
+        }
         break
       case "mainnet":
         artifact = MainnetAcreBTC
