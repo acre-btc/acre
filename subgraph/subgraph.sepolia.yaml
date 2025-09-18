@@ -36,40 +36,8 @@ dataSources:
           receipt: true
       file: ./src/bitcoin-depositor.ts
   - kind: ethereum
-    name: BitcoinRedeemer
-    network: sepolia
-    context:
-      tbtcBridgeAddress:
-        type: Bytes
-        data: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
-    source:
-      address: "0xE1d25025835A89C93d56a029C80699BE056584d2"
-      abi: BitcoinRedeemer
-      startBlock: 9169626
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      entities:
-        - DepositOwner
-        - Deposit
-        - Withdraw
-        - Event
-      abis:
-        - name: BitcoinRedeemer
-          file: ./abis/BitcoinRedeemer.json
-      eventHandlers:
-        - event: RedemptionRequested(indexed address,indexed uint256,uint256)
-          handler: handleRedemptionRequested
-          receipt: true
-      file: ./src/bitcoin-redeemer.ts
-  - kind: ethereum
     name: WithdrawalQueue
     network: sepolia
-    context:
-      tbtcBridgeAddress:
-        type: Bytes
-        data: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
     source:
       address: "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884"
       abi: WithdrawalQueue
@@ -95,9 +63,9 @@ dataSources:
     name: TbtcBridge
     network: sepolia
     context:
-      bitcoinRedeemerAddress:
+      withdrawalQueueContractAddress:
         type: Bytes
-        data: "0xE1d25025835A89C93d56a029C80699BE056584d2"
+        data: "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884"
     source:
       abi: TbtcBridge
       address: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
