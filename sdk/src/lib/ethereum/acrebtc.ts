@@ -1,7 +1,6 @@
-// TODO: Update imports when AcreBTC is ready
-import { StBTC as AcreBTCTypechain } from "@acre-btc/contracts/typechain/contracts/StBTC"
-import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/stBTC.json"
-import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/stBTC.json"
+import { AcreBTC as AcreBTCTypechain } from "@acre-btc/contracts/typechain/contracts"
+import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
+import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/acreBTC.json"
 
 import {
   EthersContractConfig,

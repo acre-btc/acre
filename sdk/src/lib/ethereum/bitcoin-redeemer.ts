@@ -1,6 +1,5 @@
-// TOOD: Update imports
-import { BitcoinRedeemer as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemer"
-import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
+import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemerV2"
+import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
 
 import { ethers } from "ethers"
@@ -10,7 +9,11 @@ import {
   EthersContractDeployment,
   EthersContractWrapper,
 } from "./contract"
-import { ChainIdentifier, BitcoinRedeemer, WithdrawalFees } from "../contracts"
+import {
+  ChainIdentifier,
+  BitcoinRedeemer,
+  RedeemerWithdrawalFees,
+} from "../contracts"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
 import { Hex } from "../utils"
@@ -47,6 +50,7 @@ export default class EthereumBitcoinRedeemer
         }
         break
       case "mainnet":
+        // TODO: set the new mainnet address
         artifact = MainnetBitcoinRedeemer
         break
       default:
@@ -76,7 +80,7 @@ export default class EthereumBitcoinRedeemer
    */
   async calculateWithdrawalFee(
     amountToWithdraw: bigint,
-  ): Promise<WithdrawalFees> {
+  ): Promise<RedeemerWithdrawalFees> {
     const { redemptionTreasuryFeeDivisor } =
       await this.#getTbtcBridgeRedemptionParameters()
 

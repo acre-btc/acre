@@ -1,6 +1,7 @@
 import React from "react"
 import { featureFlags } from "#/constants"
-import { useTriggerConnectWalletModal } from "#/hooks"
+import { useTriggerConnectWalletModal, useWallet } from "#/hooks"
+import usePositionStats from "#/hooks/usePositionStats"
 import { Card, Grid, VStack } from "@chakra-ui/react"
 import Vaults from "#/components/Vaults"
 import WithdrawalStatusBanner, {
@@ -42,8 +43,10 @@ const useWithdrawals: () => {
 
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
+  const { data, isLoading } = usePositionStats()
+  const { isConnected } = useWallet()
 
-  const { data } = useWithdrawals()
+  const { data: withdrawals } = useWithdrawals()
 
   return (
     <Grid
@@ -57,20 +60,34 @@ export default function DashboardPage() {
       ) : (
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
-      <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
-        {data.map((withdraw) => (
-          <WithdrawalStatusBanner
-            key={withdraw.withdrawnAt}
-            status={withdraw.status}
-            btcAmount={withdraw.btcAmount}
-            withdrawnAt={withdraw.withdrawnAt}
-          />
-        ))}
-      </VStack>
+      {featureFlags.WITHDRAWALS_ENABLED && (
+        <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
+          {withdrawals.map((withdrawal) => (
+            <WithdrawalStatusBanner
+              key={withdrawal.withdrawnAt}
+              status={withdrawal.status}
+              btcAmount={withdrawal.btcAmount}
+              withdrawnAt={withdrawal.withdrawnAt}
+            />
+          ))}
+        </VStack>
+      )}
 
-      <BTCDepositedCard gridColumn={grid.stats} />
-      <RewardsEarnedCard gridColumn={grid.stats} />
-      <EstimatedAPRCard gridColumn={grid.stats} />
+      {isConnected && (
+        <>
+          <BTCDepositedCard
+            gridColumn={grid.stats}
+            isLoading={isLoading}
+            btcAmount={data?.deposited}
+          />
+          <RewardsEarnedCard
+            gridColumn={grid.stats}
+            isLoading={isLoading}
+            btcAmount={data?.earned}
+          />
+          <EstimatedAPRCard gridColumn={grid.stats} />
+        </>
+      )}
 
       <Vaults gridColumn={grid.vaults} />
 

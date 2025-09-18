@@ -7,12 +7,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer, governance } = await getNamedAccounts()
   const { log } = deployments
 
-  log(
-    `transferring ownership of FeesReimbursementPool contract to ${governance}`,
-  )
+  log(`transferring ownership of MidasAllocator contract to ${governance}`)
 
   await deployments.execute(
-    "FeesReimbursementPool",
+    "MidasAllocator",
     {
       from: deployer,
       log: true,
@@ -22,11 +20,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     governance,
   )
 
-  // Run only on Hardhat network. On all other networks this function needs to
-  // be called by the governance.
-  if (hre.network.name === "hardhat") {
+  if (hre.network.name !== "mainnet" && hre.network.name !== "integration") {
     await deployments.execute(
-      "FeesReimbursementPool",
+      "MidasAllocator",
       {
         from: governance,
         log: true,
@@ -39,5 +35,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 export default func
 
-func.tags = ["TransferOwnershipFeesReimbursementPool"]
-func.dependencies = ["FeesReimbursementPool"]
+func.tags = ["TransferOwnershipMidasAllocator"]
+func.dependencies = ["MidasAllocator"]
+func.skip = async (hre: HardhatRuntimeEnvironment): Promise<boolean> =>
+  Promise.resolve(hre.network.name === "integration")

@@ -8,25 +8,30 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await helpers.signers.getNamedSigners()
   const { log } = deployments
 
-  const tbtcToken = await deployments.get("TBTC")
-  const bitcoinDepositor = await deployments.get("BitcoinDepositor")
+  const tbtc = await deployments.get("TBTC")
+  const bridge = await deployments.get("Bridge")
+  const tbtcVault = await deployments.get("TBTCVault")
+  const acreBtc = await deployments.get("acreBTC")
 
-  let deployment = await deployments.getOrNull("FeesReimbursementPool")
+  let deployment = await deployments.getOrNull("BitcoinDepositorV2")
   if (deployment && helpers.address.isValid(deployment.address)) {
-    log(`using FeesReimbursementPool at ${deployment.address}`)
+    log(`using BitcoinDepositorV2 at ${deployment.address}`)
   } else {
-    ;[, deployment] = await helpers.upgrades.deployProxy(
-      "FeesReimbursementPool",
-      {
-        contractName: "FeesReimbursementPool",
-        initializerArgs: [tbtcToken.address, bitcoinDepositor.address],
-        factoryOpts: { signer: deployer },
-        proxyOpts: {
-          kind: "transparent",
-          initialOwner: governance,
-        },
+    ;[, deployment] = await helpers.upgrades.deployProxy("BitcoinDepositorV2", {
+      factoryOpts: {
+        signer: deployer,
       },
-    )
+      initializerArgs: [
+        bridge.address,
+        tbtcVault.address,
+        tbtc.address,
+        acreBtc.address,
+      ],
+      proxyOpts: {
+        kind: "transparent",
+        initialOwner: governance,
+      },
+    })
 
     if (deployment.transactionHash && hre.network.tags.etherscan) {
       await waitForTransaction(hre, deployment.transactionHash)
@@ -39,5 +44,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 export default func
 
-func.tags = ["FeesReimbursementPool"]
-func.dependencies = ["BitcoinDepositor", "TBTC"]
+func.tags = ["BitcoinDepositorV2"]
+func.dependencies = ["TBTC", "acreBTC"]

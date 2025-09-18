@@ -53,21 +53,36 @@ const config: HardhatUserConfig = {
       // Set fixed initialBaseFeePerGas to avoid issues with maxFeePerGas
       // being too low fo the next block.
       initialBaseFeePerGas: 1000000000,
-      forking:
-        process.env.FORKING === "true"
-          ? {
-              url: MAINNET_RPC_URL,
-              // Points to the mainnet block that has a state important for the
-              // integration tests:
-              // 20971177 - the block where AcreMultiAssetVault was deployed in
-              // transaction:
-              // https://etherscan.io/tx/0x2ae30e59643e70aa074bdef089b2cd76dc2a4bf5ee5fa671c8fca9d5f37e022f
-              blockNumber: 20971177,
-            }
-          : undefined,
+      forking: (() => {
+        if (process.env.FORKING === "true") {
+          return {
+            url: MAINNET_RPC_URL,
+            // Points to the mainnet block that has a state important for the
+            // integration tests:
+            // 20971177 - the block where AcreMultiAssetVault was deployed in
+            // transaction:
+            // https://etherscan.io/tx/0x2ae30e59643e70aa074bdef089b2cd76dc2a4bf5ee5fa671c8fca9d5f37e022f
+            blockNumber: 20971177,
+          }
+        }
+        if (process.env.SEPOLIA_FORKING === "true") {
+          return {
+            url: SEPOLIA_RPC_URL,
+            // Use a recent Sepolia block for testing
+            blockNumber: process.env.SEPOLIA_BLOCK_NUMBER
+              ? parseInt(process.env.SEPOLIA_BLOCK_NUMBER, 10)
+              : undefined,
+          }
+        }
+        return undefined
+      })(),
     },
     integration: {
       url: "http://localhost:8545",
+    },
+    "sepolia-integration": {
+      url: "http://localhost:8545",
+      chainId: 11155111,
     },
     sepolia: {
       url: SEPOLIA_RPC_URL,
@@ -95,6 +110,7 @@ const config: HardhatUserConfig = {
       sepolia: ["./external/sepolia"],
       mainnet: ["./external/mainnet"],
       integration: ["./external/mainnet", "./deployments/mainnet"],
+      "sepolia-integration": ["./external/sepolia", "./deployments/sepolia"],
     },
   },
 
@@ -109,7 +125,7 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 1,
       sepolia: 0,
-      mainnet: "0x123694886DBf5Ac94DDA07135349534536D14cAf",
+      mainnet: "0x2B56435eD740C555573fB5CE60840E1E74a7cDC4",
     },
     governance: {
       default: 2,
