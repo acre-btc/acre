@@ -1,6 +1,5 @@
 import ethers, { Contract } from "ethers"
-// TODO: Update imports when AcreBTC is ready
-import acreBTCContract from "@acre-btc/contracts/deployments/sepolia/stBTC.json"
+import acreBTCContract from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
 import { EthereumAcreBTC } from "../../../src/lib/ethereum/acrebtc"
 import { Hex } from "../../../src/lib/utils"
 import {
@@ -13,7 +12,7 @@ jest.mock("ethers", (): object => ({
   ...jest.requireActual("ethers"),
 }))
 
-jest.mock("@acre-btc/contracts/deployments/sepolia/stBTC.json", () => ({
+jest.mock("@acre-btc/contracts/deployments/sepolia/acreBTC.json", () => ({
   address: "0xCA5cd11F30DD8437628ce4D0c8cE6cf7109b0FC2",
   abi: [],
 }))

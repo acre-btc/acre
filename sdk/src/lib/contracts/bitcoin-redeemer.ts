@@ -1,7 +1,7 @@
 import { Hex } from "../utils"
 import { ChainIdentifier } from "./chain-identifier"
 
-export type WithdrawalFees = {
+export type RedeemerWithdrawalFees = {
   tbtc: { treasuryFee: bigint }
 }
 
@@ -17,7 +17,9 @@ export interface BitcoinRedeemer {
    * @returns Withdrawal fees grouped by tBTC and Acre protocols in 1e18 tBTC token
    *          precision.
    */
-  calculateWithdrawalFee(amountToWithdraw: bigint): Promise<WithdrawalFees>
+  calculateWithdrawalFee(
+    amountToWithdraw: bigint,
+  ): Promise<RedeemerWithdrawalFees>
 
   /**
    * Encodes the extra data for a transaction that redeems shares for

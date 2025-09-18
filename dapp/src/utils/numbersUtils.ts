@@ -218,23 +218,51 @@ const addLeadingZero = (num: number): string =>
 const getPercentValue = (value: number, maxValue: number) =>
   (value * 100) / maxValue
 
-type DesiredDecimals = Intl.NumberFormatOptions &
-  BigIntToLocaleStringOptions["minimumFractionDigits"]
+type BigIntDecimals = BigIntToLocaleStringOptions["maximumFractionDigits"]
+
+type FormatNumberToCompactStringOptions<V> = {
+  decimals?: V extends bigint ? BigIntDecimals : number
+  withAutoCompactFormat?: boolean
+  currency?: "USD"
+}
 
 /**
  * Formats a number or bigint into compact string with K, M, B, or T suffix.
  * @param value The number or bigint to format.
- * @param decimals Number of decimal places to include (ignored for bigint to avoid floating point issues).
+ * @param options Formatting options.
+ * @param options.currency If provided, formats the number as currency
+ * (e.g., USD).
+ * @param options.withAutoCompactFormat If true, decimal places varies based on
+ * the size of the number (2 for thousands, 1 for millions or more).
+ * @param options.decimals If provided, sets the number of decimal places to
+ * a constant value. Defaults to 2 for currency and 4 otherwise.
  * @returns The formatted number as a string.
  */
-export function formatNumberToCompactString(
-  value: number | bigint,
-  decimals = 4,
+export function formatNumberToCompactString<V extends number | bigint>(
+  value: V,
+  options: FormatNumberToCompactStringOptions<V> = {},
 ): string {
+  const {
+    currency,
+    decimals = currency ? 2 : 4,
+    withAutoCompactFormat = false,
+  } = options
+
+  const isBigInt = typeof value === "bigint"
+
+  const isThousands = isBigInt ? value >= 1000n : value >= 1000
+  const isMillionsOrMore = isBigInt ? value >= 1_000_000n : value >= 1_000_000
+
+  let maximumFractionDigits = decimals as BigIntDecimals
+  if (withAutoCompactFormat && isThousands) maximumFractionDigits = 2
+  if (withAutoCompactFormat && isMillionsOrMore) maximumFractionDigits = 1
+
   return value.toLocaleString("en-US", {
     notation: "compact",
     compactDisplay: "short",
-    maximumFractionDigits: decimals as DesiredDecimals,
+    style: currency ? "currency" : undefined,
+    currency,
+    maximumFractionDigits,
   })
 }
 

@@ -1,13 +1,13 @@
-import ethers, { AbiCoder, Contract, TransactionReceipt } from "ethers"
-import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
+import ethers, { Contract, AbiCoder, TransactionReceipt } from "ethers"
+import BitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import {
   EthereumAddress,
   EthereumContractRunner,
   EthereumBitcoinRedeemer,
 } from "../../../src/lib/ethereum"
 import TbtcBridge from "../../../src/lib/ethereum/tbtc-bridge"
-import { WithdrawalFees } from "../../../src/lib/contracts"
 import { Hex } from "../../../src/lib/utils"
+import { RedeemerWithdrawalFees } from "../../../src/lib/contracts"
 
 jest.mock("ethers", (): object => ({
   Contract: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock("ethers", (): object => ({
 }))
 
 jest.mock(
-  "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json",
+  "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json",
   () => ({
     address: "0xEa887C9de098BD7110EA638cEc91cc8d345b06C0",
     abi: [],
@@ -89,7 +89,7 @@ describe("BitcoinRedeemer", () => {
     })
 
     describe("when network fees are not yet cached", () => {
-      let result: WithdrawalFees
+      let result: RedeemerWithdrawalFees
 
       beforeAll(async () => {
         result = await bitcoinRedeemer.calculateWithdrawalFee(amountToWithdraw)
@@ -107,7 +107,7 @@ describe("BitcoinRedeemer", () => {
     })
 
     describe("when network fees are already cached", () => {
-      let result: WithdrawalFees
+      let result: RedeemerWithdrawalFees
 
       beforeAll(async () => {
         mockedBridgeContractInstance.redemptionParameters.mockClear()
