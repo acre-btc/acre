@@ -20,19 +20,17 @@ const useRegisterAcreEthereumAddressInLedgerLive = () => {
 
   const { data, isLoading } = useActivities()
 
-  const hasAnyDeposit = useMemo(() => {
-    if (!data) return false
-
-    return !!data.find((activity) => activity.type === "deposit")
-  }, [data])
+  // TODO: Temporarily disabled to unblock debugging on Ledger Live side
+  // const hasAnyDeposit = useMemo(() => {
+  //   return true
+  // if (!data) return false
+  //   return !!data.find((activity) => activity.type === "deposit")
+  // }, [data])
 
   return useQuery({
     queryKey: [...queryKeysFactory.userKeys.registerAcreToken(), ethAddress],
-    enabled:
-      embeddedApp === "ledger-live" &&
-      !!bitcoinProvider &&
-      !isLoading &&
-      hasAnyDeposit,
+    enabled: embeddedApp === "ledger-live" && !!bitcoinProvider && !isLoading,
+    // hasAnyDeposit,
     queryFn: async () => {
       if (!bitcoinProvider || !ethAddress)
         throw new Error("Cannot register Ethereum address in Ledger Live")
