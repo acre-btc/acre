@@ -26,7 +26,8 @@
     "bitcoin.getXPub",
     "transaction.signAndBroadcast",
     "custom.acre.messageSign",
-    "custom.acre.transactionSignAndBroadcast"
+    "custom.acre.transactionSignAndBroadcast",
+    "custom.acre.registerYieldBearingEthereumAddress"
   ],
   "domains": ["https://"]
 }
