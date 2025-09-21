@@ -185,9 +185,12 @@ export function handleSubmitRedemptionProofCall(
     // should be set correctly. Otherwise, it means the withdrawal does not come
     // from the Acre network. The tBTC network redeems in a batch so there may
     // be other redemptions not only from the Acre.
-    if (redemptionKeyToPendingWithdrawal.withdrawId) {
+    if (redemptionKeyToPendingWithdrawal.withdrawId != null) {
       const withdraw = getOrCreateWithdraw(
-        redemptionKeyToPendingWithdrawal.withdrawId,
+        // We must use non-null assertion here otherwise AssemblyScript will
+        // fail.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        redemptionKeyToPendingWithdrawal.withdrawId!,
       )
 
       const bitcoinTransactionId = getBitcoinRedemptionTxId(
