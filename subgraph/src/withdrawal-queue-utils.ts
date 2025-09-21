@@ -39,7 +39,7 @@ export function getRequestIdFromRedeemCompletedAndBridgedRequestedLog(
   log: ethereum.Log,
 ): BigInt {
   // The `requestId` is first indexed param.
-  return ethereum.decode("address", log.topics[1])!.toBigInt()
+  return ethereum.decode("uint256", log.topics[1])!.toBigInt()
 }
 
 export function getTbtcFromRedeemCompletedAndBridgedRequestedLog(

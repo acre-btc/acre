@@ -8,14 +8,14 @@ import {
   dataSourceMock,
 } from "matchstick-as/assembly/index"
 
-import { DataSourceContext, Bytes } from "@graphprotocol/graph-ts"
+import { DataSourceContext, Bytes, BigInt } from "@graphprotocol/graph-ts"
 import { createRedemptionRequestedEvent } from "./tbtc-bridge-utils"
 import { handleRedemptionRequested } from "../src/tbtc-bridge"
 
 // Set up context
 const context = new DataSourceContext()
 context.setBytes(
-  "bitcoinRedeemerAddress",
+  "withdrawalQueueContractAddress",
   Bytes.fromHexString("0xa7049b83dB603f4a7FE93B29D2DfEa76065e76E8"),
 )
 
@@ -25,7 +25,10 @@ dataSourceMock.setReturnValues(
   context,
 )
 
-const redemptionRequestedEventData = createRedemptionRequestedEvent()
+const redemptionRequestedEventData = createRedemptionRequestedEvent(
+  BigInt.fromString("123"),
+)
+
 const owner = redemptionRequestedEventData.acreOwner
 const amount = redemptionRequestedEventData.tbtcAmount
 
@@ -47,12 +50,12 @@ describe("handleRedemptionRequested", () => {
       )
     })
 
-    test("should create RedemptionKeyCounter entity", () => {
+    test("should create RedemptionKeyToPendingWithdrawal entity", () => {
       assert.fieldEquals(
-        "RedemptionKeyCounter",
+        "RedemptionKeyToPendingWithdrawal",
         redemptionRequestedEventData.redemptionKey,
-        "counter",
-        "1",
+        "withdrawId",
+        redemptionRequestedEventData.withdrawId.toString(),
       )
     })
 
@@ -66,7 +69,7 @@ describe("handleRedemptionRequested", () => {
 
     test("should save Withdraw entity with correct fields", () => {
       const withdrawEntityId =
-        redemptionRequestedEventData.redemptionKey.concat("-1")
+        redemptionRequestedEventData.withdrawId.toString()
 
       assert.fieldEquals(
         "Withdraw",
@@ -84,52 +87,25 @@ describe("handleRedemptionRequested", () => {
         `Withdraw entity with id (${withdrawEntityId}) does not exist or has incorrect amount value`,
       )
     })
-  })
 
-  describe("when there is already withdraw with the same redemption key", () => {
-    beforeAll(() => {
-      handleRedemptionRequested(redemptionRequestedEventData.event)
-      handleRedemptionRequested(redemptionRequestedEventData.event)
-    })
-
-    afterAll(() => {
-      clearStore()
-    })
-
-    test("should save 2 withdrawals", () => {
-      assert.entityCount("Withdraw", 2, "Invalid `Withdraw` entity count")
-    })
-
-    test("should count the redemption key correctly", () => {
-      assert.fieldEquals(
-        "RedemptionKeyCounter",
-        redemptionRequestedEventData.redemptionKey,
-        "counter",
-        "2",
-      )
-    })
-
-    test("should set correct id", () => {
-      const withdrawEntityId =
-        redemptionRequestedEventData.redemptionKey.concat("-1")
-      const withdrawEntityId2 =
-        redemptionRequestedEventData.redemptionKey.concat("-2")
+    test("should set correct fields for the Event entity", () => {
+      const eventId = `${redemptionRequestedEventData.event.transaction.hash.toHexString()}_RedemptionRequested`
 
       assert.fieldEquals(
-        "Withdraw",
-        withdrawEntityId,
-        "id",
-        withdrawEntityId,
-        `Id should be ${withdrawEntityId}`,
+        "Event",
+        eventId,
+        "activity",
+        redemptionRequestedEventData.withdrawId.toString(),
       )
 
       assert.fieldEquals(
-        "Withdraw",
-        withdrawEntityId2,
-        "id",
-        withdrawEntityId2,
-        `Id should be ${withdrawEntityId2}`,
+        "Event",
+        eventId,
+        "timestamp",
+        redemptionRequestedEventData.event.block.timestamp.toString(),
       )
+
+      assert.fieldEquals("Event", eventId, "type", "Initialized")
     })
   })
 })

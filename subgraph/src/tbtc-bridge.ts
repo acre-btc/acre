@@ -60,6 +60,7 @@ export function handleRedemptionRequested(event: RedemptionRequested): void {
   const amount = getTbtcFromRedeemCompletedAndBridgedRequestedLog(
     withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
   )
+
   withdraw.amount = amount
 
   const redemptionRequestedEvent = getOrCreateEvent(

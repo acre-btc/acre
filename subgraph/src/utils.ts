@@ -1,4 +1,10 @@
-import { Address, ByteArray, ethereum, Bytes } from "@graphprotocol/graph-ts"
+import {
+  Address,
+  ByteArray,
+  ethereum,
+  Bytes,
+  BigInt,
+} from "@graphprotocol/graph-ts"
 import {
   DepositOwner,
   Deposit,
@@ -114,4 +120,11 @@ export function bytesToUint8Array(bytes: Bytes): Uint8Array {
     uint8Array[i] = bytes[i]
   }
   return uint8Array
+}
+
+export function bigIntTo64HexString(bigint: BigInt): string {
+  const hex = bigint.toHexString().slice(2) // remove '0x'
+  const padded = hex.padStart(64, "0") // pad to 64 characters
+
+  return `0x${padded}`
 }
