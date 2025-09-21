@@ -5,12 +5,12 @@
     "startBlock": 23357093
   },
   "bitcoinRedeemer": {
-    "address": "0x7e184B0cC12572D12Db6dA248322A0e3618fc756",
-    "startBlock": 20235530
+    "address": "0x42A5f91586DDf041A6084494B0b375CdA34d55e9",
+    "startBlock": 23392604
   },
   "withdrawalQueue": {
-    "address": "0x0",
-    "startBlock": 0
+    "address": "0xe7b8c14cA8Fb4f226C0A3e45e636b84809BB5D06",
+    "startBlock": 23392669
   },
   "tbtcBridge": {
     "address": "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
