@@ -1,6 +1,6 @@
 import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemerV2"
 import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
-import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
+import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemerV2.json"
 
 import { ethers } from "ethers"
 import {
@@ -44,10 +44,7 @@ export default class EthereumBitcoinRedeemer
 
     switch (network) {
       case "sepolia":
-        artifact = {
-          ...SepoliaBitcoinRedeemer,
-          address: "0xE1d25025835A89C93d56a029C80699BE056584d2",
-        }
+        artifact = SepoliaBitcoinRedeemer
         break
       case "mainnet":
         // TODO: set the new mainnet address

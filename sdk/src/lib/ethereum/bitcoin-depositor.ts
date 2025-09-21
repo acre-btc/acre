@@ -57,10 +57,7 @@ class EthereumBitcoinDepositor
 
     switch (network) {
       case "sepolia":
-        artifact = {
-          ...SepoliaBitcoinDepositor,
-          address: "0x4030348c63e1c8EdDc4485d05Ed6FCE5eB2d35b2",
-        }
+        artifact = SepoliaBitcoinDepositor
         break
       case "mainnet":
         artifact = MainnetBitcoinDepositor
