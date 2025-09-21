@@ -204,9 +204,6 @@ export default class Account {
   ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
-    // Including fees.
-    // TODO: Do we need this?
-    // const redeemedTbtc = await this.#contracts.stBTC.previewRedeem(shares)
 
     const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
       this.#contracts.bitcoinRedeemer.getChainIdentifier(),
