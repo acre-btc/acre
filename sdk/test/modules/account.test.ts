@@ -1,5 +1,9 @@
-import { BitcoinTxHash } from "@keep-network/tbtc-v2.ts"
+import {
+  BitcoinAddressConverter,
+  BitcoinTxHash,
+} from "@keep-network/tbtc-v2.ts"
 import { OrangeKitSdk } from "@orangekit/sdk"
+import { ethers } from "ethers"
 import {
   AcreContracts,
   Hex,
@@ -356,28 +360,137 @@ describe("Account", () => {
   })
 
   describe("initializeWithdrawal", () => {
-    // const btcAmount = 10000000n // 0.1 BTC
-    // const btcAmountIn1e18 = 100000000000000000n
-    // const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
-    // const mockedShares = 90000000000000000n // 0.09 stBTC in 1e18 precision
-    // const spyOnConvertToShares = jest.spyOn(contracts.stBTC, "convertToShares")
-    // // 0.08 tBTC in 1e18 precision
-    // const mockedTbtcAmountToRedeem = 80000000000000000n
-    // const spyOnPreviewRedeem = jest.spyOn(contracts.stBTC, "previewRedeem")
-    // const mockedRedeemer = {} as RedeemerProxyModule.default
-    // const spyOnInitRedeemer = jest.spyOn(RedeemerProxyModule, "default")
-    // const mockedTxHash =
-    //   "0xad19f160667d583a2eb0b844e9b4f669354e79f91ff79a4782184841e66ca06a"
-    // const mockedRedemptionKey =
-    //   "0xb7466077357653f26ca2dbbeb43b9609c9603603413284d44548e0efcb75af20"
-    // let result: Awaited<ReturnType<Account["initializeWithdrawal"]>>
-    // beforeEach(async () => {
-    //   spyOnConvertToShares.mockResolvedValueOnce(mockedShares)
-    //   spyOnPreviewRedeem.mockResolvedValueOnce(mockedTbtcAmountToRedeem)
-    //   spyOnInitRedeemer.mockReturnValueOnce(mockedRedeemer)
-    //   result = await account.initializeWithdrawal(btcAmount)
-    // })
-    // TODO: implement tests.
+    const btcAmount = 10000000n // 0.1 BTC
+    const btcAmountIn1e18 = 100000000000000000n
+
+    const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
+
+    const mockedShares = 90000000000000000n // 0.09 stBTC in 1e18 precision
+    const spyOnConvertToShares = jest.spyOn(
+      contracts.acreBTC,
+      "convertToShares",
+    )
+
+    const spyOnGetAcreChainIdentifier = jest.spyOn(
+      contracts.acreBTC,
+      "getChainIdentifier",
+    )
+    const acreChainIdentifier = EthereumAddress.from(
+      ethers.Wallet.createRandom().address,
+    )
+
+    const spyOnGetBitcoinRedeemerChainIdentifier = jest.spyOn(
+      contracts.bitcoinRedeemer,
+      "getChainIdentifier",
+    )
+    const bitcoinRedeemerChainIdentifier = EthereumAddress.from(
+      ethers.Wallet.createRandom().address,
+    )
+
+    const spyOnAddressToOutputScript = jest.spyOn(
+      BitcoinAddressConverter,
+      "addressToOutputScript",
+    )
+    const redeemerOutputScript = Hex.from(
+      "16001473167C206A13859666C2C3204D8D435185C04C56",
+    )
+
+    const spyOnEncodeReceiveApprovalExtraData = jest.spyOn(
+      contracts.bitcoinRedeemer,
+      "encodeReceiveApprovalExtraData",
+    )
+    const extraData = Hex.from("1234")
+
+    const spyOnEncodeApproveAndCall = jest.spyOn(
+      contracts.acreBTC,
+      "encodeApproveAndCallFunctionData",
+    )
+    const safeTxData = Hex.from("123456")
+
+    const spyOnFindRedemptionRequestId = jest.spyOn(
+      contracts.bitcoinRedeemer,
+      "findRedemptionRequestIdFromTransaction",
+    )
+    const mockedRedemptionRequestId = 123n
+
+    const spyOnSendTransaction = jest.spyOn(orangeKit, "sendTransaction")
+    const mockedTxHash =
+      "0xad19f160667d583a2eb0b844e9b4f669354e79f91ff79a4782184841e66ca06a"
+
+    let result: Awaited<ReturnType<Account["initializeWithdrawal"]>>
+
+    beforeEach(async () => {
+      spyOnConvertToShares.mockResolvedValue(mockedShares)
+      spyOnGetAcreChainIdentifier.mockReturnValue(acreChainIdentifier)
+      spyOnGetBitcoinRedeemerChainIdentifier.mockReturnValue(
+        bitcoinRedeemerChainIdentifier,
+      )
+      spyOnAddressToOutputScript.mockReturnValue(redeemerOutputScript)
+      spyOnEncodeReceiveApprovalExtraData.mockReturnValue(extraData)
+      spyOnEncodeApproveAndCall.mockReturnValue(safeTxData)
+      spyOnFindRedemptionRequestId.mockResolvedValue(mockedRedemptionRequestId)
+      spyOnSendTransaction.mockResolvedValue(mockedTxHash)
+
+      result = await account.initializeWithdrawal(btcAmount)
+    })
+
+    it("should convert satoshi amount to tBTC 1e18 precision", () => {
+      expect(spyOnFromSatoshi).toHaveBeenLastCalledWith(btcAmount)
+      expect(spyOnFromSatoshi).toHaveReturnedWith(btcAmountIn1e18)
+    })
+
+    it("should convert to shares", () => {
+      expect(spyOnConvertToShares).toHaveBeenCalledWith(btcAmountIn1e18)
+    })
+
+    it("should get bitcoin redeemer chain identifier", () => {
+      expect(spyOnGetBitcoinRedeemerChainIdentifier).toHaveBeenCalled()
+      expect(spyOnGetBitcoinRedeemerChainIdentifier).toHaveReturnedWith(
+        bitcoinRedeemerChainIdentifier,
+      )
+    })
+
+    it("should convert the destination bitcoin address to output script", () => {
+      expect(spyOnAddressToOutputScript).toHaveBeenCalledWith(
+        accountData.bitcoinAddress,
+        BitcoinNetwork.Testnet,
+      )
+      expect(spyOnAddressToOutputScript).toHaveReturnedWith(
+        redeemerOutputScript,
+      )
+    })
+
+    it("should encode extra data for receive approval function", () => {
+      expect(spyOnEncodeReceiveApprovalExtraData).toHaveBeenCalledWith(
+        predictedEthereumDepositorAddress,
+        redeemerOutputScript,
+      )
+    })
+
+    it("should build the safe tx data", () => {
+      expect(spyOnEncodeApproveAndCall).toHaveBeenCalledWith(
+        bitcoinRedeemerChainIdentifier,
+        mockedShares,
+        extraData,
+      )
+    })
+
+    it("should send transaction via orange kit", () => {
+      expect(spyOnSendTransaction).toHaveBeenCalledWith(
+        `0x${acreChainIdentifier.identifierHex}`,
+        "0x0",
+        safeTxData.toPrefixedString(),
+        accountData.bitcoinAddress,
+        accountData.bitcoinPublicKey,
+        expect.any(Function),
+      )
+    })
+    it("should return the transaction hash and redemption request id", () => {
+      expect(result).toStrictEqual({
+        transactionHash: mockedTxHash,
+        redemptionRequestId: mockedRedemptionRequestId,
+      })
+    })
   })
 
   describe("getWithdrawals", () => {
