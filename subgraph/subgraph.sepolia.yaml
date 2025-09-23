@@ -58,6 +58,9 @@ dataSources:
         - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
           handler: handleRedeemAndBridgeRequested
           receipt: true
+      callHandlers:
+        - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
+          handler: handleRequestRedeemAndBridgeCall
       file: ./src/withdrawal-queue.ts
   - kind: ethereum
     name: TbtcBridge

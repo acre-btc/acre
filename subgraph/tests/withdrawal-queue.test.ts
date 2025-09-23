@@ -6,9 +6,15 @@ import {
   beforeAll,
   afterAll,
 } from "matchstick-as/assembly/index"
-import { BigInt, Address } from "@graphprotocol/graph-ts"
-import { createRedeemAndBridgeRequestedEvent } from "./withdrawal-queue-utils"
-import { handleRedeemAndBridgeRequested } from "../src/withdrawal-queue"
+import { BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
+import {
+  createRedeemAndBridgeRequestedEvent,
+  createRequestRedeemAndBridgeCall,
+} from "./withdrawal-queue-utils"
+import {
+  handleRedeemAndBridgeRequested,
+  handleRequestRedeemAndBridgeCall,
+} from "../src/withdrawal-queue"
 import { DepositOwner } from "../generated/schema"
 
 // Shared
@@ -39,6 +45,13 @@ const secondRedeemAndBridgeRequestedEvent = createRedeemAndBridgeRequestedEvent(
   tbtcAmount.plus(BigInt.fromI32(2)),
   exitFeeInTbtc.plus(BigInt.fromI32(3)),
   midasSharesWithFee,
+)
+
+const redeemerOutputScript = Bytes.fromHexString("0x12345678")
+const requestRedeemAndBridgeCall = createRequestRedeemAndBridgeCall(
+  requestId,
+  owner,
+  redeemerOutputScript,
 )
 
 describe("handleRedeemAndBridgeRequested", () => {
@@ -164,5 +177,25 @@ describe("handleRedeemAndBridgeRequested", () => {
 
       assert.fieldEquals("Event", secondEventId, "type", "Requested")
     })
+  })
+})
+
+describe("handleRequestRedeemAndBridgeCall", () => {
+  beforeAll(() => {
+    handleRedeemAndBridgeRequested(redeemAndBridgeRequestedEvent)
+    handleRequestRedeemAndBridgeCall(requestRedeemAndBridgeCall)
+  })
+
+  afterAll(() => {
+    clearStore()
+  })
+
+  test("should set the redeemer output script for a given withdraw entity", () => {
+    assert.fieldEquals(
+      "Withdraw",
+      requestId.toString(),
+      "redeemerOutputScript",
+      redeemerOutputScript.toHexString(),
+    )
   })
 })

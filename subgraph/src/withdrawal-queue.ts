@@ -1,4 +1,9 @@
-import { RedeemAndBridgeRequested } from "../generated/WithdrawalQueue/WithdrawalQueue"
+import { log } from "@graphprotocol/graph-ts"
+import { Withdraw } from "../generated/schema"
+import {
+  RedeemAndBridgeRequested,
+  RequestRedeemAndBridgeCall,
+} from "../generated/WithdrawalQueue/WithdrawalQueue"
 import {
   getOrCreateDepositOwner,
   getOrCreateEvent,
@@ -31,4 +36,29 @@ export function handleRedeemAndBridgeRequested(
   ownerEntity.save()
   withdraw.save()
   redemptionRequestedEvent.save()
+}
+
+export function handleRequestRedeemAndBridgeCall(
+  call: RequestRedeemAndBridgeCall,
+): void {
+  // eslint-disable-next-line no-underscore-dangle
+  const redeemerOutputScript = call.inputs._redeemerOutputScript.toHexString()
+  const withdrawId = call.outputs.requestId.toString()
+
+  const withdrawEntity = Withdraw.load(withdrawId)
+
+  if (withdrawEntity == null) {
+    // Event and call triggers within the same transaction are ordered using a
+    // convention: event triggers first then call triggers, each type respecting
+    // the order they are defined in the manifest. So, not finding the  withdraw
+    // entity with the given ID is rather unlikely, but we log an error here
+    // just in case. The withdraw entity should be already created in
+    // `handleRedeemAndBridgeRequested`.
+    log.error("Cannot find withdraw entity with id {}", [withdrawId])
+    return
+  }
+
+  withdrawEntity.redeemerOutputScript = redeemerOutputScript
+
+  withdrawEntity.save()
 }

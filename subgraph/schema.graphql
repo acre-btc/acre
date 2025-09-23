@@ -37,6 +37,7 @@ type Withdraw implements ActivityData @entity {
   amount: BigInt
   requestedAmount: BigInt
   bitcoinTransactionId: String
+  redeemerOutputScript: String
 }
 
 type Event @entity {
