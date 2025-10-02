@@ -42,7 +42,7 @@ const useRegisterAcreEthereumAddressInLedgerLive = () => {
         tokenContractAddress: ACRE_BTC_CONTRACT_ADDRESS,
         tokenTicker: TOKEN_TICKER,
         meta: {
-          protocol: "ACRE",
+          protocol: "Acre",
           apy: "4.8%",
         },
       })
