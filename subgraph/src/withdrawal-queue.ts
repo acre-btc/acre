@@ -24,6 +24,7 @@ export function handleRedeemAndBridgeRequested(
   withdraw.requestedAmount = event.params.tbtcAmount.plus(
     event.params.exitFeeInTbtc,
   )
+  withdraw.amountToRedeem = event.params.tbtcAmount
 
   const redemptionRequestedEvent = getOrCreateEvent(
     `${event.transaction.hash.toHexString()}_RedeemAndBridgeRequested`,

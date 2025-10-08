@@ -33,9 +33,9 @@ type Withdraw implements ActivityData @entity {
   id: ID!
   depositOwner: DepositOwner!
   events: [Event!] @derivedFrom(field: "activity")
-  # TODO: amount field will be updated when working on withdraw 
   amount: BigInt
   requestedAmount: BigInt
+  amountToRedeem: BigInt
   bitcoinTransactionId: String
   redeemerOutputScript: String
 }
