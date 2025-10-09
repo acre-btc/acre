@@ -1,11 +1,14 @@
 import {
+  BitcoinAddressConverter,
+  BitcoinUtxo,
+  ChainIdentifier,
   EthereumAddress,
   TBTC as TbtcSdk,
   Deposit as TbtcSdkDeposit,
 } from "@keep-network/tbtc-v2.ts"
 
 import { ethers } from "ethers"
-import { ethers as ethersV5 } from "ethers-v5"
+import { ethers as ethersV5, VoidSigner } from "ethers-v5"
 import { Hex, BitcoinNetwork } from "../../../src"
 import Deposit from "../../../src/modules/tbtc/Deposit"
 import TbtcApi from "../../../src/lib/api/TbtcApi"
@@ -238,6 +241,96 @@ describe("Tbtc", () => {
           initializedAt: deposit2.createdAt,
         },
       ])
+    })
+  })
+
+  describe("buildRedemptionData", () => {
+    const bitcoinAddressData = {
+      address: "tb1qumuaw3exkxdhtut0u85latkqfz4ylgwstkdzsx",
+      redeemerOutputScript: "0x160014e6f9d74726b19b75f16fe1e9feaec048aa4fa1d0",
+      outputScriptNotPrependedWithLength: Hex.from(
+        "0014e6f9d74726b19b75f16fe1e9feaec048aa4fa1d0",
+      ),
+    }
+    const redeemer = EthereumAddress.from(ethers.Wallet.createRandom().address)
+    const signer = new VoidSigner(
+      `0x${redeemer.identifierHex}`,
+      ethersV5.getDefaultProvider("sepolia"),
+    )
+    const spyOnAddressToOutputScript = jest.spyOn(
+      BitcoinAddressConverter,
+      "addressToOutputScript",
+    )
+
+    let notMockedTbtcSdk: TbtcSdk
+    let tbtcModule: Tbtc
+    let result: Hex
+    let spyOnBuildRequestRedemptionData: jest.SpyInstance<
+      Hex,
+      [
+        redeemer: ChainIdentifier,
+        walletPublicKey: Hex,
+        mainUtxo: BitcoinUtxo,
+        redeemerOutputScript: Hex,
+      ]
+    >
+
+    beforeAll(async () => {
+      notMockedTbtcSdk = await TbtcSdk.initializeSepolia(signer)
+
+      tbtcModule = new Tbtc(
+        tbtcApi,
+        notMockedTbtcSdk,
+        bitcoinDepositor,
+        BitcoinNetwork.Testnet,
+      )
+
+      spyOnBuildRequestRedemptionData = jest.spyOn(
+        notMockedTbtcSdk.tbtcContracts.tbtcToken,
+        "buildRequestRedemptionData",
+      )
+
+      result = tbtcModule.buildRedemptionData(
+        redeemer,
+        bitcoinAddressData.address,
+      )
+    })
+
+    it("should convert bitcoin address to output script not prepended with length", () => {
+      expect(spyOnAddressToOutputScript).toHaveBeenCalledWith(
+        bitcoinAddressData.address,
+        BitcoinNetwork.Testnet,
+      )
+      expect(spyOnAddressToOutputScript).toHaveReturnedWith(
+        bitcoinAddressData.outputScriptNotPrependedWithLength,
+      )
+    })
+
+    it("should build redemption data via tBTC v2 sdk", () => {
+      expect(spyOnBuildRequestRedemptionData).toHaveBeenCalledWith(
+        redeemer,
+        Hex.from(ethers.ZeroAddress),
+        {
+          outputIndex: 0,
+          transactionHash: Hex.from(ethers.encodeBytes32String("")),
+          value: ethersV5.constants.Zero,
+        },
+        bitcoinAddressData.outputScriptNotPrependedWithLength,
+      )
+    })
+
+    it("should return the redemption data with length-prefixed redeemer output script ", () => {
+      const [decodedRedeemer, , , , , redeemerOutputScript] =
+        ethersV5.utils.defaultAbiCoder.decode(
+          ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
+          result.toPrefixedString(),
+        )
+      expect(
+        EthereumAddress.from(decodedRedeemer as string).equals(redeemer),
+      ).toBeTruthy()
+      expect(redeemerOutputScript).toMatch(
+        bitcoinAddressData.redeemerOutputScript,
+      )
     })
   })
 })
