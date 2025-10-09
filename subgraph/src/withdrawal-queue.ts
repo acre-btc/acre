@@ -43,7 +43,7 @@ export function handleRequestRedeemAndBridgeCall(
   call: RequestRedeemAndBridgeCall,
 ): void {
   // eslint-disable-next-line no-underscore-dangle
-  const redeemerOutputScript = call.inputs._redeemerOutputScript.toHexString()
+  const redeemerOutputScript = call.inputs._redeemerOutputScript.toHex()
   const withdrawId = call.outputs.requestId.toString()
 
   const withdrawEntity = Withdraw.load(withdrawId)
