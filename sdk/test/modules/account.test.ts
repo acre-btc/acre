@@ -10,7 +10,6 @@ import {
   Account,
   DepositStatus,
   StakeInitialization,
-  BitcoinNetwork,
 } from "../../src"
 import { EthereumAddress } from "../../src/lib/ethereum"
 import { MockAcreContracts } from "../utils/mock-acre-contracts"
@@ -394,13 +393,18 @@ describe("Account", () => {
       "16001473167C206A13859666C2C3204D8D435185C04C56",
     )
 
-    const extraData = Hex.from("1234")
-
     const spyOnEncodeApproveAndCall = jest.spyOn(
       contracts.acreBTC,
       "encodeApproveAndCallFunctionData",
     )
     const safeTxData = Hex.from("123456")
+
+    const redemptionData = Hex.from(
+      "0x0000000000000000000000004665ce4697ba6f9572703857fb3d8a0be09295ec944f997c5553a6f3e1028e707c71b5fa0dd3afa700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000017160014e6f9d74726b19b75f16fe1e9feaec048aa4fa1d0000000000000000000",
+    )
+    const spyOnBuildRedemptionData = jest
+      .spyOn(tbtc, "buildRedemptionData")
+      .mockReturnValue(redemptionData)
 
     const spyOnFindRedemptionRequestId = jest.spyOn(
       contracts.bitcoinRedeemer,
@@ -444,13 +448,10 @@ describe("Account", () => {
       )
     })
 
-    it("should convert the destination bitcoin address to output script", () => {
-      expect(spyOnAddressToOutputScript).toHaveBeenCalledWith(
+    it("should build redemption data via tbtc module", () => {
+      expect(spyOnBuildRedemptionData).toHaveBeenCalledWith(
+        accountData.ethereumAddress,
         accountData.bitcoinAddress,
-        BitcoinNetwork.Testnet,
-      )
-      expect(spyOnAddressToOutputScript).toHaveReturnedWith(
-        redeemerOutputScript,
       )
     })
 
@@ -458,7 +459,7 @@ describe("Account", () => {
       expect(spyOnEncodeApproveAndCall).toHaveBeenCalledWith(
         bitcoinRedeemerChainIdentifier,
         mockedShares,
-        extraData,
+        redemptionData,
       )
     })
 
