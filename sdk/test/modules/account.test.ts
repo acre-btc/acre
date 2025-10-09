@@ -97,7 +97,6 @@ describe("Account", () => {
     accountData,
     bitcoinProvider,
     orangeKit,
-    BitcoinNetwork.Testnet,
   )
 
   describe("initializeStake", () => {
@@ -395,10 +394,6 @@ describe("Account", () => {
       "16001473167C206A13859666C2C3204D8D435185C04C56",
     )
 
-    const spyOnEncodeReceiveApprovalExtraData = jest.spyOn(
-      contracts.bitcoinRedeemer,
-      "encodeReceiveApprovalExtraData",
-    )
     const extraData = Hex.from("1234")
 
     const spyOnEncodeApproveAndCall = jest.spyOn(
@@ -426,7 +421,6 @@ describe("Account", () => {
         bitcoinRedeemerChainIdentifier,
       )
       spyOnAddressToOutputScript.mockReturnValue(redeemerOutputScript)
-      spyOnEncodeReceiveApprovalExtraData.mockReturnValue(extraData)
       spyOnEncodeApproveAndCall.mockReturnValue(safeTxData)
       spyOnFindRedemptionRequestId.mockResolvedValue(mockedRedemptionRequestId)
       spyOnSendTransaction.mockResolvedValue(mockedTxHash)
@@ -456,13 +450,6 @@ describe("Account", () => {
         BitcoinNetwork.Testnet,
       )
       expect(spyOnAddressToOutputScript).toHaveReturnedWith(
-        redeemerOutputScript,
-      )
-    })
-
-    it("should encode extra data for receive approval function", () => {
-      expect(spyOnEncodeReceiveApprovalExtraData).toHaveBeenCalledWith(
-        predictedEthereumDepositorAddress,
         redeemerOutputScript,
       )
     })

@@ -1,12 +1,11 @@
 import { OrangeKitSdk, SafeTransactionData } from "@orangekit/sdk"
-import { BitcoinAddressConverter } from "@keep-network/tbtc-v2.ts"
 import { AcreContracts, ChainIdentifier } from "../lib/contracts"
 import StakeInitialization from "./staking"
 import { fromSatoshi, toSatoshi, Hex } from "../lib/utils"
 import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
-import { AcreBitcoinProvider, BitcoinNetwork } from "../lib/bitcoin"
+import { AcreBitcoinProvider } from "../lib/bitcoin"
 
 export { DepositReceipt } from "./tbtc"
 
@@ -75,8 +74,6 @@ export default class Account {
 
   readonly #orangeKitSdk: OrangeKitSdk
 
-  readonly #bitcoinNetwork: BitcoinNetwork
-
   constructor(
     contracts: AcreContracts,
     tbtc: Tbtc,
@@ -88,7 +85,6 @@ export default class Account {
     },
     bitcoinProvider: AcreBitcoinProvider,
     orangeKitSdk: OrangeKitSdk,
-    bitcoinNetwork: BitcoinNetwork,
   ) {
     this.#contracts = contracts
     this.#tbtc = tbtc
@@ -98,7 +94,6 @@ export default class Account {
     this.#bitcoinProvider = bitcoinProvider
     this.#orangeKitSdk = orangeKitSdk
     this.#bitcoinPublicKey = account.bitcoinPublicKey
-    this.#bitcoinNetwork = bitcoinNetwork
   }
 
   /**
@@ -208,14 +203,12 @@ export default class Account {
     const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
       this.#contracts.bitcoinRedeemer.getChainIdentifier(),
       shares,
-      this.#contracts.bitcoinRedeemer.encodeReceiveApprovalExtraData(
+      this.#tbtc.buildRedemptionData(
         this.#ethereumAddress,
-        BitcoinAddressConverter.addressToOutputScript(
-          this.#bitcoinAddress,
-          this.#bitcoinNetwork,
-        ),
+        this.#bitcoinAddress,
       ),
     )
+
     await dataBuiltStepCallback?.(safeTxData)
 
     const transactionHash = await this.#orangeKitSdk.sendTransaction(

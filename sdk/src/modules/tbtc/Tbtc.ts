@@ -1,7 +1,15 @@
-import { ChainIdentifier, TBTC as TbtcSdk } from "@keep-network/tbtc-v2.ts"
+import {
+  BitcoinAddressConverter,
+  ChainIdentifier,
+  TBTC as TbtcSdk,
+} from "@keep-network/tbtc-v2.ts"
 
 import { ethers, ZeroAddress } from "ethers"
-import { getDefaultProvider, VoidSigner } from "ethers-v5"
+import {
+  constants as ethersv5Constants,
+  getDefaultProvider,
+  VoidSigner,
+} from "ethers-v5"
 import TbtcApi, { DepositStatus } from "../../lib/api/TbtcApi"
 import { BitcoinDepositor } from "../../lib/contracts"
 import { Hex } from "../../lib/utils"
@@ -19,14 +27,18 @@ export default class Tbtc {
 
   readonly #bitcoinDepositor: BitcoinDepositor
 
+  readonly #network: BitcoinNetwork
+
   constructor(
     tbtcApi: TbtcApi,
     tbtcSdk: TbtcSdk,
     bitcoinDepositor: BitcoinDepositor,
+    network: BitcoinNetwork,
   ) {
     this.#tbtcApi = tbtcApi
     this.#tbtcSdk = tbtcSdk
     this.#bitcoinDepositor = bitcoinDepositor
+    this.#network = network
   }
 
   /**
@@ -55,7 +67,7 @@ export default class Tbtc {
         ? await TbtcSdk.initializeMainnet(signer)
         : await TbtcSdk.initializeSepolia(signer)
 
-    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor)
+    return new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor, network)
   }
 
   /**
@@ -143,5 +155,37 @@ export default class Tbtc {
       txHash: deposit.txHash,
       initializedAt: deposit.createdAt,
     }))
+  }
+
+  /**
+   * Prepare tBTC Redemption Data in the raw bytes format expected by the
+   * WithdrawalQueue contract. The data is used to requests a redemption with
+   * bridging to Bitcoin.
+   * @param redeemer Chain identifier of the redeemer. This is the address that
+   *        will be able to claim the tBTC tokens if anything goes wrong during
+   *        the redemption process.
+   * @param bitcoinAddress The bitcoin address that the redeemed funds will be
+   *        locked to.
+   */
+  buildRedemptionData(redeemer: ChainIdentifier, bitcoinAddress: string) {
+    // We only need encode `redeemer` and `redeemerOutputScript`. Other values
+    // can be empty because the are not used in the contract.
+    return this.#tbtcSdk.tbtcContracts.tbtcToken.buildRequestRedemptionData(
+      redeemer,
+      Hex.from(
+        // The Ethereum address is 20 bytes so we can use it as "empty"
+        // `bytes20` type.
+        ethers.ZeroAddress,
+      ),
+      {
+        outputIndex: 0,
+        transactionHash: Hex.from(ethers.encodeBytes32String("")),
+        value: ethersv5Constants.Zero,
+      },
+      BitcoinAddressConverter.addressToOutputScript(
+        bitcoinAddress,
+        this.#network,
+      ),
+    )
   }
 }

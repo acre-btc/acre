@@ -2,7 +2,6 @@ import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contrac
 import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
 import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemerV2.json"
 
-import { ethers } from "ethers"
 import {
   EthereumContractRunner,
   EthersContractConfig,
@@ -110,33 +109,6 @@ export default class EthereumBitcoinRedeemer
       redemptionTreasuryFeeDivisor,
     }
     return this.#cache.tbtcBridgeRedemptionParameters
-  }
-
-  /**
-   * @see {BitcoinRedeemer#encodeReceiveApprovalExtraData}
-   */
-  // eslint-disable-next-line class-methods-use-this
-  encodeReceiveApprovalExtraData(
-    redeemer: ChainIdentifier,
-    redeemerOutputScript: Hex,
-  ): Hex {
-    // We only need encode `redeemer` and `redeemerOutputScript`. Other values
-    // can be empty because the are not used in the contract.
-    return Hex.from(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "bytes20", "bytes32", "uint32", "uint64", "bytes"],
-        [
-          `0x${redeemer.identifierHex}`,
-          // The Ethereum address is 20 bytes so we can use it as "empty" ` bytes20`
-          // type.
-          ethers.ZeroAddress,
-          ethers.encodeBytes32String(""),
-          0,
-          0,
-          redeemerOutputScript.toPrefixedString(),
-        ],
-      ),
-    )
   }
 
   /**

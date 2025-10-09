@@ -40,7 +40,7 @@ describe("Tbtc", () => {
 
   beforeAll(() => {
     jest.spyOn(ethersV5, "VoidSigner").mockReturnValue(mockedSigner)
-    tbtc = new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor)
+    tbtc = new Tbtc(tbtcApi, tbtcSdk, bitcoinDepositor, BitcoinNetwork.Testnet)
   })
 
   describe("initialize", () => {

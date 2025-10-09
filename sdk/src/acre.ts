@@ -157,7 +157,6 @@ class Acre {
       },
       bitcoinProvider,
       this.#orangeKit,
-      this.#network,
     )
 
     return this
