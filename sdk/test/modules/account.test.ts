@@ -491,13 +491,17 @@ describe("Account", () => {
           .reverse()
           .toString(),
         amount: 10000000000000000n,
+        requestedAmount: 10000000000000000n,
+        requestedAt: 1718871276,
         initializedAt: 1718871276,
         finalizedAt: 1718871276,
       },
       {
         id: "0xa40df409c4e463cb0c7744df310ad8714a01c40bcf6807cb2b4266ffa0b860ea-1",
         bitcoinTransactionId: undefined,
+        requestedAmount: 10000000000000000n,
         amount: 10000000000000000n,
+        requestedAt: 1718871276,
         initializedAt: 1718889168,
         finalizedAt: 1718889168,
       },

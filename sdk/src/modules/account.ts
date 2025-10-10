@@ -45,6 +45,19 @@ export type Deposit = {
   finalizedAt?: number
 }
 
+type WithdrawalStatus = "requested" | "initialized" | "finalized"
+
+export type Withdrawal = {
+  id: string
+  requestedAmount: bigint
+  amount?: bigint
+  bitcoinTransactionId?: string
+  status: WithdrawalStatus
+  requestedAt: number
+  initializedAt?: number
+  finalizedAt?: number
+}
+
 /**
  * Module exposing features related to the account.
  */
@@ -239,22 +252,20 @@ export default class Account {
   /**
    * @returns All withdrawals associated with the account.
    */
-  async getWithdrawals(): Promise<
-    {
-      id: string
-      amount: bigint
-      bitcoinTransactionId?: string
-      status: "initialized" | "finalized"
-      initializedAt: number
-      finalizedAt?: number
-    }[]
-  > {
+  async getWithdrawals(): Promise<Withdrawal[]> {
     return (
       await this.#acreSubgraphApi.getWithdrawalsByOwner(this.#ethereumAddress)
-    ).map((withdraw) => ({
-      ...withdraw,
-      amount: toSatoshi(withdraw.amount),
-      status: withdraw.bitcoinTransactionId ? "finalized" : "initialized",
-    }))
+    ).map((withdraw) => {
+      let status: WithdrawalStatus = "requested"
+      if (withdraw.amount) status = "initialized"
+      if (withdraw.bitcoinTransactionId) status = "finalized"
+
+      return {
+        ...withdraw,
+        amount: withdraw.amount ? toSatoshi(withdraw.amount) : undefined,
+        requestedAmount: toSatoshi(withdraw.requestedAmount),
+        status,
+      }
+    })
   }
 }

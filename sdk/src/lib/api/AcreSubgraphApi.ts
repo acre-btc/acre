@@ -79,16 +79,22 @@ type WithdrawalsDataResponse = {
       id: string
       bitcoinTransactionId: string | null
       amount: string
-      events: { type: "Initialized" | "Finalized"; timestamp: string }[]
+      requestedAmount: string
+      events: {
+        type: "Requested" | "Initialized" | "Finalized"
+        timestamp: string
+      }[]
     }[]
   }
 }
 
 type Withdraw = {
   id: string
-  amount: bigint
+  requestedAmount: bigint
+  amount?: bigint
   bitcoinTransactionId?: string
-  initializedAt: number
+  requestedAt: number
+  initializedAt?: number
   finalizedAt?: number
 }
 
@@ -118,6 +124,7 @@ export function buildGetWithdrawalsByOwnerQuery(owner: ChainIdentifier) {
     ) {
         id
         bitcoinTransactionId
+        requestedAmount
         amount
         events(orderBy: timestamp, orderDirection: asc) {
           timestamp
@@ -209,9 +216,14 @@ export default class AcreSubgraphApi extends HttpApi {
     return acreWithdrawals.data.withdraws.map((withdraw) => {
       const { id, events } = withdraw
       const bitcoinTransactionId = withdraw.bitcoinTransactionId ?? undefined
-      const amount = BigInt(withdraw.amount)
-      const [initializedEvent, finalizedEvent] = events
-      const initializedAt = parseInt(initializedEvent.timestamp, 10)
+      const requestedAmount = BigInt(withdraw.requestedAmount)
+      const amount = withdraw.amount ? BigInt(withdraw.amount) : undefined
+
+      const [requestedEvent, initializedEvent, finalizedEvent] = events
+      const requestedAt = parseInt(requestedEvent.timestamp, 10)
+      const initializedAt = initializedEvent
+        ? parseInt(initializedEvent.timestamp, 10)
+        : undefined
       const finalizedAt = finalizedEvent
         ? parseInt(finalizedEvent.timestamp, 10)
         : undefined
@@ -220,6 +232,8 @@ export default class AcreSubgraphApi extends HttpApi {
         id,
         bitcoinTransactionId,
         amount,
+        requestedAmount,
+        requestedAt,
         initializedAt,
         finalizedAt,
       }
