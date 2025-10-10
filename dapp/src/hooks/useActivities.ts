@@ -1,14 +1,25 @@
 import { queryKeysFactory, time } from "#/constants"
 import { useQuery } from "@tanstack/react-query"
 import { Activity } from "#/types"
-import { DepositStatus } from "@acre-btc/sdk"
+import { DepositStatus, Withdrawal } from "@acre-btc/sdk"
 import { useAcreContext } from "#/acre-react/hooks"
 import { activitiesUtils } from "#/utils"
 import useWallet from "./useWallet"
 
 const { userKeys } = queryKeysFactory
 
-export default function useActivities() {
+const SDK_STATUS_TO_DAPP_STATUS: Record<
+  Withdrawal["status"],
+  Activity["status"]
+> = {
+  requested: "requested",
+  initialized: "pending",
+  finalized: "completed",
+}
+
+export default function useActivities<TSelected = Activity[]>(
+  select?: (data: Activity[] | undefined) => TSelected,
+) {
   const { address } = useWallet()
   const { acre, isConnected } = useAcreContext()
 
@@ -31,12 +42,20 @@ export default function useActivities() {
 
       const withdrawals: Activity[] = (await acre.account.getWithdrawals()).map(
         (withdraw) => {
-          const { bitcoinTransactionId, status, ...rest } = withdraw
+          const status = SDK_STATUS_TO_DAPP_STATUS[withdraw.status]
+
+          let initializedAt: number = withdraw.requestedAt
+          if (status === "pending") initializedAt = withdraw.initializedAt!
 
           return {
-            ...rest,
-            txHash: bitcoinTransactionId,
-            status: status === "finalized" ? "completed" : "pending",
+            id: withdraw.id,
+            initializedAt,
+            txHash: withdraw.bitcoinTransactionId,
+            status,
+            amount:
+              status === "requested"
+                ? withdraw.requestedAmount
+                : withdraw.amount!,
             type: "withdraw",
           }
         },
@@ -46,6 +65,7 @@ export default function useActivities() {
         ...withdrawals,
       ])
     },
+    select,
     refetchInterval: time.REFETCH_INTERVAL_IN_MILLISECONDS,
   })
 }
