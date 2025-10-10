@@ -6,7 +6,7 @@ import {
   useCurrencyConversion,
   useTransactionModal,
 } from "#/hooks"
-import { activitiesUtils, numbersUtils, timeUtils } from "#/utils"
+import { numbersUtils, timeUtils } from "#/utils"
 import { time } from "#/constants"
 import { ACTION_FLOW_TYPES } from "#/types"
 import ProgressBar from "./shared/ProgressBar"
@@ -165,11 +165,7 @@ export default function WithdrawalStatusBanner({
           <Text size="md" color="text.tertiary" ml="auto">
             {STATUS[status].timeDurationText}{" "}
             <Text as="span" color="text.secondary">
-              ~
-              {activitiesUtils.getEstimatedDuration(
-                btcAmount,
-                "withdraw-funds",
-              )}
+              ~6h
             </Text>
           </Text>
         )}
