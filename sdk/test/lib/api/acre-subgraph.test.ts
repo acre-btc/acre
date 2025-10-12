@@ -5,6 +5,10 @@ import AcreSubgraphApi, {
   buildGetWithdrawalsByOwnerQuery,
 } from "../../../src/lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../../../src/lib/api/TbtcApi"
+import {
+  acreSubgraphApiParsedWithdrawalsData,
+  acreSubgraphWithdrawalsDataResponse,
+} from "../../data/withdrawals"
 
 const subgraphData = {
   data: {
@@ -68,53 +72,7 @@ const expectedDepositData = [
   },
 ]
 
-const acreSubgraphWithdrawalsData = {
-  data: {
-    withdraws: [
-      {
-        id: "0x047078deab9f2325ce5adc483d6b28dfb32547017ffb73f857482b51b622d5eb-1",
-        bitcoinTransactionId:
-          "01209B0641F4BBCE77292DB481AADE68742C99AD5D375E76BAAEEA3122474B84",
-        amount: "10000000000000000",
-        events: [
-          {
-            timestamp: "1718871276",
-            type: "Initialized",
-          },
-        ],
-      },
-      {
-        id: "0xa40df409c4e463cb0c7744df310ad8714a01c40bcf6807cb2b4266ffa0b860ea-1",
-        bitcoinTransactionId: null,
-        amount: "10000000000000000",
-        events: [
-          {
-            timestamp: "1718889168",
-            type: "Initialized",
-          },
-        ],
-      },
-    ],
-  },
-}
-
-const expectedWithdrawalsData = [
-  {
-    id: "0x047078deab9f2325ce5adc483d6b28dfb32547017ffb73f857482b51b622d5eb-1",
-    bitcoinTransactionId:
-      "01209B0641F4BBCE77292DB481AADE68742C99AD5D375E76BAAEEA3122474B84",
-    amount: 10000000000000000n,
-    initializedAt: 1718871276,
-    finalizedAt: undefined,
-  },
-  {
-    id: "0xa40df409c4e463cb0c7744df310ad8714a01c40bcf6807cb2b4266ffa0b860ea-1",
-    bitcoinTransactionId: undefined,
-    amount: 10000000000000000n,
-    initializedAt: 1718889168,
-    finalizedAt: undefined,
-  },
-]
+const expectedWithdrawalsData = acreSubgraphApiParsedWithdrawalsData
 
 describe("Acre Subgraph API", () => {
   const subgraphApiUrl = "https://subgraph.test"
@@ -174,7 +132,7 @@ describe("Acre Subgraph API", () => {
       // @ts-expect-error We only mock fields/methods used in the code.
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(acreSubgraphWithdrawalsData),
+        json: () => Promise.resolve(acreSubgraphWithdrawalsDataResponse),
       }),
     )
 

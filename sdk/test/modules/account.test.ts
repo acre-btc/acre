@@ -19,6 +19,7 @@ import AcreSubgraphApi from "../../src/lib/api/AcreSubgraphApi"
 import * as satoshiConverter from "../../src/lib/utils/satoshi-converter"
 import { MockBitcoinProvider } from "../utils/mock-bitcoin-provider"
 import { MockOrangeKitSdk } from "../utils/mock-orangekit"
+import { acreSubgraphApiParsedWithdrawalsData } from "../data/withdrawals"
 
 const stakingModuleData: {
   initializeDeposit: {
@@ -482,30 +483,7 @@ describe("Account", () => {
   })
 
   describe("getWithdrawals", () => {
-    const withdrawals = [
-      {
-        id: "0x047078deab9f2325ce5adc483d6b28dfb32547017ffb73f857482b51b622d5eb-1",
-        bitcoinTransactionId: Hex.from(
-          "0x844b472231eaaeba765e375dad992c7468deaa81b42d2977cebbf441069b2001",
-        )
-          .reverse()
-          .toString(),
-        amount: 10000000000000000n,
-        requestedAmount: 10000000000000000n,
-        requestedAt: 1718871276,
-        initializedAt: 1718871276,
-        finalizedAt: 1718871276,
-      },
-      {
-        id: "0xa40df409c4e463cb0c7744df310ad8714a01c40bcf6807cb2b4266ffa0b860ea-1",
-        bitcoinTransactionId: undefined,
-        requestedAmount: 10000000000000000n,
-        amount: 10000000000000000n,
-        requestedAt: 1718871276,
-        initializedAt: 1718889168,
-        finalizedAt: 1718889168,
-      },
-    ]
+    const withdrawals = acreSubgraphApiParsedWithdrawalsData
 
     const spyOnSubgraphGetWithdrawals = jest
       .spyOn(acreSubgraph, "getWithdrawalsByOwner")
@@ -514,13 +492,19 @@ describe("Account", () => {
     const expectedWithdrawals = [
       {
         ...withdrawals[0],
-        amount: 1000000n,
-        status: "finalized",
+        amount: undefined,
+        requestedAmount: satoshiConverter.toSatoshi(
+          withdrawals[0].requestedAmount,
+        ),
+        status: "requested",
       },
       {
         ...withdrawals[1],
-        amount: 1000000n,
-        status: "initialized",
+        amount: satoshiConverter.toSatoshi(withdrawals[1].amount!),
+        requestedAmount: satoshiConverter.toSatoshi(
+          withdrawals[1].requestedAmount,
+        ),
+        status: "finalized",
       },
     ]
 
