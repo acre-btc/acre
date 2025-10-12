@@ -88,13 +88,41 @@ type WithdrawalsDataResponse = {
   }
 }
 
-type Withdraw = {
+/**
+ * Represents the formatted withdrawal.
+ */
+type Withdrawal = {
+  /**
+   * Unique withdrawal identifier.
+   */
   id: string
+  /**
+   * Amount of tBTC tokens requested for withdrawal.
+   */
   requestedAmount: bigint
+  /**
+   * Actual amount of tBTC tokens being withdrawn. This may differ from
+   * `requestedAmount` due to fees. Only available after the
+   * withdrawal has been initialized.
+   */
   amount?: bigint
+  /**
+   * Bitcoin transaction hash (or transaction ID) in the same byte order as used
+   * by the Bitcoin block explorers. Only available after the withdrawal has been
+   * finalized.
+   */
   bitcoinTransactionId?: string
+  /**
+   * Timestamp when the withdrawal was requested.
+   */
   requestedAt: number
+  /**
+   * Timestamp when the withdrawal was initialized.
+   */
   initializedAt?: number
+  /**
+   * Timestamp when the withdrawal was finalized.
+   */
   finalizedAt?: number
 }
 
@@ -196,7 +224,7 @@ export default class AcreSubgraphApi extends HttpApi {
 
   async getWithdrawalsByOwner(
     depositOwnerId: ChainIdentifier,
-  ): Promise<Withdraw[]> {
+  ): Promise<Withdrawal[]> {
     const query = buildGetWithdrawalsByOwnerQuery(depositOwnerId)
 
     const response = await this.postRequest(
