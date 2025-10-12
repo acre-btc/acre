@@ -20,22 +20,18 @@ const STATUS: Record<
   {
     icon: ComponentType
     title: string
-    timeDurationText: string
     iconPros: { color: string; bg: string }
   }
 > = {
   pending: {
     icon: IconHourglassEmpty,
     iconPros: { color: "orange.50", bg: "oldPalette.opacity.orange.50.15" },
-
     title: "Withdrawal Request in Progress",
-    timeDurationText: "Est. time remaining",
   },
   ready: {
     icon: IconArrowUp,
     iconPros: { color: "green.50", bg: "oldPalette.opacity.green.50.15" },
     title: "Funds Ready to Transfer",
-    timeDurationText: "Est. duration",
   },
 }
 
@@ -84,7 +80,7 @@ function PendingWithdrawBannerTimeInfo({
         marginLeft="auto"
       />
       <Text size="md" color="text.tertiary">
-        {STATUS.pending.timeDurationText}{" "}
+        Est. duration{" "}
         <Text as="span" size="md" color="text.secondary">
           {days !== "0" && `${days}d`}
           {hours !== "0" && `, ${hours}h`}
@@ -163,7 +159,7 @@ export default function WithdrawalStatusBanner({
         )}
         {status === "ready" && (
           <Text size="md" color="text.tertiary" ml="auto">
-            {STATUS[status].timeDurationText}{" "}
+            Est. duration{" "}
             <Text as="span" color="text.secondary">
               ~6h
             </Text>
