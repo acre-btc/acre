@@ -1,6 +1,6 @@
 import React from "react"
 import { featureFlags } from "#/constants"
-import { useTriggerConnectWalletModal, useWallet } from "#/hooks"
+import { useActivities, useTriggerConnectWalletModal, useWallet } from "#/hooks"
 import usePositionStats from "#/hooks/usePositionStats"
 import { Card, Grid, VStack } from "@chakra-ui/react"
 import Vaults from "#/components/Vaults"
@@ -26,27 +26,27 @@ const grid = {
   history: fullWidthGridColumn,
 }
 
-// TODO: Temporary hook. Fetch on-chain data and order by status. `ready` or
-// `pending` first ?
-const useWithdrawals: () => {
-  data: {
-    withdrawnAt: number
-    btcAmount: bigint
-    status: WithdrawStatus
-  }[]
-} = () => ({
-  data: [
-    { withdrawnAt: 1753274685, btcAmount: 30000000n, status: "ready" },
-    { withdrawnAt: 1753533885, btcAmount: 20000000n, status: "pending" },
-  ],
-})
-
 export default function DashboardPage() {
   useTriggerConnectWalletModal()
   const { data, isLoading } = usePositionStats()
   const { isConnected } = useWallet()
 
-  const { data: withdrawals } = useWithdrawals()
+  const { data: withdrawals } = useActivities<
+    { withdrawnAt: number; btcAmount: bigint; status: WithdrawStatus }[]
+  >((activities) => {
+    if (!activities) return []
+
+    return activities
+      .filter(
+        (activity) =>
+          activity.type === "withdraw" && activity.status === "requested",
+      )
+      .map((activity) => ({
+        withdrawnAt: activity.initializedAt,
+        btcAmount: activity.amount,
+        status: "pending",
+      }))
+  })
 
   return (
     <Grid
@@ -60,18 +60,20 @@ export default function DashboardPage() {
       ) : (
         <AcrePointsTemplateCard gridColumn={grid.points} />
       )}
-      {featureFlags.WITHDRAWALS_ENABLED && (
-        <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
-          {withdrawals.map((withdrawal) => (
-            <WithdrawalStatusBanner
-              key={withdrawal.withdrawnAt}
-              status={withdrawal.status}
-              btcAmount={withdrawal.btcAmount}
-              withdrawnAt={withdrawal.withdrawnAt}
-            />
-          ))}
-        </VStack>
-      )}
+      {featureFlags.WITHDRAWALS_ENABLED &&
+        !!withdrawals &&
+        withdrawals.length > 0 && (
+          <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
+            {withdrawals.map((withdrawal) => (
+              <WithdrawalStatusBanner
+                key={withdrawal.withdrawnAt}
+                status={withdrawal.status}
+                btcAmount={withdrawal.btcAmount}
+                withdrawnAt={withdrawal.withdrawnAt}
+              />
+            ))}
+          </VStack>
+        )}
 
       {isConnected && (
         <>

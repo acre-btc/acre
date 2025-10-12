@@ -79,16 +79,50 @@ type WithdrawalsDataResponse = {
       id: string
       bitcoinTransactionId: string | null
       amount: string
-      events: { type: "Initialized" | "Finalized"; timestamp: string }[]
+      requestedAmount: string
+      events: {
+        type: "Requested" | "Initialized" | "Finalized"
+        timestamp: string
+      }[]
     }[]
   }
 }
 
-type Withdraw = {
+/**
+ * Represents the formatted withdrawal.
+ */
+type Withdrawal = {
+  /**
+   * Unique withdrawal identifier.
+   */
   id: string
-  amount: bigint
+  /**
+   * Amount of tBTC tokens requested for withdrawal.
+   */
+  requestedAmount: bigint
+  /**
+   * Actual amount of tBTC tokens being withdrawn. This may differ from
+   * `requestedAmount` due to fees. Only available after the
+   * withdrawal has been initialized.
+   */
+  amount?: bigint
+  /**
+   * Bitcoin transaction hash (or transaction ID) in the same byte order as used
+   * by the Bitcoin block explorers. Only available after the withdrawal has been
+   * finalized.
+   */
   bitcoinTransactionId?: string
-  initializedAt: number
+  /**
+   * Timestamp when the withdrawal was requested.
+   */
+  requestedAt: number
+  /**
+   * Timestamp when the withdrawal was initialized.
+   */
+  initializedAt?: number
+  /**
+   * Timestamp when the withdrawal was finalized.
+   */
   finalizedAt?: number
 }
 
@@ -118,6 +152,7 @@ export function buildGetWithdrawalsByOwnerQuery(owner: ChainIdentifier) {
     ) {
         id
         bitcoinTransactionId
+        requestedAmount
         amount
         events(orderBy: timestamp, orderDirection: asc) {
           timestamp
@@ -189,7 +224,7 @@ export default class AcreSubgraphApi extends HttpApi {
 
   async getWithdrawalsByOwner(
     depositOwnerId: ChainIdentifier,
-  ): Promise<Withdraw[]> {
+  ): Promise<Withdrawal[]> {
     const query = buildGetWithdrawalsByOwnerQuery(depositOwnerId)
 
     const response = await this.postRequest(
@@ -209,9 +244,14 @@ export default class AcreSubgraphApi extends HttpApi {
     return acreWithdrawals.data.withdraws.map((withdraw) => {
       const { id, events } = withdraw
       const bitcoinTransactionId = withdraw.bitcoinTransactionId ?? undefined
-      const amount = BigInt(withdraw.amount)
-      const [initializedEvent, finalizedEvent] = events
-      const initializedAt = parseInt(initializedEvent.timestamp, 10)
+      const requestedAmount = BigInt(withdraw.requestedAmount)
+      const amount = withdraw.amount ? BigInt(withdraw.amount) : undefined
+
+      const [requestedEvent, initializedEvent, finalizedEvent] = events
+      const requestedAt = parseInt(requestedEvent.timestamp, 10)
+      const initializedAt = initializedEvent
+        ? parseInt(initializedEvent.timestamp, 10)
+        : undefined
       const finalizedAt = finalizedEvent
         ? parseInt(finalizedEvent.timestamp, 10)
         : undefined
@@ -220,6 +260,8 @@ export default class AcreSubgraphApi extends HttpApi {
         id,
         bitcoinTransactionId,
         amount,
+        requestedAmount,
+        requestedAt,
         initializedAt,
         finalizedAt,
       }

@@ -3,7 +3,7 @@ type CommonActivityData = {
   initializedAt: number
   finalizedAt?: number
   amount: bigint
-  status: "completed" | "pending"
+  status: "completed" | "pending" | "requested"
 }
 
 type ConditionalActivityData =
@@ -11,12 +11,10 @@ type ConditionalActivityData =
       type: "deposit"
       txHash: string
     }
-  // TODO: rename to withdraw-request
   | {
       type: "withdraw"
       txHash?: string
     }
-  | { type: "withdraw-funds"; txHash?: string }
 
 export type ActivityType = ConditionalActivityData["type"]
 

@@ -1,18 +1,17 @@
-import { OrangeKitSdk } from "@orangekit/sdk"
+import { OrangeKitSdk, SafeTransactionData } from "@orangekit/sdk"
 import { AcreContracts, ChainIdentifier } from "../lib/contracts"
 import StakeInitialization from "./staking"
-import { fromSatoshi, toSatoshi } from "../lib/utils"
+import { fromSatoshi, toSatoshi, Hex } from "../lib/utils"
 import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
-import OrangeKitTbtcRedeemerProxy, {
-  DataBuiltStepCallback,
-  MessageSignedStepCallback,
-  OnSignMessageStepCallback,
-} from "../lib/redeemer-proxy"
 import { AcreBitcoinProvider } from "../lib/bitcoin"
 
 export { DepositReceipt } from "./tbtc"
+
+export type DataBuiltStepCallback = (safeTxData: Hex) => Promise<void>
+export type OnSignMessageStepCallback = (messageToSign: string) => Promise<void>
+export type MessageSignedStepCallback = (signedMessage: string) => Promise<void>
 
 /**
  * Represents the deposit data.
@@ -43,6 +42,19 @@ export type Deposit = {
   /**
    * Timestamp when the deposit was finalized.
    */
+  finalizedAt?: number
+}
+
+type WithdrawalStatus = "requested" | "initialized" | "finalized"
+
+export type Withdrawal = {
+  id: string
+  requestedAmount: bigint
+  amount?: bigint
+  bitcoinTransactionId?: string
+  status: WithdrawalStatus
+  requestedAt: number
+  initializedAt?: number
   finalizedAt?: number
 }
 
@@ -190,60 +202,70 @@ export default class Account {
    *        signing step.
    * @param messageSignedStepCallback A callback triggered after the message
    *        signing step.
-   * @returns Hash of the withdrawal transaction and the redemption key.
+   * @returns Hash of the withdrawal transaction and the redemption request id.
    */
   async initializeWithdrawal(
     btcAmount: bigint,
     dataBuiltStepCallback?: DataBuiltStepCallback,
     onSignMessageStepCallback?: OnSignMessageStepCallback,
     messageSignedStepCallback?: MessageSignedStepCallback,
-  ): Promise<{ transactionHash: string; redemptionKey: string }> {
+  ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
-    // Including fees.
-    const redeemedTbtc = await this.#contracts.acreBTC.previewRedeem(shares)
 
-    const redeemerProxy = new OrangeKitTbtcRedeemerProxy(
-      this.#contracts,
-      this.#orangeKitSdk,
-      {
-        bitcoinAddress: this.#bitcoinAddress,
-        ethereumAddress: this.#ethereumAddress,
-        publicKey: this.#bitcoinPublicKey,
-      },
-      this.#bitcoinProvider,
+    const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
+      this.#contracts.bitcoinRedeemer.getChainIdentifier(),
       shares,
-      dataBuiltStepCallback,
-      onSignMessageStepCallback,
-      messageSignedStepCallback,
+      this.#tbtc.buildRedemptionData(
+        this.#ethereumAddress,
+        this.#bitcoinAddress,
+      ),
     )
 
-    return this.#tbtc.initiateRedemption(
+    await dataBuiltStepCallback?.(safeTxData)
+
+    const transactionHash = await this.#orangeKitSdk.sendTransaction(
+      `0x${this.#contracts.acreBTC.getChainIdentifier().identifierHex}`,
+      "0x0",
+      safeTxData.toPrefixedString(),
       this.#bitcoinAddress,
-      redeemedTbtc,
-      redeemerProxy,
+      this.#bitcoinPublicKey,
+      async (message: string, txData: SafeTransactionData) => {
+        await onSignMessageStepCallback?.(message)
+        const signedMessage =
+          await (this.#bitcoinProvider.signWithdrawMessage?.(message, txData) ??
+            (await this.#bitcoinProvider.signMessage(message)))
+
+        await messageSignedStepCallback?.(signedMessage)
+
+        return signedMessage
+      },
     )
+
+    const redemptionRequestId =
+      await this.#contracts.bitcoinRedeemer.findRedemptionRequestIdFromTransaction(
+        Hex.from(transactionHash),
+      )
+    return { transactionHash, redemptionRequestId }
   }
 
   /**
    * @returns All withdrawals associated with the account.
    */
-  async getWithdrawals(): Promise<
-    {
-      id: string
-      amount: bigint
-      bitcoinTransactionId?: string
-      status: "initialized" | "finalized"
-      initializedAt: number
-      finalizedAt?: number
-    }[]
-  > {
+  async getWithdrawals(): Promise<Withdrawal[]> {
     return (
       await this.#acreSubgraphApi.getWithdrawalsByOwner(this.#ethereumAddress)
-    ).map((withdraw) => ({
-      ...withdraw,
-      amount: toSatoshi(withdraw.amount),
-      status: withdraw.bitcoinTransactionId ? "finalized" : "initialized",
-    }))
+    ).map((withdraw) => {
+      let status: WithdrawalStatus = "requested"
+      if (withdraw.amount) status = "initialized"
+      if (withdraw.bitcoinTransactionId) status = "finalized"
+
+      return {
+        ...withdraw,
+        amount: withdraw.amount ? toSatoshi(withdraw.amount) : undefined,
+        requestedAmount: toSatoshi(withdraw.requestedAmount),
+        status,
+      }
+    })
   }
 }

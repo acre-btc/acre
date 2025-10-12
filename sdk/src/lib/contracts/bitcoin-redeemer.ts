@@ -1,3 +1,4 @@
+import { Hex } from "../utils"
 import { ChainIdentifier } from "./chain-identifier"
 
 export type RedeemerWithdrawalFees = {
@@ -19,4 +20,11 @@ export interface BitcoinRedeemer {
   calculateWithdrawalFee(
     amountToWithdraw: bigint,
   ): Promise<RedeemerWithdrawalFees>
+
+  /**
+   * Finds the redemption request ID from a given transaction.
+   * @param transactionHash The transaction hash in which the redeem request was
+   *                        executed.
+   */
+  findRedemptionRequestIdFromTransaction(transactionHash: Hex): Promise<bigint>
 }
