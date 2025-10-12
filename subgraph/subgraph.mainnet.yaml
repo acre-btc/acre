@@ -35,38 +35,65 @@ dataSources:
           handler: handleDepositFinalized
           receipt: true
       file: ./src/bitcoin-depositor.ts
-  # - kind: ethereum
-  #   name: TbtcBridge
-  #   network: mainnet
-  #   context:
-  #     bitcoinRedeemerAddress:
-  #       type: Bytes
-  #       data: "0x7e184B0cC12572D12Db6dA248322A0e3618fc756"
-  #   source:
-  #     abi: TbtcBridge
-  #     address: "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
-  #     # We can start indexing from the same block where the BitcoinRedeemer
-  #     # contract was deployed since we only want to index Acre redemptions.
-  #     startBlock: 20235530
-  #   mapping:
-  #     kind: ethereum/events
-  #     apiVersion: 0.0.9
-  #     language: wasm/assemblyscript
-  #     entities:
-  #       - Withdraw
-  #       - Event
-  #       - RedemptionKeyCounter
-  #       - RedemptionsCompletedEvent
-  #     abis:
-  #       - name: TbtcBridge
-  #         file: ./abis/TbtcBridge.json
-  #     eventHandlers:
-  #       - event: RedemptionRequested(indexed bytes20,bytes,indexed address,uint64,uint64,uint64)
-  #         handler: handleRedemptionRequested
-  #         receipt: true
-  #       - event: RedemptionsCompleted(indexed bytes20,bytes32)
-  #         handler: handleRedemptionsCompleted
-  #     callHandlers:
-  #       - function: submitRedemptionProof((bytes4,bytes,bytes,bytes4),(bytes,uint256,bytes,bytes32,bytes),(bytes32,uint32,uint64),bytes20)
-  #         handler: handleSubmitRedemptionProofCall
-  #     file: ./src/tbtc-bridge.ts
+  - kind: ethereum
+    name: WithdrawalQueue
+    network: mainnet
+    source:
+      address: "0xe7b8c14cA8Fb4f226C0A3e45e636b84809BB5D06"
+      abi: WithdrawalQueue
+      startBlock: 23392669
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Withdraw
+        - Event
+      abis:
+        - name: WithdrawalQueue
+          file: ./abis/WithdrawalQueue.json
+      eventHandlers:
+        - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
+          handler: handleRedeemAndBridgeRequested
+          receipt: true
+      callHandlers:
+        - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
+          handler: handleRequestRedeemAndBridgeCall
+      file: ./src/withdrawal-queue.ts
+  - kind: ethereum
+    name: TbtcBridge
+    network: mainnet
+    context:
+      withdrawalQueueContractAddress:
+        type: Bytes
+        data: "0xe7b8c14cA8Fb4f226C0A3e45e636b84809BB5D06"
+    source:
+      abi: TbtcBridge
+      address: "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
+      # We can start indexing from the same block where the BitcoinRedeemer
+      # contract was deployed since we only want to index Acre redemptions.
+      startBlock: 23392604
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Withdraw
+        - Event
+        - RedemptionKeyCounter
+        - RedemptionsCompletedEvent
+      abis:
+        - name: TbtcBridge
+          file: ./abis/TbtcBridge.json
+      eventHandlers:
+        - event: RedemptionRequested(indexed bytes20,bytes,indexed address,uint64,uint64,uint64)
+          handler: handleRedemptionRequested
+          receipt: true
+        - event: RedemptionsCompleted(indexed bytes20,bytes32)
+          handler: handleRedemptionsCompleted
+      callHandlers:
+        - function: submitRedemptionProof((bytes4,bytes,bytes,bytes4),(bytes,uint256,bytes,bytes32,bytes),(bytes32,uint32,uint64),bytes20)
+          handler: handleSubmitRedemptionProofCall
+      file: ./src/tbtc-bridge.ts
