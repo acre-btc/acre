@@ -28,6 +28,8 @@ import AcreTVLMessage from "./AcreTVLMessage"
 
 const isWithdrawalFlowEnabled = featureFlags.WITHDRAWALS_ENABLED
 
+const isMigrationMode = featureFlags.MIGRATION_MODE_ENABLED
+
 const buttonStyles: ButtonProps = {
   size: "lg",
   flex: 1,
@@ -92,13 +94,31 @@ export default function PositionDetails() {
       <HStack w="full" justify="start" flexWrap="wrap" spacing={5}>
         <UserDataSkeleton>
           <ArrivingSoonTooltip
-            label="This option is not available on mobile yet. Please use the desktop app to deposit."
-            shouldDisplayTooltip={isDisabledForMobileMode}
+            label={
+              isMigrationMode ? (
+                <Text>
+                  <b>Notice: Temporary Pause on Deposits</b>
+                  <br />
+                  <br />
+                  Deposits to the stBTC vault are temporarily paused while we
+                  complete an update. Your funds remain fully secure and under
+                  your control. Deposits will be re-enabled within the next 72
+                  hours.
+                  <br />
+                  <br />
+                  Thank you for your patience as we finalize this upgrade.
+                </Text>
+              ) : (
+                "This option is not available on mobile yet. Please use the desktop app to deposit."
+              )
+            }
+            shouldDisplayTooltip={isMigrationMode || isDisabledForMobileMode}
           >
             <Button
               {...buttonStyles}
               onClick={openDepositModal}
               isDisabled={
+                isMigrationMode ||
                 (featureFlags.DEPOSIT_CAP_ENABLED && tvl.isCapExceeded) ||
                 isDisabledForMobileMode
               }

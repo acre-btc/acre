@@ -23,6 +23,9 @@ const POSTHOG_ENABLED = import.meta.env.VITE_FEATURE_POSTHOG_ENABLED === "true"
 const MOBILE_MODE_ENABLED =
   import.meta.env.VITE_FEATURE_MOBILE_MODE_ENABLED === "true"
 
+const MIGRATION_MODE_ENABLED =
+  import.meta.env.VITE_FEATURE_FLAG_MIGRATION_MODE_ENABLED === "true"
+
 const featureFlags = {
   OKX_WALLET_ENABLED,
   XVERSE_WALLET_ENABLED,
@@ -33,6 +36,7 @@ const featureFlags = {
   GATING_DAPP_ENABLED,
   POSTHOG_ENABLED,
   MOBILE_MODE_ENABLED,
+  MIGRATION_MODE_ENABLED,
 }
 
 export default featureFlags
