@@ -3,7 +3,7 @@ type CommonActivityData = {
   initializedAt: number
   finalizedAt?: number
   amount: bigint
-  status: "completed" | "pending"
+  status: "completed" | "pending" | "requested"
 }
 
 type ConditionalActivityData =

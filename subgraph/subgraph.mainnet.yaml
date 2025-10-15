@@ -12,9 +12,9 @@ dataSources:
         type: Bytes
         data: "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
     source:
-      address: "0x2Ba614a598Cffa5a19d683cDCA97bac3a49313d1"
+      address: "0xe5F48D3d31baf15dfF89fb394F10A5362711c777"
       abi: BitcoinDepositor
-      startBlock: 20235512
+      startBlock: 23357093
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -36,18 +36,45 @@ dataSources:
           receipt: true
       file: ./src/bitcoin-depositor.ts
   - kind: ethereum
+    name: WithdrawalQueue
+    network: mainnet
+    source:
+      address: "0xe7b8c14cA8Fb4f226C0A3e45e636b84809BB5D06"
+      abi: WithdrawalQueue
+      startBlock: 23392669
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Withdraw
+        - Event
+      abis:
+        - name: WithdrawalQueue
+          file: ./abis/WithdrawalQueue.json
+      eventHandlers:
+        - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
+          handler: handleRedeemAndBridgeRequested
+          receipt: true
+      callHandlers:
+        - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
+          handler: handleRequestRedeemAndBridgeCall
+      file: ./src/withdrawal-queue.ts
+  - kind: ethereum
     name: TbtcBridge
     network: mainnet
     context:
-      bitcoinRedeemerAddress:
+      withdrawalQueueContractAddress:
         type: Bytes
-        data: "0x7e184B0cC12572D12Db6dA248322A0e3618fc756"
+        data: "0xe7b8c14cA8Fb4f226C0A3e45e636b84809BB5D06"
     source:
       abi: TbtcBridge
       address: "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
       # We can start indexing from the same block where the BitcoinRedeemer
       # contract was deployed since we only want to index Acre redemptions.
-      startBlock: 20235530
+      startBlock: 23392604
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

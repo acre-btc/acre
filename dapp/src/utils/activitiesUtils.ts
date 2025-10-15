@@ -22,10 +22,15 @@ const sortActivitiesByTimestamp = (activities: Activity[]): Activity[] =>
 
 const isWithdrawType = (type: ActivityType) => type === "withdraw"
 
-function getEstimatedDuration(amount: bigint, type: ActivityType): string {
+function getEstimatedDuration(
+  amount: bigint,
+  type: ActivityType,
+  shouldUseShortenTimeUnitSuffix = false,
+): string {
+  const hoursSuffix = shouldUseShortenTimeUnitSuffix ? "h" : " hours"
   // Withdrawal duration is related to the tBTC redemption process, which takes
   // approximately 5 - 7 hours. We use the average value of 6 hours.
-  if (isWithdrawType(type)) return "6 hours"
+  if (isWithdrawType(type)) return `72${hoursSuffix}`
 
   // Deposit duration is related to the tBTC minting process, which varies based
   // on the amount of BTC deposited.
@@ -45,11 +50,11 @@ function getEstimatedDuration(amount: bigint, type: ActivityType): string {
   // We round the estimated duration up to the nearest hour.
   //
   // For <0.1 BTC estimated duration is around 1 hour 20 minutes.
-  if (amount < MIN_LIMIT_VALUE_DURATION) return "2 hours"
+  if (amount < MIN_LIMIT_VALUE_DURATION) return `2${hoursSuffix}`
   // For <1 BTC estimated duration is around 1 hours 40 minutes.
-  if (amount < MAX_LIMIT_VALUE_DURATION) return "2 hours"
+  if (amount < MAX_LIMIT_VALUE_DURATION) return `2${hoursSuffix}`
   // For >=1 BTC estimated duration is around 2 hours 10 minutes.
-  return "3 hours"
+  return `3${hoursSuffix}`
 }
 
 export default {

@@ -1,15 +1,21 @@
-import { BitcoinRedeemer as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemer"
-import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemer.json"
-import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemer.json"
+import { BitcoinRedeemerV2 as BitcoinRedeemerTypechain } from "@acre-btc/contracts/typechain/contracts/BitcoinRedeemerV2"
+import SepoliaBitcoinRedeemer from "@acre-btc/contracts/deployments/sepolia/BitcoinRedeemerV2.json"
+import MainnetBitcoinRedeemer from "@acre-btc/contracts/deployments/mainnet/BitcoinRedeemerV2.json"
 
 import {
+  EthereumContractRunner,
   EthersContractConfig,
   EthersContractDeployment,
   EthersContractWrapper,
 } from "./contract"
-import { ChainIdentifier, BitcoinRedeemer, WithdrawalFees } from "../contracts"
+import {
+  ChainIdentifier,
+  BitcoinRedeemer,
+  RedeemerWithdrawalFees,
+} from "../contracts"
 import { EthereumNetwork } from "./network"
 import TbtcBridge from "./tbtc-bridge"
+import { Hex } from "../utils"
 
 type TbtcBridgeRedemptionParameters = {
   redemptionTreasuryFeeDivisor: bigint
@@ -30,6 +36,8 @@ export default class EthereumBitcoinRedeemer
 
   #tbtcBridge: TbtcBridge | undefined
 
+  #runner: EthereumContractRunner
+
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
@@ -38,6 +46,7 @@ export default class EthereumBitcoinRedeemer
         artifact = SepoliaBitcoinRedeemer
         break
       case "mainnet":
+        // TODO: set the new mainnet address
         artifact = MainnetBitcoinRedeemer
         break
       default:
@@ -45,6 +54,7 @@ export default class EthereumBitcoinRedeemer
     }
 
     super(config, artifact)
+    this.#runner = config.runner
     this.#cache = {
       tbtcBridgeRedemptionParameters: undefined,
     }
@@ -66,7 +76,7 @@ export default class EthereumBitcoinRedeemer
    */
   async calculateWithdrawalFee(
     amountToWithdraw: bigint,
-  ): Promise<WithdrawalFees> {
+  ): Promise<RedeemerWithdrawalFees> {
     const { redemptionTreasuryFeeDivisor } =
       await this.#getTbtcBridgeRedemptionParameters()
 
@@ -99,5 +109,43 @@ export default class EthereumBitcoinRedeemer
       redemptionTreasuryFeeDivisor,
     }
     return this.#cache.tbtcBridgeRedemptionParameters
+  }
+
+  /**
+   * @see {BitcoinRedeemer#findRedemptionRequestIdFromTransaction}
+   */
+  async findRedemptionRequestIdFromTransaction(
+    transactionHash: Hex,
+  ): Promise<bigint> {
+    const receipt = await this.#runner.provider?.getTransactionReceipt(
+      transactionHash.toPrefixedString(),
+    )
+
+    if (!receipt)
+      throw new Error(
+        `Cannot find the redemption request id. Transaction with hash ${transactionHash.toPrefixedString()} not found`,
+      )
+
+    const eventTopic = this.instance.interface.getEvent(
+      "RedemptionRequested",
+    ).topicHash
+
+    // We assume only one redemption was requested in this transaction.
+    const log = receipt.logs.find(
+      (receiptLog) => receiptLog.topics[0] === eventTopic,
+    )
+
+    if (!log)
+      throw new Error(
+        "Cannot find the redemption request id. The RedemptionRequested event not found",
+      )
+
+    // @ts-expect-error Something is off with types.
+    const parsedLog = this.instance.interface.parseLog(log)
+
+    if (!parsedLog)
+      throw new Error("Cannot find the redemption request id. Cannot parse log")
+
+    return parsedLog.args[1] as bigint
   }
 }

@@ -1,6 +1,6 @@
 import ethers, { Contract } from "ethers"
-import stBTC from "@acre-btc/contracts/deployments/sepolia/stBTC.json"
-import { EthereumStBTC } from "../../../src/lib/ethereum/stbtc"
+import acreBTCContract from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
+import { EthereumAcreBTC } from "../../../src/lib/ethereum/acrebtc"
 import { Hex } from "../../../src/lib/utils"
 import {
   EthereumAddress,
@@ -12,13 +12,13 @@ jest.mock("ethers", (): object => ({
   ...jest.requireActual("ethers"),
 }))
 
-jest.mock("@acre-btc/contracts/deployments/sepolia/stBTC.json", () => ({
+jest.mock("@acre-btc/contracts/deployments/sepolia/acreBTC.json", () => ({
   address: "0xCA5cd11F30DD8437628ce4D0c8cE6cf7109b0FC2",
   abi: [],
 }))
 
-describe("stbtc", () => {
-  let stbtc: EthereumStBTC
+describe("AcreBTC", () => {
+  let acreBTC: EthereumAcreBTC
   const staker = EthereumAddress.from(ethers.Wallet.createRandom().address)
 
   const mockedContractInstance = {
@@ -41,7 +41,7 @@ describe("stbtc", () => {
         () => mockedContractInstance as unknown as Contract,
       )
 
-    stbtc = new EthereumStBTC(
+    acreBTC = new EthereumAcreBTC(
       {
         runner: {} as EthereumContractRunner,
       },
@@ -55,14 +55,14 @@ describe("stbtc", () => {
 
     beforeAll(async () => {
       mockedContractInstance.totalAssets.mockResolvedValue(expectedResult)
-      result = await stbtc.totalAssets()
+      result = await acreBTC.totalAssets()
     })
 
     it("should call ethers contract instance", () => {
       expect(mockedContractInstance.totalAssets).toHaveBeenCalled()
     })
 
-    it("should return total tBTC amount under stBTC contract management", () => {
+    it("should return total tBTC amount under acreBTC contract management", () => {
       expect(result).toEqual(expectedResult)
     })
   })
@@ -73,7 +73,7 @@ describe("stbtc", () => {
 
     beforeAll(async () => {
       mockedContractInstance.balanceOf.mockResolvedValue(expectedResult)
-      result = await stbtc.balanceOf(staker)
+      result = await acreBTC.balanceOf(staker)
     })
 
     it("should call ethers contract instance", () => {
@@ -82,7 +82,7 @@ describe("stbtc", () => {
       )
     })
 
-    it("should return balance of stBTC tokens", () => {
+    it("should return balance of acreBTC tokens", () => {
       expect(result).toEqual(expectedResult)
     })
   })
@@ -93,7 +93,7 @@ describe("stbtc", () => {
 
     beforeAll(async () => {
       mockedContractInstance.assetsBalanceOf.mockResolvedValue(expectedResult)
-      result = await stbtc.assetsBalanceOf(staker)
+      result = await acreBTC.assetsBalanceOf(staker)
     })
 
     it("should call ethers contract instance", () => {
@@ -122,7 +122,7 @@ describe("stbtc", () => {
           mockedEntryFeeBasisPointsValue,
         )
 
-        result = await stbtc.calculateDepositFee(amount)
+        result = await acreBTC.calculateDepositFee(amount)
       })
 
       it("should get the entry fee basis points from contract", () => {
@@ -140,9 +140,9 @@ describe("stbtc", () => {
           mockedEntryFeeBasisPointsValue,
         )
 
-        await stbtc.calculateDepositFee(amount)
+        await acreBTC.calculateDepositFee(amount)
 
-        result = await stbtc.calculateDepositFee(amount)
+        result = await acreBTC.calculateDepositFee(amount)
       })
 
       it("should get the entry fee basis points from cache", () => {
@@ -172,7 +172,7 @@ describe("stbtc", () => {
           mockedExitFeeBasisPointsValue,
         )
 
-        result = await stbtc.calculateWithdrawalFee(amount)
+        result = await acreBTC.calculateWithdrawalFee(amount)
       })
 
       it("should get the exit fee basis points from contract", () => {
@@ -190,9 +190,9 @@ describe("stbtc", () => {
           mockedExitFeeBasisPointsValue,
         )
 
-        await stbtc.calculateWithdrawalFee(amount)
+        await acreBTC.calculateWithdrawalFee(amount)
 
-        result = await stbtc.calculateWithdrawalFee(amount)
+        result = await acreBTC.calculateWithdrawalFee(amount)
       })
 
       it("should get the exit fee basis points from cache", () => {
@@ -209,9 +209,11 @@ describe("stbtc", () => {
 
   describe("getChainIdentifier", () => {
     it("should return contract address", () => {
-      const result = stbtc.getChainIdentifier()
+      const result = acreBTC.getChainIdentifier()
 
-      expect(result.equals(EthereumAddress.from(stBTC.address))).toBeTruthy()
+      expect(
+        result.equals(EthereumAddress.from(acreBTCContract.address)),
+      ).toBeTruthy()
     })
   })
 
@@ -228,7 +230,7 @@ describe("stbtc", () => {
         mockedEncodedData,
       )
 
-      result = stbtc.encodeApproveAndCallFunctionData(
+      result = acreBTC.encodeApproveAndCallFunctionData(
         spender,
         amount,
         extraData,
@@ -259,14 +261,14 @@ describe("stbtc", () => {
     beforeAll(async () => {
       mockedContractInstance.previewRedeem.mockResolvedValue(expectedResult)
 
-      result = await stbtc.previewRedeem(shares)
+      result = await acreBTC.previewRedeem(shares)
     })
 
     it("should call ethers contract instance", () => {
       expect(mockedContractInstance.previewRedeem).toHaveBeenCalledWith(shares)
     })
 
-    it("should return the amount of tBTC that will be redeemed for the given amount of stBTC shares.", () => {
+    it("should return the amount of tBTC that will be redeemed for the given amount of acreBTC shares.", () => {
       expect(result).toEqual(expectedResult)
     })
   })
@@ -279,7 +281,7 @@ describe("stbtc", () => {
     beforeAll(async () => {
       mockedContractInstance.convertToShares.mockResolvedValue(expectedResult)
 
-      result = await stbtc.convertToShares(tbtcAmount)
+      result = await acreBTC.convertToShares(tbtcAmount)
     })
 
     it("should call ethers contract instance", () => {
@@ -288,7 +290,7 @@ describe("stbtc", () => {
       )
     })
 
-    it("should convert tBTC amount to stBTC shares", () => {
+    it("should convert tBTC amount to acreBTC shares", () => {
       expect(result).toEqual(expectedResult)
     })
   })

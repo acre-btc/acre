@@ -4,9 +4,12 @@ import {
   Address,
   Bytes,
   Wrapped,
+  crypto,
+  ByteArray,
 } from "@graphprotocol/graph-ts"
 import { newMockEvent } from "matchstick-as"
 import { RedemptionRequested } from "../generated/TbtcBridge/TbtcBridge"
+import { bigIntTo64HexString } from "../src/utils"
 
 class RedemptionRequestedEventData {
   event: RedemptionRequested
@@ -17,21 +20,27 @@ class RedemptionRequestedEventData {
 
   tbtcAmount: BigInt
 
+  withdrawId: BigInt
+
   constructor(
     event: RedemptionRequested,
     key: string,
     acreOwner: Address,
     tbtcAmount: BigInt,
+    withdrawId: BigInt,
   ) {
     this.event = event
     this.redemptionKey = key
     this.acreOwner = acreOwner
     this.tbtcAmount = tbtcAmount
+    this.withdrawId = withdrawId
   }
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export function createRedemptionRequestedEvent(): RedemptionRequestedEventData {
+export function createRedemptionRequestedEvent(
+  withdrawId: BigInt,
+): RedemptionRequestedEventData {
   const redemptionRequestedEvent =
     changetype<RedemptionRequested>(newMockEvent())
 
@@ -59,7 +68,7 @@ export function createRedemptionRequestedEvent(): RedemptionRequestedEventData {
   )
 
   const requestedAmountParam = new ethereum.EventParam(
-    "requestedAmount :",
+    "requestedAmount",
     ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(1017456)),
   )
 
@@ -81,20 +90,33 @@ export function createRedemptionRequestedEvent(): RedemptionRequestedEventData {
   )
   const tbtcAmount = BigInt.fromString("10174563591022443")
 
-  // Logs data from https://sepolia.etherscan.io/tx/0x4951c225e35cb61c741d531c268d72c3c861a8f59f5877ec33cb181c36e90d39#eventlog#144
+  const redeemCompleteAndBridgeRequestedEventSignature = Bytes.fromHexString(
+    crypto
+      .keccak256(
+        ByteArray.fromUTF8(
+          "RedeemCompletedAndBridgeRequested(uint256,address,uint256)",
+        ),
+      )
+      .toHexString(),
+  )
+
+  const withdrawIdAsHex = Bytes.fromHexString(bigIntTo64HexString(withdrawId))
+
+  const redeemCompleteAndBridgeRequestedEventLogData = Bytes.fromHexString(
+    bigIntTo64HexString(tbtcAmount),
+  )
+
   const log = new ethereum.Log(
     Address.fromString("0xa7049b83dB603f4a7FE93B29D2DfEa76065e76E8"),
     [
       // Event signature
-      Bytes.fromHexString(
-        "0x46949ee51143d5b58e4df83122d6c382a04f7bffbe563f78cd7fa61ee519ec08",
-      ),
-      // `owner` - indexed topic 1
+      redeemCompleteAndBridgeRequestedEventSignature,
+      // `requestId` - indexed topic 1
+      withdrawIdAsHex,
+      // `redeemer` - indexed topic 2
       acreOwnerAsHex,
     ],
-    Bytes.fromHexString(
-      "0x00000000000000000000000000000000000000000000000000243cd890b58000000000000000000000000000000000000000000000000000002425b63096676b",
-    ),
+    redeemCompleteAndBridgeRequestedEventLogData,
     redemptionRequestedEvent.block.hash,
     Bytes.fromI32(1),
     redemptionRequestedEvent.transaction.hash,
@@ -124,6 +146,7 @@ export function createRedemptionRequestedEvent(): RedemptionRequestedEventData {
     redemptionKey,
     acreOwner,
     tbtcAmount,
+    withdrawId,
   )
 
   return data

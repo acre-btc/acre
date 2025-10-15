@@ -12,9 +12,9 @@ dataSources:
         type: Bytes
         data: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
     source:
-      address: "0x6c2c643c90383Cba125E4b8DD01344eA35A75F27"
+      address: "0x4030348c63e1c8EdDc4485d05Ed6FCE5eB2d35b2"
       abi: BitcoinDepositor
-      startBlock: 6237625
+      startBlock: 9169564
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -36,18 +36,45 @@ dataSources:
           receipt: true
       file: ./src/bitcoin-depositor.ts
   - kind: ethereum
+    name: WithdrawalQueue
+    network: sepolia
+    source:
+      address: "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884"
+      abi: WithdrawalQueue
+      startBlock: 9169609
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Withdraw
+        - Event
+      abis:
+        - name: WithdrawalQueue
+          file: ./abis/WithdrawalQueue.json
+      eventHandlers:
+        - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
+          handler: handleRedeemAndBridgeRequested
+          receipt: true
+      callHandlers:
+        - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
+          handler: handleRequestRedeemAndBridgeCall
+      file: ./src/withdrawal-queue.ts
+  - kind: ethereum
     name: TbtcBridge
     network: sepolia
     context:
-      bitcoinRedeemerAddress:
+      withdrawalQueueContractAddress:
         type: Bytes
-        data: "0xF4011FD0C77Bd4d909Ae05c7390b88455294dAeA"
+        data: "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884"
     source:
       abi: TbtcBridge
       address: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
       # We can start indexing from the same block where the BitcoinRedeemer
       # contract was deployed since we only want to index Acre redemptions.
-      startBlock: 6237636
+      startBlock: 9169626
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

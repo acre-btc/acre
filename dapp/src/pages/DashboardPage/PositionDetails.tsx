@@ -1,7 +1,6 @@
 import React from "react"
-import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
 import {
-  useActivitiesCount,
+  // useActivitiesCount,
   useBitcoinPosition,
   useTransactionModal,
   useStatistics,
@@ -24,6 +23,7 @@ import { featureFlags } from "#/constants"
 import { IconClockHour5Filled } from "@tabler/icons-react"
 import TooltipIcon from "#/components/shared/TooltipIcon"
 import { activitiesUtils } from "#/utils"
+import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import AcreTVLMessage from "./AcreTVLMessage"
 
 const isWithdrawalFlowEnabled = featureFlags.WITHDRAWALS_ENABLED
@@ -40,15 +40,17 @@ const buttonStyles: ButtonProps = {
 
 export default function PositionDetails() {
   const { data: bitcoinPosition } = useBitcoinPosition()
-  const bitcoinAmount = bitcoinPosition?.estimatedBitcoinBalance ?? 0n
+  const shares = bitcoinPosition?.sharesBalance ?? 0n
 
   const openDepositModal = useTransactionModal(ACTION_FLOW_TYPES.STAKE)
   const openWithdrawModal = useTransactionModal(ACTION_FLOW_TYPES.UNSTAKE)
-  const activitiesCount = useActivitiesCount()
+  // const activitiesCount = useActivitiesCount()
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
 
-  const { tvl } = useStatistics()
+  const statistics = useStatistics()
+
+  const { tvl } = statistics.data
 
   const { isConnected } = useWallet()
 
@@ -71,19 +73,12 @@ export default function PositionDetails() {
         </HStack>
         <UserDataSkeleton>
           <VStack alignItems="start" spacing={0}>
-            <CurrencyBalanceWithConversion
-              from={{
-                amount: bitcoinAmount,
-                currency: "bitcoin",
-                size: "4xl",
-                letterSpacing: "-0.075rem", // -1.2px
-                color: "text.primary",
-              }}
-              to={{
-                currency: "usd",
-                color: "text.tertiary",
-                fontWeight: "medium",
-              }}
+            <CurrencyBalance
+              amount={shares}
+              currency="acrebtc"
+              size="4xl"
+              letterSpacing="-0.075rem" // -1.2px
+              color="text.primary"
             />
           </VStack>
         </UserDataSkeleton>
@@ -103,17 +98,35 @@ export default function PositionDetails() {
                 isDisabledForMobileMode
               }
             >
-              {isConnected ? <>Deposit</> : <>Connect wallet</>}
+              Deposit
             </Button>
           </ArrivingSoonTooltip>
         </UserDataSkeleton>
-        {isConnected && activitiesCount > 0 && (
+        {/* TODO: Uncomment when withdrawals are supported. Right now we want to
+         * show the withdraw button to all users so they are aware we are in the phased launch.
+         */}
+        {/* {isConnected && activitiesCount > 0 && ( */}
+        {isConnected && (
           <UserDataSkeleton>
             <ArrivingSoonTooltip
               label={
-                isMobileMode
-                  ? "This option is not available on mobile yet. Please use the desktop app to withdraw."
-                  : "This option is currently not available."
+                isMobileMode ? (
+                  "This option is not available on mobile yet. Please use the desktop app to withdraw."
+                ) : (
+                  // TODO: Update to another copy once withdrawals are released.
+                  <Text>
+                    <b>Notice: Temporary Pause on Withdrawals</b>
+                    <br />
+                    <br />
+                    Withdrawals from the acreBTC vault are temporarily paused
+                    while we complete an update. Your funds remain fully secure
+                    and under your control. Withdrawals will be re-enabled
+                    within the next 72 hours.
+                    <br />
+                    <br />
+                    Thank you for your patience as we finalize this upgrade.
+                  </Text>
+                )
               }
               shouldDisplayTooltip={
                 !isWithdrawalFlowEnabled || isDisabledForMobileMode

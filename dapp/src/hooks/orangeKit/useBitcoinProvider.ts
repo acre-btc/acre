@@ -2,9 +2,9 @@ import { useMemo } from "react"
 import { OrangeKitBitcoinWalletProvider } from "@orangekit/react/dist/src/wallet/bitcoin-wallet-provider"
 import useConnector from "./useConnector"
 
-type UseBitcoinProviderReturn = OrangeKitBitcoinWalletProvider | undefined
-
-export default function useBitcoinProvider(): UseBitcoinProviderReturn {
+export default function useBitcoinProvider<
+  P = OrangeKitBitcoinWalletProvider,
+>(): P | undefined {
   const connector = useConnector()
 
   return useMemo(() => {
@@ -12,9 +12,10 @@ export default function useBitcoinProvider(): UseBitcoinProviderReturn {
       !connector ||
       !connector.getBitcoinProvider ||
       typeof connector.getBitcoinProvider !== "function"
-    )
+    ) {
       return undefined
+    }
 
-    return connector.getBitcoinProvider()
+    return connector.getBitcoinProvider() as OrangeKitBitcoinWalletProvider & P
   }, [connector])
 }

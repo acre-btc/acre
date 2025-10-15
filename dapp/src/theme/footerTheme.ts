@@ -17,9 +17,8 @@ const wrapperStyles = defineStyle({
   display: "flex",
   alignItems: "center",
   gap: { base: 4, xl: 10 },
-  maxW: "120rem", // 1920px
   py: 3,
-  px: { base: 4, md: "2.5rem", xl: 30 },
+  px: 10,
   mx: "auto",
 })
 

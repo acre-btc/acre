@@ -65,7 +65,7 @@ const getItemsList = (
           as={Link}
           __css={styles.link}
           iconSpacing={0}
-          rightIcon={<Icon as={IconArrowUpRight} />}
+          rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
           {...link}
           isExternal
         />

@@ -4,9 +4,7 @@ import {
   getOrCreateEvent,
   getOrCreateWithdraw,
   bytesToUint8Array,
-  getNextWithdrawId,
-  getOrCreateRedemptionKeyCounter,
-  getLastWithdrawId,
+  getOrCreateRedemptionKeyToPendingWithdrawal,
 } from "./utils"
 import {
   RedemptionRequested,
@@ -19,26 +17,32 @@ import {
   buildRedemptionKeyFromRedeemerOutputScript,
 } from "./tbtc-utils"
 import {
-  getOwnerFromRedemptionRequestedLog,
-  getRedemptionRequestedLog,
-  getTbtcAmountFromRedemptionRequestedLog,
-} from "./bitcoin-redeemer-utils"
+  getOwnerFromRedeemCompletedAndBridgedRequestedLog,
+  getRedeemCompletedAndBridgedRequestedLog,
+  getTbtcFromRedeemCompletedAndBridgedRequestedLog,
+  getRequestIdFromRedeemCompletedAndBridgedRequestedLog,
+} from "./withdrawal-queue-utils"
 import * as BitcoinUtils from "./bitcoin-utils"
 import { RedemptionsCompletedEvent } from "../generated/schema"
 
 export function handleRedemptionRequested(event: RedemptionRequested): void {
-  const bitcoinRedeemerRedemptionRequestLog = getRedemptionRequestedLog(
-    (event.receipt as ethereum.TransactionReceipt).logs,
-  )
+  const withdrawalQueueRedeemCompletedAndBridgedRequestedLog =
+    getRedeemCompletedAndBridgedRequestedLog(
+      (event.receipt as ethereum.TransactionReceipt).logs,
+    )
 
-  if (!bitcoinRedeemerRedemptionRequestLog) {
+  if (!withdrawalQueueRedeemCompletedAndBridgedRequestedLog) {
     log.info("The redemption does not come from the Acre", [])
     return
   }
 
-  const ownerId = getOwnerFromRedemptionRequestedLog(
-    bitcoinRedeemerRedemptionRequestLog,
+  const ownerId = getOwnerFromRedeemCompletedAndBridgedRequestedLog(
+    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
   )
+
+  const withdrawId = getRequestIdFromRedeemCompletedAndBridgedRequestedLog(
+    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
+  ).toString()
 
   const ownerEntity = getOrCreateDepositOwner(ownerId)
 
@@ -47,14 +51,16 @@ export function handleRedemptionRequested(event: RedemptionRequested): void {
     event.params.walletPubKeyHash,
   )
 
-  const withdrawId = getNextWithdrawId(redemptionKey)
-  const redemptionKeyCounter = getOrCreateRedemptionKeyCounter(redemptionKey)
+  const redemptionKeyToPendingWithdrawal =
+    getOrCreateRedemptionKeyToPendingWithdrawal(redemptionKey)
+  redemptionKeyToPendingWithdrawal.withdrawId = withdrawId
 
-  const withdraw = getOrCreateWithdraw(withdrawId)
+  const withdraw = getOrCreateWithdraw(withdrawId.toString())
   withdraw.depositOwner = ownerEntity.id
-  const amount = getTbtcAmountFromRedemptionRequestedLog(
-    bitcoinRedeemerRedemptionRequestLog,
+  const amount = getTbtcFromRedeemCompletedAndBridgedRequestedLog(
+    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
   )
+
   withdraw.amount = amount
 
   const redemptionRequestedEvent = getOrCreateEvent(
@@ -67,10 +73,8 @@ export function handleRedemptionRequested(event: RedemptionRequested): void {
   ownerEntity.save()
   withdraw.save()
   redemptionRequestedEvent.save()
-  redemptionKeyCounter.counter = redemptionKeyCounter.counter.plus(
-    BigInt.fromI32(1),
-  )
-  redemptionKeyCounter.save()
+
+  redemptionKeyToPendingWithdrawal.save()
 }
 
 function buildRedemptionsCompletedEventId(
@@ -173,15 +177,21 @@ export function handleSubmitRedemptionProofCall(
       call.inputs.walletPubKeyHash,
     )
 
-    const withdrawId = getLastWithdrawId(redemptionKey)
+    const redemptionKeyToPendingWithdrawal =
+      getOrCreateRedemptionKeyToPendingWithdrawal(redemptionKey)
 
     // Check if the withdraw entity exists. Only withdrawals from Acre exist in
     // the subgraph and they should be already indexed and the `depositOwner`
     // should be set correctly. Otherwise, it means the withdrawal does not come
     // from the Acre network. The tBTC network redeems in a batch so there may
     // be other redemptions not only from the Acre.
-    if (withdrawId) {
-      const withdraw = getOrCreateWithdraw(withdrawId)
+    if (redemptionKeyToPendingWithdrawal.withdrawId != null) {
+      const withdraw = getOrCreateWithdraw(
+        // We must use non-null assertion here otherwise AssemblyScript will
+        // fail.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        redemptionKeyToPendingWithdrawal.withdrawId!,
+      )
 
       const bitcoinTransactionId = getBitcoinRedemptionTxId(
         call.inputs.walletPubKeyHash,
@@ -197,8 +207,14 @@ export function handleSubmitRedemptionProofCall(
       redemptionCompletedEvent.timestamp = call.block.timestamp
       redemptionCompletedEvent.type = "Finalized"
 
+      // Redemption completed. There are no pending withdrawals with the same
+      // redemption key. Meaning that a redemption with the same redemption key
+      // can be created.
+      redemptionKeyToPendingWithdrawal.withdrawId = null
+
       redemptionCompletedEvent.save()
       withdraw.save()
+      redemptionKeyToPendingWithdrawal.save()
     }
 
     outputStartingIndex = outputStartingIndex.plus(outputLength)
