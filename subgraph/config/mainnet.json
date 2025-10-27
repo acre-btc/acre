@@ -14,5 +14,12 @@
   },
   "tbtcBridge": {
     "address": "0x5e4861a80B55f035D899f66772117F00FA0E8e7B"
+  },
+  "stbtc": {
+    "address": "0xdF217EFD8f3ecb5E837aedF203C28c1f06854017"
+  },
+  "acrebtc": {
+    "address": "0x19531C886339dd28b9923d903F6B235C45396ded",
+    "startBlock": 23349292
   }
 }
