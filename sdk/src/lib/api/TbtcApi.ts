@@ -146,6 +146,7 @@ export enum DepositStatus {
   Initialized = "INITIALIZED",
   Finalized = "FINALIZED",
   Cancelled = "CANCELLED",
+  Migrated = "MIGRATED",
 }
 
 // TODO: This type is copied from tbtc-api, we should consider exporting it from there.
