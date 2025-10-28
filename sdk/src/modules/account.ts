@@ -178,11 +178,12 @@ export default class Account {
     const migratedDeposits = subgraphData
       .filter((d) => d.status === DepositStatus.Migrated)
       .map((migratedDeposit) => ({
-        // In that case this is not actaully the deposit key. It's a migrated deposit and the id is `<txHash>_<log_index>`.
+        // In that case this is not actually the deposit key.It's a migrated
+        // deposit and the id is `<txHash>_<log_index>`.
         id: migratedDeposit.depositKey,
         // For migrated deposit the bitcoin tx hash is null.
         txHash: migratedDeposit.txHash,
-        amount: migratedDeposit.amountToDeposit,
+        amount: toSatoshi(migratedDeposit.amountToDeposit),
         status: migratedDeposit.status,
         initializedAt: migratedDeposit.initializedAt,
         finalizedAt: migratedDeposit.initializedAt,
