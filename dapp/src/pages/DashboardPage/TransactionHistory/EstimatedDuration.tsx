@@ -9,7 +9,11 @@ export default function EstimatedDuration({
 }: {
   activity: Activity
 }) {
-  if (activitiesUtils.isActivityCompleted(activity)) return null
+  if (
+    activitiesUtils.isActivityCompleted(activity) ||
+    activitiesUtils.isActivityMigrated(activity)
+  )
+    return null
 
   return (
     <Flex gap={3} flexWrap="wrap">

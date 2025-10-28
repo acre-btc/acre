@@ -30,14 +30,17 @@ export default function useActivities<TSelected = Activity[]>(
       if (!acre) return undefined
 
       const deposits: Activity[] = (await acre.account.getDeposits()).map(
-        (deposit) => ({
-          ...deposit,
-          status:
-            deposit.status === DepositStatus.Finalized
-              ? "completed"
-              : "pending",
-          type: "deposit",
-        }),
+        (deposit) => {
+          let status: Activity["status"] = "pending"
+          if (deposit.status === DepositStatus.Finalized) status = "completed"
+          if (deposit.status === DepositStatus.Migrated) status = "migrated"
+
+          return {
+            ...deposit,
+            status,
+            type: "deposit",
+          }
+        },
       )
 
       const withdrawals: Activity[] = (await acre.account.getWithdrawals()).map(

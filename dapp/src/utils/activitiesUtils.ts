@@ -6,6 +6,9 @@ const MAX_LIMIT_VALUE_DURATION = BigInt(String(1e8)) // 1 BTC
 const isActivityCompleted = (activity: Activity): boolean =>
   activity.status === "completed"
 
+const isActivityMigrated = (activity: Activity): boolean =>
+  activity.status === "migrated"
+
 const getActivityTimestamp = (activity: Activity): number =>
   activity?.finalizedAt ?? activity.initializedAt
 
@@ -59,6 +62,7 @@ function getEstimatedDuration(
 
 export default {
   isActivityCompleted,
+  isActivityMigrated,
   getActivityTimestamp,
   hasPendingDeposits,
   sortActivitiesByTimestamp,
