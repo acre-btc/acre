@@ -99,7 +99,7 @@ class Acre {
       network === BitcoinNetwork.Mainnet
         ? // TODO: Figure out why this link doesn't point to the latest published version
           // ? `https://gateway-arbitrum.network.thegraph.com/api/${subgraphApiKey}/subgraphs/id/DJfS9X5asHtFEdAPikBcSLw8jtKmFcbReQVEa2iY9C9`
-          `https://gateway-arbitrum.network.thegraph.com/api/${subgraphApiKey}/deployments/id/QmNxv8CWeYteX5VDmYHweHWAVhmXdxXGvTFBNNQay1v3tB`
+          `https://gateway-arbitrum.network.thegraph.com/api/${subgraphApiKey}/deployments/id/QmXM9RdRjBnVpZsX7w3MS8M1BxeazVBPmM4cfUQhgpLjwP`
         : "https://api.studio.thegraph.com/query/73600/acre-sepolia/version/latest"
 
     const subgraph = new AcreSubgraphApi(acreSubgraphApiUrl)

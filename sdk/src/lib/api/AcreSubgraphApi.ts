@@ -31,7 +31,10 @@ type DepositDataResponse = {
       /**
        * Events associated with a given deposit.
        */
-      events: { type: "Initialized" | "Finalized"; timestamp: string }[]
+      events: {
+        type: "Initialized" | "Finalized" | "Migrated"
+        timestamp: string
+      }[]
     }[]
   }
 }
@@ -199,10 +202,13 @@ export default class AcreSubgraphApi extends HttpApi {
         id,
       } = deposit
 
-      // The subgraph indexes only initialized or finalized deposits.
-      const status = events.some(({ type }) => type === "Finalized")
-        ? DepositStatus.Finalized
-        : DepositStatus.Initialized
+      // The subgraph indexes only initialized, finalized or migrated deposits.
+      let status = DepositStatus.Initialized
+      if (events.some(({ type }) => type === "Finalized"))
+        status = DepositStatus.Finalized
+      if (events.some(({ type }) => type === "Migrated"))
+        status = DepositStatus.Migrated
+
       const [initializedEvent, finalizedEvent] = events
       const initializedAt = parseInt(initializedEvent.timestamp, 10)
       const finalizedAt = finalizedEvent
