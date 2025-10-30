@@ -280,7 +280,7 @@ export default class Account {
 
       return {
         ...withdraw,
-        amount: withdraw.amount ? toSatoshi(withdraw.amount) : undefined,
+        amount: toSatoshi(withdraw.amount),
         requestedAmount: toSatoshi(withdraw.requestedAmount),
         status,
       }
