@@ -39,12 +39,13 @@ export default function DashboardPage() {
     return activities
       .filter(
         (activity) =>
-          activity.type === "withdraw" && activity.status === "requested",
+          activity.type === "withdraw" &&
+          (activity.status === "requested" || activity.status === "pending"),
       )
       .map((activity) => ({
         withdrawnAt: activity.initializedAt,
         btcAmount: activity.amount,
-        status: "pending",
+        status: activity.status as WithdrawStatus,
       }))
   })
 
