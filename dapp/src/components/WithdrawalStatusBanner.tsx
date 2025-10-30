@@ -1,42 +1,32 @@
-import React, { ComponentType, useEffect, useState } from "react"
-import { Button, Card, HStack, Icon, Text, VStack } from "@chakra-ui/react"
-import { IconHourglassEmpty, IconArrowUp } from "@tabler/icons-react"
-import {
-  useCountdown,
-  useCurrencyConversion,
-  useTransactionModal,
-} from "#/hooks"
-import { numbersUtils, timeUtils } from "#/utils"
+import React, { useEffect, useMemo, useState } from "react"
+import { Card, HStack, Icon, Text, VStack } from "@chakra-ui/react"
+import { IconHourglassEmpty } from "@tabler/icons-react"
+import { useCountdown, useCurrencyConversion } from "#/hooks"
+import { activitiesUtils, numbersUtils, timeUtils } from "#/utils"
 import { time } from "#/constants"
-import { ACTION_FLOW_TYPES } from "#/types"
+import { Activity } from "#/types"
 import ProgressBar from "./shared/ProgressBar"
 import CurrencyBalance from "./shared/CurrencyBalance"
 import TooltipIcon from "./shared/TooltipIcon"
 
-export type WithdrawStatus = "pending" | "ready"
-
-const STATUS: Record<
-  WithdrawStatus,
-  {
-    icon: ComponentType
-    title: string
-    iconPros: { color: string; bg: string }
-  }
-> = {
-  pending: {
-    icon: IconHourglassEmpty,
-    iconPros: { color: "orange.50", bg: "oldPalette.opacity.orange.50.15" },
-    title: "Withdrawal Request in Progress",
-  },
-  ready: {
-    icon: IconArrowUp,
-    iconPros: { color: "green.50", bg: "oldPalette.opacity.green.50.15" },
-    title: "Funds Ready to Transfer",
-  },
-}
+export type WithdrawStatus = Extract<
+  Activity["status"],
+  "pending" | "requested"
+>
 
 const PENDING_STATE_TOOLTIP_CONTENT =
   "Your withdrawal request has been submitted and is now being processed. The requested funds will be available for withdrawal in approximately 72 hours."
+
+function EstimatedDurationText({ children }: { children: React.ReactNode }) {
+  return (
+    <Text size="md" color="text.tertiary" ml="auto">
+      Est. duration{" "}
+      <Text as="span" size="md" color="text.secondary">
+        {children}
+      </Text>
+    </Text>
+  )
+}
 
 function PendingWithdrawBannerTimeInfo({
   withdrawnAt,
@@ -44,11 +34,21 @@ function PendingWithdrawBannerTimeInfo({
   withdrawnAt: number
 }) {
   const [progress, setProgress] = useState(0)
-  const availableAtTimestamp = withdrawnAt + 3 * time.ONE_DAY_IN_SECONDS
+  const availableAtTimestamp = useMemo(
+    () => withdrawnAt + 3 * time.ONE_DAY_IN_SECONDS,
+    [withdrawnAt],
+  )
+
+  const isDeadlinePassed = useMemo(
+    () => availableAtTimestamp <= timeUtils.dateToUnixTimestamp(),
+    [availableAtTimestamp],
+  )
 
   const { days, hours, minutes } = useCountdown(availableAtTimestamp, false)
 
   useEffect(() => {
+    if (isDeadlinePassed) return () => {}
+
     function updateProgress() {
       const now = timeUtils.dateToUnixTimestamp()
       const total = availableAtTimestamp - withdrawnAt
@@ -67,7 +67,21 @@ function PendingWithdrawBannerTimeInfo({
     )
 
     return () => clearInterval(interval)
-  }, [withdrawnAt, availableAtTimestamp])
+  }, [withdrawnAt, availableAtTimestamp, isDeadlinePassed])
+
+  if (isDeadlinePassed)
+    return (
+      <EstimatedDurationText>
+        {activitiesUtils.getEstimatedDuration(
+          // There’s no need to pass an amount for the `withdraw` activity, as
+          // the timing doesn’t depend on the amount.
+          0n,
+          "withdraw",
+          undefined,
+          "requested",
+        )}
+      </EstimatedDurationText>
+    )
 
   return (
     <VStack ml="auto">
@@ -79,14 +93,11 @@ function PendingWithdrawBannerTimeInfo({
         maxW="160px"
         marginLeft="auto"
       />
-      <Text size="md" color="text.tertiary">
-        Est. duration{" "}
-        <Text as="span" size="md" color="text.secondary">
-          {days !== "0" && `${days}d`}
-          {hours !== "0" && `, ${hours}h`}
-          {minutes !== "0" && days === "0" && hours === "0" && `${minutes}m`}
-        </Text>
-      </Text>
+      <EstimatedDurationText>
+        {days !== "0" && `${days}d`}
+        {hours !== "0" && `, ${hours}h`}
+        {minutes !== "0" && days === "0" && hours === "0" && `${minutes}m`}
+      </EstimatedDurationText>
     </VStack>
   )
 }
@@ -104,30 +115,24 @@ export default function WithdrawalStatusBanner({
     from: { currency: "bitcoin", amount: btcAmount },
     to: { currency: "usd" },
   })
-  const openWithdrawModal = useTransactionModal(ACTION_FLOW_TYPES.UNSTAKE)
-  const iconProps = STATUS[status].iconPros
 
   return (
     <Card px="6" py="6" w="100%" bg="ivoire.10">
       <HStack alignItems="center" spacing={4}>
         <Icon
-          as={STATUS[status].icon}
+          as={IconHourglassEmpty}
           rounded="full"
           w="9"
           h="9"
           p="2"
-          {...iconProps}
+          color="orange.50"
+          bg="oldPalette.opacity.orange.50.15"
         />
 
         <VStack alignItems="flex-start" spacing={0}>
-          <Text
-            size="md"
-            color={status === "ready" ? "green.50" : undefined}
-            as={HStack}
-            spacing="2"
-          >
-            <Text>{STATUS[status].title}</Text>
-            {status === "pending" && (
+          <Text size="md" as={HStack} spacing="2">
+            <Text>Withdrawal Request in Progress</Text>
+            {status === "requested" && (
               <TooltipIcon
                 as="div"
                 label={PENDING_STATE_TOOLTIP_CONTENT}
@@ -154,24 +159,18 @@ export default function WithdrawalStatusBanner({
           </Text>
         </VStack>
 
-        {status === "pending" && (
+        {status === "requested" && (
           <PendingWithdrawBannerTimeInfo withdrawnAt={withdrawnAt} />
         )}
-        {status === "ready" && (
-          <Text size="md" color="text.tertiary" ml="auto">
-            Est. duration{" "}
-            <Text as="span" color="text.secondary">
-              ~6h
-            </Text>
-          </Text>
-        )}
-        {status === "ready" && (
-          // TODO: We do not support the color schema in button theme. Do we
-          // want to add it or can we use `outline` variant? Or we can use solid
-          // variant with acre brand color.
-          <Button variant="outline" onClick={openWithdrawModal}>
-            Withdraw Funds
-          </Button>
+        {status === "pending" && (
+          <EstimatedDurationText>
+            {activitiesUtils.getEstimatedDuration(
+              btcAmount,
+              "withdraw",
+              undefined,
+              status,
+            )}
+          </EstimatedDurationText>
         )}
       </HStack>
     </Card>

@@ -47,18 +47,14 @@ export default function useActivities<TSelected = Activity[]>(
         (withdraw) => {
           const status = SDK_STATUS_TO_DAPP_STATUS[withdraw.status]
 
-          let initializedAt: number = withdraw.requestedAt
-          if (status === "pending") initializedAt = withdraw.initializedAt!
+          const initializedAt: number = withdraw.requestedAt
 
           return {
             id: withdraw.id,
             initializedAt,
             txHash: withdraw.bitcoinTransactionId,
             status,
-            amount:
-              status === "requested"
-                ? withdraw.requestedAmount
-                : withdraw.amount!,
+            amount: withdraw.amount,
             type: "withdraw",
           }
         },
