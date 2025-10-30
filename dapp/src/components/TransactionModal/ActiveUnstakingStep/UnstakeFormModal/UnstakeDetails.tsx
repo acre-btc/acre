@@ -13,14 +13,14 @@ import TransactionDetailsAmountItem from "#/components/shared/TransactionDetails
 import FeesTooltip from "../../FeesTooltip"
 
 function UnstakeDetails({ currency }: { currency: CurrencyType }) {
-  const { value = 0n } = useFormField<bigint | undefined>(
-    TOKEN_AMOUNT_FIELD_NAME,
-  )
+  const { value = 0n } = useFormField<bigint>(TOKEN_AMOUNT_FIELD_NAME)
   const minWithdrawAmount = useMinWithdrawAmount()
-  const amount = value >= minWithdrawAmount ? value : 0n
-  const details = useTransactionDetails(amount, ACTION_FLOW_TYPES.UNSTAKE)
+  const { transactionFee, estimatedAmount } = useTransactionDetails(
+    value >= minWithdrawAmount ? value : 0n,
+    ACTION_FLOW_TYPES.UNSTAKE,
+  )
 
-  const { total, ...restFees } = details.transactionFee
+  const { total: totalFees, ...restFees } = transactionFee
 
   return (
     <List spacing={3} mt={10}>
@@ -31,7 +31,7 @@ function UnstakeDetails({ currency }: { currency: CurrencyType }) {
         tooltip={<FeesTooltip fees={restFees} />}
         from={{
           currency,
-          amount: total,
+          amount: totalFees,
           desiredDecimals: currencies.DESIRED_DECIMALS_FOR_FEE,
           withRoundUp: true,
         }}
@@ -43,7 +43,7 @@ function UnstakeDetails({ currency }: { currency: CurrencyType }) {
         label="You will receive"
         from={{
           currency,
-          amount: details.estimatedAmount,
+          amount: estimatedAmount,
         }}
       />
     </List>
