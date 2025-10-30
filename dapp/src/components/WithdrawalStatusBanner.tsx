@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Card, HStack, Icon, Text, VStack } from "@chakra-ui/react"
 import { IconHourglassEmpty } from "@tabler/icons-react"
 import { useCountdown, useCurrencyConversion } from "#/hooks"
@@ -17,17 +17,38 @@ export type WithdrawStatus = Extract<
 const PENDING_STATE_TOOLTIP_CONTENT =
   "Your withdrawal request has been submitted and is now being processed. The requested funds will be available for withdrawal in approximately 72 hours."
 
+function EstimatedDurationText({ children }: { children: React.ReactNode }) {
+  return (
+    <Text size="md" color="text.tertiary" ml="auto">
+      Est. duration{" "}
+      <Text as="span" size="md" color="text.secondary">
+        {children}
+      </Text>
+    </Text>
+  )
+}
+
 function PendingWithdrawBannerTimeInfo({
   withdrawnAt,
 }: {
   withdrawnAt: number
 }) {
   const [progress, setProgress] = useState(0)
-  const availableAtTimestamp = withdrawnAt + 3 * time.ONE_DAY_IN_SECONDS
+  const availableAtTimestamp = useMemo(
+    () => withdrawnAt + 3 * time.ONE_DAY_IN_SECONDS,
+    [withdrawnAt],
+  )
+
+  const isDeadlinePassed = useMemo(
+    () => availableAtTimestamp <= timeUtils.dateToUnixTimestamp(),
+    [availableAtTimestamp],
+  )
 
   const { days, hours, minutes } = useCountdown(availableAtTimestamp, false)
 
   useEffect(() => {
+    if (isDeadlinePassed) return () => {}
+
     function updateProgress() {
       const now = timeUtils.dateToUnixTimestamp()
       const total = availableAtTimestamp - withdrawnAt
@@ -46,7 +67,21 @@ function PendingWithdrawBannerTimeInfo({
     )
 
     return () => clearInterval(interval)
-  }, [withdrawnAt, availableAtTimestamp])
+  }, [withdrawnAt, availableAtTimestamp, isDeadlinePassed])
+
+  if (isDeadlinePassed)
+    return (
+      <EstimatedDurationText>
+        {activitiesUtils.getEstimatedDuration(
+          // There’s no need to pass an amount for the `withdraw` activity, as
+          // the timing doesn’t depend on the amount.
+          0n,
+          "withdraw",
+          undefined,
+          "requested",
+        )}
+      </EstimatedDurationText>
+    )
 
   return (
     <VStack ml="auto">
@@ -58,14 +93,11 @@ function PendingWithdrawBannerTimeInfo({
         maxW="160px"
         marginLeft="auto"
       />
-      <Text size="md" color="text.tertiary">
-        Est. duration{" "}
-        <Text as="span" size="md" color="text.secondary">
-          {days !== "0" && `${days}d`}
-          {hours !== "0" && `, ${hours}h`}
-          {minutes !== "0" && days === "0" && hours === "0" && `${minutes}m`}
-        </Text>
-      </Text>
+      <EstimatedDurationText>
+        {days !== "0" && `${days}d`}
+        {hours !== "0" && `, ${hours}h`}
+        {minutes !== "0" && days === "0" && hours === "0" && `${minutes}m`}
+      </EstimatedDurationText>
     </VStack>
   )
 }
@@ -131,17 +163,14 @@ export default function WithdrawalStatusBanner({
           <PendingWithdrawBannerTimeInfo withdrawnAt={withdrawnAt} />
         )}
         {status === "pending" && (
-          <Text size="md" color="text.tertiary" ml="auto">
-            Est. duration{" "}
-            <Text as="span" color="text.secondary">
-              {activitiesUtils.getEstimatedDuration(
-                btcAmount,
-                "withdraw",
-                undefined,
-                status,
-              )}
-            </Text>
-          </Text>
+          <EstimatedDurationText>
+            {activitiesUtils.getEstimatedDuration(
+              btcAmount,
+              "withdraw",
+              undefined,
+              status,
+            )}
+          </EstimatedDurationText>
         )}
       </HStack>
     </Card>
