@@ -275,8 +275,8 @@ export default class Account {
       await this.#acreSubgraphApi.getWithdrawalsByOwner(this.#ethereumAddress)
     ).map((withdraw) => {
       let status: WithdrawalStatus = "requested"
-      if (withdraw.amount) status = "initialized"
-      if (withdraw.bitcoinTransactionId) status = "finalized"
+      if (withdraw.initializedAt) status = "initialized"
+      if (withdraw.finalizedAt) status = "finalized"
 
       return {
         ...withdraw,
