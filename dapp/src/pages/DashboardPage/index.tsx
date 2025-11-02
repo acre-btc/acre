@@ -32,19 +32,26 @@ export default function DashboardPage() {
   const { isConnected } = useWallet()
 
   const { data: withdrawals } = useActivities<
-    { withdrawnAt: number; btcAmount: bigint; status: WithdrawStatus }[]
+    {
+      id: string
+      withdrawnAt: number
+      btcAmount: bigint
+      status: WithdrawStatus
+    }[]
   >((activities) => {
     if (!activities) return []
 
     return activities
       .filter(
         (activity) =>
-          activity.type === "withdraw" && activity.status === "requested",
+          activity.type === "withdraw" &&
+          (activity.status === "requested" || activity.status === "pending"),
       )
       .map((activity) => ({
+        id: activity.id,
         withdrawnAt: activity.initializedAt,
         btcAmount: activity.amount,
-        status: "pending",
+        status: activity.status as WithdrawStatus,
       }))
   })
 
@@ -66,7 +73,7 @@ export default function DashboardPage() {
           <VStack as="div" gridColumn={grid.withdrawals} spacing={4}>
             {withdrawals.map((withdrawal) => (
               <WithdrawalStatusBanner
-                key={withdrawal.withdrawnAt}
+                key={withdrawal.id}
                 status={withdrawal.status}
                 btcAmount={withdrawal.btcAmount}
                 withdrawnAt={withdrawal.withdrawnAt}

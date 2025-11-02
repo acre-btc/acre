@@ -35,6 +35,8 @@ export default function EstimatedDuration({
             {activitiesUtils.getEstimatedDuration(
               activity.amount,
               activity.type,
+              undefined,
+              activity.status,
             )}
           </Box>
         </TagLabel>
