@@ -128,29 +128,29 @@ export function getMidasVaultDetails({
           { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],
       },
-      // {
-      //   sectionKey: "tvl",
-      //   label: "Total Value Locked",
-      //   tooltip:
-      //     "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
-      //   items: [
-      //     {
-      //       label: "Active Bitcoin Earning",
-      //       value: formatNumberToCompactString(vaultTvlInUsd, {
-      //         currency: "USD",
-      //         withAutoCompactFormat: true,
-      //       }),
-      //     },
-      //     {
-      //       label: "TVL Cap",
-      //       value: formatNumberToCompactString(tvlCap, {
-      //         currency: "USD",
-      //         withAutoCompactFormat: true,
-      //       }),
-      //     },
-      //     { label: "Protocol Fee", value: "20% of Earned Rewards" },
-      //   ],
-      // },
+      {
+        sectionKey: "tvl",
+        label: "Total Value Locked",
+        tooltip:
+          "Total Value Locked (TVL) is the total amount of assets deposited in the vault.",
+        items: [
+          {
+            label: "Active Bitcoin Earning",
+            value: formatNumberToCompactString(vaultTvlInUsd, {
+              currency: "USD",
+              withAutoCompactFormat: true,
+            }),
+          },
+          {
+            label: "TVL Cap",
+            value: formatNumberToCompactString(tvlCapInUsd, {
+              currency: "USD",
+              withAutoCompactFormat: true,
+            }),
+          },
+          { label: "Protocol Fee", value: "20% of Earned Rewards" },
+        ],
+      },
       {
         sectionKey: "misc",
         items: [
