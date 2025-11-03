@@ -40,6 +40,8 @@ export type VaultDetails = {
 }
 
 type VaultParamDetails = {
+  depositFeePercentage?: number
+  withdrawalFeePercentage?: number
   tvlCapInUsd: number
   vaultTvlInUsd: number
 }
@@ -115,10 +117,14 @@ const VAULT_PROVIDER_TO_DETAILS: Record<
 
 export function VaultDetailsModalBase({
   provider,
+  depositFeePercentage,
+  withdrawalFeePercentage,
   tvlCapInUsd,
   vaultTvlInUsd,
 }: VaultDetailsModalBaseProps) {
   const details = VAULT_PROVIDER_TO_DETAILS[provider]({
+    depositFeePercentage,
+    withdrawalFeePercentage,
     tvlCapInUsd,
     vaultTvlInUsd,
   })

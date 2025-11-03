@@ -1,4 +1,14 @@
 import React from "react"
+import { vaults } from "#/constants"
+import {
+  useCurrencyConversion,
+  useDepositFeePercentage,
+  useModal,
+  useStatistics,
+  useWithdrawalFeePercentage,
+} from "#/hooks"
+import { MODAL_TYPES } from "#/types"
+import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   Box,
   Button,
@@ -19,16 +29,12 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { logPromiseFailure, numbersUtils } from "#/utils"
 import {
   IconArrowUpRight,
   IconChevronRight,
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
-import { vaults } from "#/constants"
-import { useCurrencyConversion, useModal, useStatistics } from "#/hooks"
-import { MODAL_TYPES } from "#/types"
 import { getMidasVaultDetails } from "./MidasVaultDetails"
 import { VaultDetails } from "./VaultDetailsModal"
 
@@ -86,6 +92,8 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
   const { openModal } = useModal()
 
   const provider = vaults.VAULT_PROVIDERS[vault.provider]
+  const { data: depositFeePercentage } = useDepositFeePercentage()
+  const { data: withdrawalFeePercentage } = useWithdrawalFeePercentage()
   const portfolioWeightPercentage = getPercentValue(vault.portfolioWeight, 1)
   const aprPercentage = getPercentValue(vault.apr, 100)
   const tvlCapAsSatoshi = numbersUtils.userAmountToBigInt(
@@ -107,6 +115,8 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
   const handleOpenVaultDetails = () => {
     openModal(MODAL_TYPES.VAULT_DETAILS, {
       provider: vault.provider,
+      depositFeePercentage,
+      withdrawalFeePercentage,
       tvlCapInUsd,
       vaultTvlInUsd: vault.tvl,
     })
@@ -182,6 +192,8 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
 
 function Vaults(props: VaultsRootProps) {
   const statistics = useStatistics()
+  const { data: depositFeePercentage } = useDepositFeePercentage()
+  const { data: withdrawalFeePercentage } = useWithdrawalFeePercentage()
 
   const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
@@ -202,6 +214,7 @@ function Vaults(props: VaultsRootProps) {
     )
   }
 
+  // FIXME: We shouldn't prevent the table from being rendered if the statistics are not available.
   if (statistics.isError) {
     return (
       <VaultsRoot {...props}>
@@ -238,6 +251,8 @@ function Vaults(props: VaultsRootProps) {
       tvlCap: statistics.data.tvl.cap,
       curator: "re7",
       details: getMidasVaultDetails({
+        depositFeePercentage,
+        withdrawalFeePercentage,
         tvlCapInUsd: statistics.data.tvl.cap,
         vaultTvlInUsd: statistics.data.tvl.usdValue,
       }),
