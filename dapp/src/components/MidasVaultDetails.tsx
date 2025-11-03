@@ -1,9 +1,13 @@
-import React from "react"
-import { externalHref, vaults } from "#/constants"
-import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { IconArrowUpRight } from "@tabler/icons-react"
+import { externalHref, vaults } from "#/constants"
 import { addressUtils } from "#/utils"
+import { Button, Icon, Link, Text } from "@chakra-ui/react"
+import { IconArrowUpRight } from "@tabler/icons-react"
+
+import {
+  formatNumberToCompactString,
+  numberToLocaleString,
+} from "#/utils/numbersUtils"
 import BlockExplorerLink from "./shared/BlockExplorerLink"
 
 export default function MidasVaultDetailsDescription() {
@@ -76,11 +80,13 @@ export default function MidasVaultDetailsDescription() {
 }
 
 export function getMidasVaultDetails({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  tvlCapInUsd: tvlCap,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  depositFeePercentage,
+  withdrawalFeePercentage,
+  tvlCapInUsd,
   vaultTvlInUsd,
 }: {
+  depositFeePercentage?: number
+  withdrawalFeePercentage?: number
   tvlCapInUsd: number
   vaultTvlInUsd: number
 }) {
@@ -106,10 +112,18 @@ export function getMidasVaultDetails({
         tooltip:
           "Fees are charged to cover the costs of managing and operating the vault.",
         items: [
-          { label: "Deposit Fee", value: "0.10%" },
+          {
+            label: "Deposit Fee",
+            value:
+              depositFeePercentage !== undefined
+                ? `${numberToLocaleString(depositFeePercentage, 2)}%`
+                : "Loading...",
+          },
           {
             label: "Withdrawal Fee",
-            value: "0.45%",
+            value: withdrawalFeePercentage
+              ? `${numberToLocaleString(withdrawalFeePercentage, 2)}%`
+              : "Loading...",
           },
           { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],

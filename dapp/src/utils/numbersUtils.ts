@@ -2,7 +2,7 @@ function roundUp(amount: number, desiredDecimals = 2): number {
   return Math.ceil(amount * 10 ** desiredDecimals) / 10 ** desiredDecimals
 }
 
-const numberToLocaleString = (
+export const numberToLocaleString = (
   value: string | number,
   desiredDecimals = 0,
 ): string => {
