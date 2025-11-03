@@ -3,13 +3,13 @@ type CommonActivityData = {
   initializedAt: number
   finalizedAt?: number
   amount: bigint
-  status: "completed" | "pending" | "requested"
+  status: "completed" | "pending" | "requested" | "migrated"
 }
 
 type ConditionalActivityData =
   | {
       type: "deposit"
-      txHash: string
+      txHash?: string
     }
   | {
       type: "withdraw"

@@ -97,3 +97,30 @@ dataSources:
         - function: submitRedemptionProof((bytes4,bytes,bytes,bytes4),(bytes,uint256,bytes,bytes32,bytes),(bytes32,uint32,uint64),bytes20)
           handler: handleSubmitRedemptionProofCall
       file: ./src/tbtc-bridge.ts
+  - kind: ethereum
+    name: AcreBTC
+    network: {{network}}
+    context:
+      stbtcContractAddress:
+        type: Bytes
+        data: "{{stbtc.address}}"
+    source:
+      address: "{{acrebtc.address}}"
+      abi: AcreBTC
+      startBlock: {{acrebtc.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Deposit
+        - Event
+      abis:
+        - name: AcreBTC
+          file: ./abis/acreBTC.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDeposit
+          receipt: true
+      file: ./src/acrebtc.ts

@@ -168,29 +168,47 @@ export default class Account {
     )
 
     const initializedOrFinalizedDepositsMap = new Map(
-      subgraphData.map((data) => [data.depositKey, data]),
+      subgraphData
+        .filter((d) => d.status !== DepositStatus.Migrated)
+        .map((data) => [data.depositKey, data]),
     )
 
     const tbtcData = await this.#tbtc.getDepositsByOwner(this.#ethereumAddress)
 
-    return tbtcData.map((deposit) => {
-      const depositFromSubgraph = initializedOrFinalizedDepositsMap.get(
-        deposit.depositKey,
-      )
+    const migratedDeposits = subgraphData
+      .filter((d) => d.status === DepositStatus.Migrated)
+      .map((migratedDeposit) => ({
+        // In that case this is not actually the deposit key.It's a migrated
+        // deposit and the id is `<txHash>_<log_index>`.
+        id: migratedDeposit.depositKey,
+        // For migrated deposit the bitcoin tx hash is null.
+        txHash: migratedDeposit.txHash,
+        amount: toSatoshi(migratedDeposit.amountToDeposit),
+        status: migratedDeposit.status,
+        initializedAt: migratedDeposit.initializedAt,
+        finalizedAt: migratedDeposit.initializedAt,
+      }))
 
-      const amount = toSatoshi(
-        depositFromSubgraph?.amountToDeposit || deposit.initialAmount,
-      )
+    return tbtcData
+      .map((deposit) => {
+        const depositFromSubgraph = initializedOrFinalizedDepositsMap.get(
+          deposit.depositKey,
+        )
 
-      return {
-        id: deposit.depositKey,
-        txHash: deposit.txHash,
-        amount,
-        status: deposit.status,
-        initializedAt: deposit.initializedAt,
-        finalizedAt: depositFromSubgraph?.finalizedAt,
-      }
-    })
+        const amount = toSatoshi(
+          depositFromSubgraph?.amountToDeposit || deposit.initialAmount,
+        )
+
+        return {
+          id: deposit.depositKey,
+          txHash: deposit.txHash,
+          amount,
+          status: deposit.status,
+          initializedAt: deposit.initializedAt,
+          finalizedAt: depositFromSubgraph?.finalizedAt,
+        }
+      })
+      .concat(migratedDeposits)
   }
 
   /**
@@ -257,12 +275,12 @@ export default class Account {
       await this.#acreSubgraphApi.getWithdrawalsByOwner(this.#ethereumAddress)
     ).map((withdraw) => {
       let status: WithdrawalStatus = "requested"
-      if (withdraw.amount) status = "initialized"
-      if (withdraw.bitcoinTransactionId) status = "finalized"
+      if (withdraw.initializedAt) status = "initialized"
+      if (withdraw.finalizedAt) status = "finalized"
 
       return {
         ...withdraw,
-        amount: withdraw.amount ? toSatoshi(withdraw.amount) : undefined,
+        amount: toSatoshi(withdraw.amount),
         requestedAmount: toSatoshi(withdraw.requestedAmount),
         status,
       }

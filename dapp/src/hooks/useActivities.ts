@@ -30,32 +30,31 @@ export default function useActivities<TSelected = Activity[]>(
       if (!acre) return undefined
 
       const deposits: Activity[] = (await acre.account.getDeposits()).map(
-        (deposit) => ({
-          ...deposit,
-          status:
-            deposit.status === DepositStatus.Finalized
-              ? "completed"
-              : "pending",
-          type: "deposit",
-        }),
+        (deposit) => {
+          let status: Activity["status"] = "pending"
+          if (deposit.status === DepositStatus.Finalized) status = "completed"
+          if (deposit.status === DepositStatus.Migrated) status = "migrated"
+
+          return {
+            ...deposit,
+            status,
+            type: "deposit",
+          }
+        },
       )
 
       const withdrawals: Activity[] = (await acre.account.getWithdrawals()).map(
         (withdraw) => {
           const status = SDK_STATUS_TO_DAPP_STATUS[withdraw.status]
 
-          let initializedAt: number = withdraw.requestedAt
-          if (status === "pending") initializedAt = withdraw.initializedAt!
+          const initializedAt: number = withdraw.requestedAt
 
           return {
             id: withdraw.id,
             initializedAt,
             txHash: withdraw.bitcoinTransactionId,
             status,
-            amount:
-              status === "requested"
-                ? withdraw.requestedAmount
-                : withdraw.amount!,
+            amount: withdraw.amount,
             type: "withdraw",
           }
         },

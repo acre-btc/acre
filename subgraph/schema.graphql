@@ -2,6 +2,7 @@ enum EventType {
   Requested
   Initialized
   Finalized
+  Migrated
 }
 
 interface ActivityData @key(fields: "id") {

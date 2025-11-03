@@ -492,7 +492,7 @@ describe("Account", () => {
     const expectedWithdrawals = [
       {
         ...withdrawals[0],
-        amount: undefined,
+        amount: satoshiConverter.toSatoshi(withdrawals[0].amount),
         requestedAmount: satoshiConverter.toSatoshi(
           withdrawals[0].requestedAmount,
         ),
@@ -500,7 +500,7 @@ describe("Account", () => {
       },
       {
         ...withdrawals[1],
-        amount: satoshiConverter.toSatoshi(withdrawals[1].amount!),
+        amount: satoshiConverter.toSatoshi(withdrawals[1].amount),
         requestedAmount: satoshiConverter.toSatoshi(
           withdrawals[1].requestedAmount,
         ),

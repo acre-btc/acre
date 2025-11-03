@@ -51,7 +51,7 @@ export const acreSubgraphApiParsedWithdrawalsData = [
   {
     id: "1",
     bitcoinTransactionId: undefined,
-    amount: undefined,
+    amount: 14947630922693266n,
     requestedAmount: 14985000000000000n,
     requestedAt: 1759706723,
     initializedAt: undefined,

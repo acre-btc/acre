@@ -31,7 +31,10 @@ type DepositDataResponse = {
       /**
        * Events associated with a given deposit.
        */
-      events: { type: "Initialized" | "Finalized"; timestamp: string }[]
+      events: {
+        type: "Initialized" | "Finalized" | "Migrated"
+        timestamp: string
+      }[]
     }[]
   }
 }
@@ -80,6 +83,7 @@ type WithdrawalsDataResponse = {
       bitcoinTransactionId: string | null
       amount: string
       requestedAmount: string
+      amountToRedeem: string
       events: {
         type: "Requested" | "Initialized" | "Finalized"
         timestamp: string
@@ -97,15 +101,14 @@ type Withdrawal = {
    */
   id: string
   /**
-   * Amount of tBTC tokens requested for withdrawal.
+   * Amount of tBTC tokens requested for withdrawal including tBTC exit fees.
    */
   requestedAmount: bigint
   /**
    * Actual amount of tBTC tokens being withdrawn. This may differ from
-   * `requestedAmount` due to fees. Only available after the
-   * withdrawal has been initialized.
+   * `requestedAmount` due to fees.
    */
-  amount?: bigint
+  amount: bigint
   /**
    * Bitcoin transaction hash (or transaction ID) in the same byte order as used
    * by the Bitcoin block explorers. Only available after the withdrawal has been
@@ -153,6 +156,7 @@ export function buildGetWithdrawalsByOwnerQuery(owner: ChainIdentifier) {
         id
         bitcoinTransactionId
         requestedAmount
+        amountToRedeem
         amount
         events(orderBy: timestamp, orderDirection: asc) {
           timestamp
@@ -199,10 +203,13 @@ export default class AcreSubgraphApi extends HttpApi {
         id,
       } = deposit
 
-      // The subgraph indexes only initialized or finalized deposits.
-      const status = events.some(({ type }) => type === "Finalized")
-        ? DepositStatus.Finalized
-        : DepositStatus.Initialized
+      // The subgraph indexes only initialized, finalized or migrated deposits.
+      let status = DepositStatus.Initialized
+      if (events.some(({ type }) => type === "Finalized"))
+        status = DepositStatus.Finalized
+      if (events.some(({ type }) => type === "Migrated"))
+        status = DepositStatus.Migrated
+
       const [initializedEvent, finalizedEvent] = events
       const initializedAt = parseInt(initializedEvent.timestamp, 10)
       const finalizedAt = finalizedEvent
@@ -245,7 +252,14 @@ export default class AcreSubgraphApi extends HttpApi {
       const { id, events } = withdraw
       const bitcoinTransactionId = withdraw.bitcoinTransactionId ?? undefined
       const requestedAmount = BigInt(withdraw.requestedAmount)
-      const amount = withdraw.amount ? BigInt(withdraw.amount) : undefined
+
+      // The `amount` field from subgraph is available once the bridging process
+      // on the tBTC side has finished. If it's not available let's use the
+      // `amountToRedeem` field, available immediately after withdrawal request
+      // initialization.
+      const amount = withdraw.amount
+        ? BigInt(withdraw.amount)
+        : BigInt(withdraw.amountToRedeem)
 
       const [requestedEvent, initializedEvent, finalizedEvent] = events
       const requestedAt = parseInt(requestedEvent.timestamp, 10)

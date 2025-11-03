@@ -1,5 +1,18 @@
 import React from "react"
-import { HStack, Card, CardBody, Box, Flex, Icon, Text } from "@chakra-ui/react"
+import {
+  HStack,
+  Card,
+  CardBody,
+  Box,
+  Flex,
+  Icon,
+  Text,
+  Tag,
+  TagLeftIcon,
+  TagLabel,
+} from "@chakra-ui/react"
+import { IconCheck, IconArrowUpRight } from "@tabler/icons-react"
+
 import {
   Pagination,
   PaginationButton,
@@ -11,7 +24,6 @@ import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import { timeUtils, activitiesUtils } from "#/utils"
 import { Activity } from "#/types"
 import BlockExplorerLink from "#/components/shared/BlockExplorerLink"
-import { IconArrowUpRight } from "@tabler/icons-react"
 import { useActivities, useMobileMode } from "#/hooks"
 import { semanticTokens } from "#/theme/utils"
 import EstimatedDuration from "./EstimatedDuration"
@@ -19,9 +31,8 @@ import EstimatedDuration from "./EstimatedDuration"
 const BLOCK_EXPLORER_CELL_MIN_WIDTH = 16
 
 export default function TransactionTable() {
-  const { data } = useActivities((activities) =>
-    activities?.filter((_) => _.status !== "requested"),
-  )
+  const { data } = useActivities()
+
   const isMobileMode = useMobileMode()
 
   return (
@@ -90,6 +101,17 @@ export default function TransactionTable() {
                     )}
                   </Flex>
                 </Flex>
+                {activitiesUtils.isActivityMigrated(activity) && (
+                  <Tag variant="solid">
+                    <TagLeftIcon
+                      as={IconCheck}
+                      color="acre.50"
+                      mr={2}
+                      boxSize={6}
+                    />
+                    <TagLabel>Deposit migrated from stBTC</TagLabel>
+                  </Tag>
+                )}
                 <EstimatedDuration activity={activity} />
               </CardBody>
             </Card>
