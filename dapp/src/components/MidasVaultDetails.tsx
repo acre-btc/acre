@@ -149,7 +149,6 @@ export function getMidasVaultDetails({
               withAutoCompactFormat: true,
             }),
           },
-          { label: "Protocol Fee", value: "20% of Earned Rewards" },
         ],
       },
       {
