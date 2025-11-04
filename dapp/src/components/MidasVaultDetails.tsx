@@ -127,6 +127,7 @@ export function getMidasVaultDetails({
       },
       {
         sectionKey: "transparency",
+        label: "Transparency",
         items: [
           {
             label: "Vault Address",
@@ -181,9 +182,7 @@ export function getMidasVaultDetails({
                   fontWeight="semibold"
                   marginRight={1}
                 >
-                  {addressUtils.truncateAddress(
-                    transparency.ONCHAIN_WALLETS,
-                  )}
+                  {addressUtils.truncateAddress(transparency.ONCHAIN_WALLETS)}
                 </Text>
                 <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
               </DeBankLink>
@@ -208,7 +207,7 @@ export function getMidasVaultDetails({
               </DeBankLink>
             ),
           },
-        ]
+        ],
       },
       {
         sectionKey: "misc",
@@ -248,8 +247,12 @@ export function getMidasVaultDetails({
             value: "Bitcoin, tBTC",
           },
           {
-            label: "Withdrawal Cool Down Time",
-            value: "14 days",
+            label: "Lockup",
+            value: "None",
+          },
+          {
+            label: "Withdrawal Cooldown Time",
+            value: "< 72 hours (14 days after Dec 2025)",
           },
         ],
       },
