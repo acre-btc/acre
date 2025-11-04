@@ -1,6 +1,6 @@
 import React from "react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { externalHref, vaults } from "#/constants"
+import { externalHref, transparency, vaults } from "#/constants"
 import { addressUtils } from "#/utils"
 import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import { IconArrowUpRight } from "@tabler/icons-react"
@@ -10,6 +10,7 @@ import {
   numberToLocaleString,
 } from "#/utils/numbersUtils"
 import BlockExplorerLink from "./shared/BlockExplorerLink"
+import DeBankLink from "./shared/DeBankLink"
 
 export default function MidasVaultDetailsDescription() {
   return (
@@ -152,6 +153,91 @@ export function getMidasVaultDetails({
         ],
       },
       {
+        sectionKey: "transparency",
+        items: [
+          {
+            label: "Vault Address",
+            value: (
+              <BlockExplorerLink
+                type="address"
+                chain="ethereum"
+                id={vaults.VAULT_PROVIDERS.tbtc.address}
+              >
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    vaults.VAULT_PROVIDERS.tbtc.address,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </BlockExplorerLink>
+            ),
+          },
+          {
+            label: "Assets to be Deployed",
+            value: (
+              <DeBankLink address={transparency.ASSETS_TO_BE_DEPLOYED}>
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    transparency.ASSETS_TO_BE_DEPLOYED,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </DeBankLink>
+            ),
+          },
+          {
+            label: "Onchain Wallets",
+            value: (
+              <DeBankLink address={transparency.ONCHAIN_WALLETS}>
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    transparency.ONCHAIN_WALLETS,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </DeBankLink>
+            ),
+          },
+          {
+            label: "Available Liquidity Buffer",
+            value: (
+              <DeBankLink address={transparency.AVAILABLE_LIQUIDITY_BUFFER}>
+                <Text
+                  size="sm"
+                  as="span"
+                  color="text.primary"
+                  fontWeight="semibold"
+                  marginRight={1}
+                >
+                  {addressUtils.truncateAddress(
+                    transparency.AVAILABLE_LIQUIDITY_BUFFER,
+                  )}
+                </Text>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </DeBankLink>
+            ),
+          },
+        ]
+      },
+      {
         sectionKey: "misc",
         items: [
           {
@@ -182,29 +268,6 @@ export function getMidasVaultDetails({
               >
                 Midas
               </Button>
-            ),
-          },
-          {
-            label: "Vault Address",
-            value: (
-              <BlockExplorerLink
-                type="address"
-                chain="ethereum"
-                id={vaults.VAULT_PROVIDERS.tbtc.address}
-              >
-                <Text
-                  size="sm"
-                  as="span"
-                  color="text.primary"
-                  fontWeight="semibold"
-                  marginRight={1}
-                >
-                  {addressUtils.truncateAddress(
-                    vaults.VAULT_PROVIDERS.tbtc.address,
-                  )}
-                </Text>
-                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
-              </BlockExplorerLink>
             ),
           },
           {
