@@ -15,8 +15,8 @@ import DeBankLink from "./shared/DeBankLink"
 export default function MidasVaultDetailsDescription() {
   return (
     <>
-      Put your Bitcoin to work with market-neutral DeFi strategy designed for
-      security and transparency.{" "}
+      Put your Bitcoin to work with this market-neutral DeFi strategy, designed
+      for security and transparency.{" "}
       <Link
         fontWeight="bold"
         textDecoration="underline"
@@ -25,20 +25,19 @@ export default function MidasVaultDetailsDescription() {
       >
         Midas
       </Link>{" "}
-      provides an algorithmic infrastructure and 24/7 portfolio monitoring. Risk
-      and strategy management comes from{" "}
+      provides algorithmic infrastructure and 24/7 portfolio monitoring. Risk
+      and strategy management are handled by{" "}
       <Link
         fontWeight="bold"
         textDecoration="underline"
         href={externalHref.RE7}
         isExternal
       >
-        Re7Labs
+        Re7 Labs
       </Link>
-      , the innovation arm of Re7 Capital, known for their on-chain risk
-      curation and DeFi Ratings framework. Risk parameters for the vault have
-      been reviewed and approved Acre Security Council and your Bitcoin will be
-      deployed according to the{" "}
+      , the innovation arm of Re7 Capital and creators of the Re7 DeFi Ratings
+      framework. Risk parameters for the vault have been reviewed and approved
+      by the Acre Security Council, following the{" "}
       <Link
         fontWeight="bold"
         textDecoration="underline"
@@ -46,37 +45,11 @@ export default function MidasVaultDetailsDescription() {
         isExternal
       >
         Acre Deployment Policy
-      </Link>{" "}
-      to the following protocols:{" "}
-      <Link
-        fontWeight="bold"
-        textDecoration="underline"
-        href={externalHref.AAVE}
-        isExternal
-      >
-        Aave
       </Link>
-      ,{" "}
-      <Link
-        fontWeight="bold"
-        textDecoration="underline"
-        href={externalHref.GIZA}
-        isExternal
-      >
-        Giza
-      </Link>
-      ,{" "}
-      <Link
-        fontWeight="bold"
-        textDecoration="underline"
-        href={externalHref.RE7_CAPITAL}
-        isExternal
-      >
-        Re7
-      </Link>
-      . Protocol Fee of 20% of the earned yield will go to the Acre DAO and its
-      partners. Deposits and withdrawals always under your direct control.
-      Deployments, rewards and redemptions are fully on-chain and auditable.
+      . A protocol fee of 20% on earned rewards will go to the Acre DAO and its
+      partners. Deposits and withdrawals are always under your direct control,
+      and all deployments, rewards, and redemptions are fully on-chain and
+      auditable.
     </>
   )
 }
