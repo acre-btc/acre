@@ -15,8 +15,9 @@ import DeBankLink from "./shared/DeBankLink"
 export default function MidasVaultDetailsDescription() {
   return (
     <>
-      Put your Bitcoin to work with this market-neutral DeFi strategy, designed
-      for security and transparency.{" "}
+      This BTC-neutral vault generates yield from multiple sources: DeFi
+      (liquidity provision + delta-neutral strategies), options premia, and BTC
+      staking (Starknet).{" "}
       <Link
         fontWeight="bold"
         textDecoration="underline"
@@ -66,7 +67,7 @@ export function getMidasVaultDetails({
   vaultTvlInUsd: number
 }) {
   return {
-    vaultName: "Market-Neutral Bitcoin DeFi Vault",
+    vaultName: "BTC-Neutral Blended Yield",
     description: <MidasVaultDetailsDescription />,
     icon: TbtcIcon,
     sections: [

@@ -35,7 +35,7 @@ export default function TransactionHistory(props: StackProps) {
   return (
     <VStack spacing={6} w="full" {...props}>
       <Text size="md" w="full">
-        Transactions
+        Your Transactions
       </Text>
       <TransactionHistoryContent />
     </VStack>
