@@ -13,8 +13,8 @@ function RewardsEarnedCard(props: RewardsEarnedCardProps) {
   return (
     <BitcoinAmountFeaturedMetricsCard
       icon={IconGift}
-      label="Rewards Earned"
-      infoContent="Total rewards earned in Acre"
+      label="BTC Earned"
+      infoContent="Total BTC rewards earned in Acre. Does NOT include Acre Points or Acre v1 Rewards)"
       {...props}
     />
   )

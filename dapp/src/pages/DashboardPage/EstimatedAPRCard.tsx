@@ -13,8 +13,8 @@ function EstimatedAPRCard(props: EstimatedAPRCardProps) {
   return (
     <FeaturedMetricsCard
       icon={IconTrendingUp}
-      label="APR (Est.)"
-      infoContent="Estimated annual percentage rate for your deposits"
+      label="Target APY"
+      infoContent="Target APY is estimated on past performance. Live APY updated every 2 weeks."
       value={["14%"]}
       {...props}
     />

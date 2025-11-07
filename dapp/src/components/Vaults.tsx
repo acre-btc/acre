@@ -74,8 +74,8 @@ function VaultsRoot(props: VaultsRootProps) {
           <Thead>
             <Tr>
               <Th>Name</Th>
-              <Th>Portfolio weight</Th>
-              <Th>APR</Th>
+              <Th>Portfolio Weight</Th>
+              <Th>APY</Th>
               <Th>TVL</Th>
               <Th>Risk Manager</Th>
             </Tr>
