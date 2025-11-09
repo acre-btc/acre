@@ -27,6 +27,8 @@ dataSources:
       abis:
         - name: BitcoinDepositor
           file: ./abis/BitcoinDepositor.json
+        - name: TbtcBridge
+          file: ./abis/TbtcBridge.json
       eventHandlers:
         - event: DepositInitialized(indexed uint256,indexed address,indexed address,uint256)
           handler: handleDepositInitialized
@@ -51,12 +53,16 @@ dataSources:
         - Deposit
         - Withdraw
         - Event
+        - MidasWithdrawRequest
       abis:
         - name: WithdrawalQueue
           file: ./abis/WithdrawalQueue.json
       eventHandlers:
         - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
           handler: handleRedeemAndBridgeRequested
+          receipt: true
+        - event: RedeemRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256)
+          handler: handleRedeemRequested
           receipt: true
       callHandlers:
         - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
@@ -116,11 +122,15 @@ dataSources:
         - DepositOwner
         - Deposit
         - Event
+        - Withdraw
       abis:
         - name: AcreBTC
           file: ./abis/acreBTC.json
       eventHandlers:
         - event: Deposit(indexed address,indexed address,uint256,uint256)
           handler: handleDeposit
+          receipt: true
+        - event: RedemptionRequested(indexed uint256,indexed address,indexed address,address,uint256)
+          handler: handleRedemptionRequested
           receipt: true
       file: ./src/acrebtc.ts

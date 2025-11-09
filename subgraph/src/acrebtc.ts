@@ -1,9 +1,13 @@
 import { Address, dataSource } from "@graphprotocol/graph-ts"
-import { Deposit as DepositEvent } from "../generated/AcreBTC/AcreBTC"
+import {
+  Deposit as DepositEvent,
+  RedemptionRequested as RedemptionRequestedEvent,
+} from "../generated/AcreBTC/AcreBTC"
 import {
   getOrCreateDepositOwner,
   getOrCreateDeposit,
   getOrCreateEvent,
+  getOrCreateWithdraw,
 } from "./utils"
 
 // eslint-disable-next-line import/prefer-default-export
@@ -37,4 +41,26 @@ export function handleDeposit(event: DepositEvent): void {
   depositOwnerEntity.save()
   depositEntity.save()
   eventEntity.save()
+}
+
+export function handleRedemptionRequested(
+  event: RedemptionRequestedEvent,
+): void {
+  const depositOwnerEntity = getOrCreateDepositOwner(event.params.owner)
+
+  const withdrawEntity = getOrCreateWithdraw(event.params.requestId.toString())
+  withdrawEntity.depositOwner = depositOwnerEntity.id
+  withdrawEntity.shares = event.params.shares
+
+  const redemptionRequestedEvent = getOrCreateEvent(
+    `${event.transaction.hash.toHexString()}_RedemptionRequested`,
+  )
+
+  redemptionRequestedEvent.activity = withdrawEntity.id
+  redemptionRequestedEvent.timestamp = event.block.timestamp
+  redemptionRequestedEvent.type = "Requested"
+
+  depositOwnerEntity.save()
+  withdrawEntity.save()
+  redemptionRequestedEvent.save()
 }
