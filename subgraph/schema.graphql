@@ -35,10 +35,18 @@ type Withdraw implements ActivityData @entity {
   depositOwner: DepositOwner!
   events: [Event!] @derivedFrom(field: "activity")
   amount: BigInt
+  shares: BigInt
   requestedAmount: BigInt
   amountToRedeem: BigInt
   bitcoinTransactionId: String
   redeemerOutputScript: String
+  receiver: String
+  midasWithdrawRequest: MidasWithdrawRequest @derivedFrom(field: "withdraw")
+}
+
+type MidasWithdrawRequest @entity {
+  id: ID!
+  withdraw: Withdraw!
 }
 
 type Event @entity {
