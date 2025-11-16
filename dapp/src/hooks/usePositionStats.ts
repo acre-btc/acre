@@ -1,32 +1,32 @@
-import { useAcreContext } from "#/acre-react/hooks"
-import { queryKeysFactory } from "#/constants"
-import { useQuery } from "@tanstack/react-query"
+import { useMemo } from "react"
+import useActivities from "./useActivities"
+import useBitcoinPosition from "./useBitcoinPosition"
 
 export default function usePositionStats() {
-  const { acre, isInitialized, isConnected } = useAcreContext()
+  const { data, isLoading } = useActivities()
+  const { data: position, isLoading: isLoadingBitcoinPosition } =
+    useBitcoinPosition()
 
-  return useQuery({
-    queryKey: [...queryKeysFactory.userKeys.positionStats()],
-    queryFn: async () => {
-      if (!acre) throw new Error("Acre SDK not available")
+  const positionStats = useMemo(() => {
+    if (!data || !position) return undefined
 
-      const currentBalance = await acre.account.estimatedBitcoinBalance()
-      const withdrawals = await acre.account.getWithdrawals()
-      const deposits = await acre.account.getDeposits()
+    const currentBalance = position.estimatedBitcoinBalance
+    const withdrawals = data.filter((activity) => activity.type === "withdraw")
+    const deposits = data.filter((activity) => activity.type === "deposit")
 
-      const sumOfWithdrawals = withdrawals.reduce(
-        (sum, withdrawal) => sum + withdrawal.amount,
-        0n,
-      )
-      const sumOfDeposits = deposits.reduce(
-        (sum, deposit) => sum + deposit.amount,
-        0n,
-      )
+    const sumOfWithdrawals = withdrawals.reduce(
+      (sum, withdrawal) => sum + withdrawal.amount,
+      0n,
+    )
+    const sumOfDeposits = deposits.reduce(
+      (sum, deposit) => sum + deposit.amount,
+      0n,
+    )
 
-      const earned = currentBalance + sumOfWithdrawals - sumOfDeposits
+    const earned = currentBalance + sumOfWithdrawals - sumOfDeposits
 
-      return { deposited: currentBalance, earned: earned < 0n ? 0n : earned }
-    },
-    enabled: isInitialized && isConnected && !!acre,
-  })
+    return { deposited: sumOfDeposits, earned: earned < 0n ? 0n : earned }
+  }, [data, position])
+
+  return { data: positionStats, isLoading, isLoadingBitcoinPosition }
 }
