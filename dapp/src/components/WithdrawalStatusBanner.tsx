@@ -45,6 +45,7 @@ function PendingWithdrawBannerTimeInfo({
   )
 
   const { days, hours, minutes } = useCountdown(availableAtTimestamp, false)
+  const totalHours = Number(days) * 24 + Number(hours)
 
   useEffect(() => {
     if (isDeadlinePassed) return () => {}
@@ -94,9 +95,8 @@ function PendingWithdrawBannerTimeInfo({
         marginLeft="auto"
       />
       <EstimatedDurationText>
-        {days !== "0" && `${days}d`}
-        {hours !== "0" && `, ${hours}h`}
-        {minutes !== "0" && days === "0" && hours === "0" && `${minutes}m`}
+        {totalHours !== 0 && `${hours}h`}
+        {minutes !== "0" && `${minutes}m`}
       </EstimatedDurationText>
     </VStack>
   )
