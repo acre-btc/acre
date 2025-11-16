@@ -72,10 +72,10 @@ export function getMidasVaultDetails({
     icon: TbtcIcon,
     sections: [
       {
-        sectionKey: "apr",
-        label: "APR",
+        sectionKey: "apy",
+        label: "APY",
         tooltip:
-          "Annual Percentage Rate (APR) is the annual rate of return earned on an investment.",
+          "Annual Percentage Yield (APY) is the annual rate of return earned on an investment.",
         items: [
           { label: "Annual", value: "14% (est.)" },
           { label: "Monthly", value: "1.09% (est.)" },
