@@ -15,7 +15,7 @@ export type WithdrawStatus = Extract<
 >
 
 const PENDING_STATE_TOOLTIP_CONTENT =
-  "Your withdrawal request has been submitted and is now being processed. The requested funds will be available for withdrawal in approximately 72 hours."
+  "Your withdrawal is being processed. The funds will be released and are expected to arrive in your wallet within approximately 72 hours."
 
 function EstimatedDurationText({ children }: { children: React.ReactNode }) {
   return (
@@ -131,7 +131,7 @@ export default function WithdrawalStatusBanner({
 
         <VStack alignItems="flex-start" spacing={0}>
           <Text size="md" as={HStack} spacing="2">
-            <Text>Withdrawal Request in Progress</Text>
+            <Text>Withdrawal in Progress</Text>
             {status === "requested" && (
               <TooltipIcon
                 as="div"
@@ -155,7 +155,6 @@ export default function WithdrawalStatusBanner({
               {numbersUtils.numberToLocaleString(usdAmount ?? 0, 2)}
               {") "}
             </Text>
-            {status === "pending" && "being withdrawn."}
           </Text>
         </VStack>
 
