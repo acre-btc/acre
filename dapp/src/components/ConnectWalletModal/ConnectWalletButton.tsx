@@ -289,7 +289,7 @@ export default function ConnectWalletButton({
             isDisabled={connector.isDisabled}
           >
             <Flex flex="1">
-              <Text size="lg" flex={1} fontWeight="semibold">
+              <Text size="lg" fontWeight="semibold">
                 {label}
               </Text>
               {connectorIdToLabel[connector.id] ?? null}
