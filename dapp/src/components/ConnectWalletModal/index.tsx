@@ -56,7 +56,9 @@ export function ConnectWalletModalBase({
           }}
         />
       )}
-      <ModalHeader>{`Select your ${isEmbed ? "account" : "wallet"}`}</ModalHeader>
+      <ModalHeader>
+        {isEmbed ? "Select your account" : "Connect wallet"}
+      </ModalHeader>
 
       <ModalBody gap={0}>
         <ConnectWalletAlert type={type} />
