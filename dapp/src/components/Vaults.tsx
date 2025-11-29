@@ -75,7 +75,7 @@ function VaultsRoot(props: VaultsRootProps) {
             <Tr>
               <Th>Name</Th>
               <Th>Portfolio Weight</Th>
-              <Th>APY</Th>
+              <Th>NET APY</Th>
               <Th>TVL</Th>
               <Th>Risk Manager</Th>
             </Tr>
@@ -246,7 +246,7 @@ function Vaults(props: VaultsRootProps) {
     {
       provider: "tbtc",
       portfolioWeight: 1,
-      apr: 14,
+      apr: 11,
       tvl: statistics.data.tvl.usdValue,
       tvlCap: statistics.data.tvl.cap,
       curator: "re7",

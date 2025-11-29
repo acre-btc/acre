@@ -77,9 +77,10 @@ export function getMidasVaultDetails({
         tooltip:
           "Annual Percentage Yield (APY) is the annual rate of return earned on an investment.",
         items: [
-          { label: "Annual", value: "14% (est.)" },
-          { label: "Monthly", value: "1.09% (est.)" },
-          { label: "Weekly", value: "0.25% (est.)" },
+          { label: "Gross Annual", value: "14% (est.)" },
+          { label: "Net Annual", value: "11% (est.)" },
+          { label: "Net Monthly", value: "0.87% (est.)" },
+          { label: "Net Weekly", value: "0.20% (est.)" },
         ],
       },
       {
