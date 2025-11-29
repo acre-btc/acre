@@ -24,9 +24,16 @@ export default function usePositionStats() {
     )
 
     const earned = currentBalance + sumOfWithdrawals - sumOfDeposits
+    const deposited = sumOfDeposits - sumOfWithdrawals
 
-    return { deposited: sumOfDeposits, earned: earned < 0n ? 0n : earned }
+    return {
+      deposited: deposited < 0n ? 0n : deposited,
+      earned: earned < 0n ? 0n : earned,
+    }
   }, [data, position])
 
-  return { data: positionStats, isLoading, isLoadingBitcoinPosition }
+  return {
+    data: positionStats,
+    isLoading: isLoading || isLoadingBitcoinPosition,
+  }
 }
