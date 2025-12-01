@@ -132,7 +132,7 @@ export function getMidasVaultDetails({
         label: "Transparency",
         items: [
           {
-            label: "Vault Address",
+            label: "BTC-Neutral Blended Yield Vault",
             value: (
               <BlockExplorerLink
                 type="address"
