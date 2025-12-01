@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react"
-import { ModalBody, ModalHeader, ModalCloseButton } from "@chakra-ui/react"
+import {
+  ModalBody,
+  ModalHeader,
+  ModalCloseButton,
+  ModalFooter,
+  Link,
+  Button,
+  Icon,
+  Text,
+} from "@chakra-ui/react"
 import {
   useConnectors,
   useIsEmbed,
@@ -8,7 +17,8 @@ import {
   useWalletConnectionAlert,
 } from "#/hooks"
 import { OrangeKitConnector, BaseModalProps, OnSuccessCallback } from "#/types"
-import { wallets } from "#/constants"
+import { externalHref, wallets } from "#/constants"
+import { IconArrowUpRight } from "@tabler/icons-react"
 import withBaseModal from "../ModalRoot/withBaseModal"
 import ConnectWalletButton from "./ConnectWalletButton"
 import ConnectWalletAlert from "./ConnectWalletAlert"
@@ -56,7 +66,9 @@ export function ConnectWalletModalBase({
           }}
         />
       )}
-      <ModalHeader>{`Select your ${isEmbed ? "account" : "wallet"}`}</ModalHeader>
+      <ModalHeader>
+        {isEmbed ? "Select your account" : "Connect wallet"}
+      </ModalHeader>
 
       <ModalBody gap={0}>
         <ConnectWalletAlert type={type} />
@@ -73,6 +85,28 @@ export function ConnectWalletModalBase({
           />
         ))}
       </ModalBody>
+      <ModalFooter display="block">
+        <Text size="md" fontWeight="600">
+          Having trouble?
+        </Text>
+        <Text size="md" fontWeight="400">
+          Check out our{" "}
+          <Button
+            as={Link}
+            href={externalHref.WALLET_GUIDE}
+            isExternal
+            variant="link"
+            fontWeight="400"
+            textDecoration="underline"
+            rightIcon={
+              <Icon as={IconArrowUpRight} color="oldPalette.brand.400" />
+            }
+            fontSize="inherit"
+          >
+            Wallet Guide
+          </Button>
+        </Text>
+      </ModalFooter>
     </>
   )
 }

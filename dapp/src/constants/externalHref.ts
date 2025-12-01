@@ -15,4 +15,5 @@ export default {
   AAVE: "https://aave.com/",
   GIZA: "https://www.gizatech.xyz/",
   RE7_CAPITAL: "https://re7.capital/",
+  WALLET_GUIDE: "https://docs.acre.fi/acre-dapp/sign-in",
 }

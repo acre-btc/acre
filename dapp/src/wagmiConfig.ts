@@ -61,9 +61,9 @@ async function getWagmiConfig() {
   }
 
   const defaultConnectors = [
-    orangeKitOKXConnector(),
-    orangeKitUnisatConnector(),
     orangeKitXverseConnector(),
+    orangeKitUnisatConnector(),
+    orangeKitOKXConnector(),
   ]
 
   const connectors = (createEmbedConnectorFn !== undefined

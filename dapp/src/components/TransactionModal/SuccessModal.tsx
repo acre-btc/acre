@@ -41,7 +41,7 @@ export default function SuccessModal({ type }: SuccessModalProps) {
       <ModalCloseButton />
       <ModalHeader textAlign="center" pt={{ sm: 16 }} pb={10}>
         {ACTION_FLOW_TYPES.UNSTAKE === type
-          ? "Withdrawal requested submitted!"
+          ? "Withdrawal request submitted!"
           : "Deposit received!"}
       </ModalHeader>
       <ModalBody gap={10}>
@@ -67,7 +67,7 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           )}
           {ACTION_FLOW_TYPES.UNSTAKE === type && (
             <Text size="md">
-              Your BTC will appear in your account in 72 hours. Track the status
+              Your BTC will appear in your wallet in 72 hours. Track the status
               in your dashboard.
             </Text>
           )}

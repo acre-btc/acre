@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { time } from "#/constants"
 import {
   useAppDispatch,
@@ -23,8 +29,15 @@ import {
   ImageProps,
   VStack,
   Text,
+  Tag,
+  TagProps,
+  TagRightIcon,
 } from "@chakra-ui/react"
-import { IconArrowNarrowRight } from "@tabler/icons-react"
+import {
+  IconArrowNarrowRight,
+  IconLink,
+  IconLinkOff,
+} from "@tabler/icons-react"
 import { AnimatePresence, Variants, motion } from "framer-motion"
 import ArrivingSoonTooltip from "../ArrivingSoonTooltip"
 import ConnectWalletStatusLabel from "./ConnectWalletStatusLabel"
@@ -49,6 +62,52 @@ const iconStyles: Record<string, ImageProps> = {
 const collapseVariants: Variants = {
   collapsed: { height: 0 },
   expanded: { height: "auto" },
+}
+
+function SupportedFeatureTag({
+  featureName,
+  ...tagProps
+}: { featureName: string } & TagProps) {
+  return (
+    <Tag {...tagProps} size="sm" px="2" py="1" variant="solid" ml="2">
+      <Flex alignItems="center">
+        <Text>Supports </Text>
+        <Icon as={IconLink} size="14" mx="0.5" />
+        <Text as="span" fontWeight="600">
+          {featureName}
+        </Text>
+      </Flex>
+    </Tag>
+  )
+}
+
+const connectorIdToLabel: Record<string, ReactNode> = {
+  "orangekit-xverse": (
+    <SupportedFeatureTag
+      featureName="Ledger"
+      bg="oldPalette.opacity.orange.50.15"
+    />
+  ),
+  "orangekit-unisat": (
+    <SupportedFeatureTag
+      featureName="Keystone"
+      bg="oldPalette.opacity.blue.100.10"
+    />
+  ),
+  "orangekit-okx": (
+    <Tag
+      size="sm"
+      px="2"
+      py="1"
+      variant="solid"
+      bg="ivoire.10"
+      color="neutral.60"
+      ml="2"
+    >
+      No hardware support
+      <TagRightIcon as={IconLinkOff} ml="0.5" />
+    </Tag>
+  ),
 }
 
 export default function ConnectWalletButton({
@@ -213,7 +272,7 @@ export default function ConnectWalletButton({
             leftIcon={
               <Image
                 src={connector.icon}
-                boxSize={6}
+                boxSize="10"
                 bg="black"
                 rounded="xs"
                 {...iconStyles[connector.id]}
@@ -229,9 +288,12 @@ export default function ConnectWalletButton({
             iconSpacing={4}
             isDisabled={connector.isDisabled}
           >
-            <Text size="lg" flex={1} textAlign="start" fontWeight="semibold">
-              {label}
-            </Text>
+            <Flex flex="1">
+              <Text size="lg" fontWeight="semibold">
+                {label}
+              </Text>
+              {connectorIdToLabel[connector.id] ?? null}
+            </Flex>
           </Button>
         </ArrivingSoonTooltip>
       </CardHeader>
