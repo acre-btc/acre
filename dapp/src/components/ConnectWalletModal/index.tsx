@@ -8,6 +8,9 @@ import {
   Button,
   Icon,
   Text,
+  Box,
+  Flex,
+  Image,
 } from "@chakra-ui/react"
 import {
   useConnectors,
@@ -19,6 +22,8 @@ import {
 import { OrangeKitConnector, BaseModalProps, OnSuccessCallback } from "#/types"
 import { externalHref, wallets } from "#/constants"
 import { IconArrowUpRight } from "@tabler/icons-react"
+import tbtcEvmIconSrc from "#/assets/images/tbtc-evm-icon.png"
+import evmWalletsLogosSrc from "#/assets/images/evm-wallets-logos.png"
 import withBaseModal from "../ModalRoot/withBaseModal"
 import ConnectWalletButton from "./ConnectWalletButton"
 import ConnectWalletAlert from "./ConnectWalletAlert"
@@ -70,7 +75,7 @@ export function ConnectWalletModalBase({
         {isEmbed ? "Select your account" : "Connect wallet"}
       </ModalHeader>
 
-      <ModalBody gap={0}>
+      <ModalBody gap={0} pb={{ sm: 0 }}>
         <ConnectWalletAlert type={type} />
 
         {enabledConnectors.map((connector) => (
@@ -85,27 +90,66 @@ export function ConnectWalletModalBase({
           />
         ))}
       </ModalBody>
-      <ModalFooter display="block">
-        <Text size="md" fontWeight="600">
-          Having trouble?
-        </Text>
-        <Text size="md" fontWeight="400">
-          Check out our{" "}
-          <Button
-            as={Link}
-            href={externalHref.WALLET_GUIDE}
-            isExternal
-            variant="link"
-            fontWeight="400"
-            textDecoration="underline"
-            rightIcon={
-              <Icon as={IconArrowUpRight} color="oldPalette.brand.400" />
-            }
-            fontSize="inherit"
-          >
-            Wallet Guide
-          </Button>
-        </Text>
+
+      <ModalFooter p={{ sm: 0 }} gap={0}>
+        <Box p={8} pt={5} w="full">
+          <Text size="md" fontWeight="600">
+            Having trouble?
+          </Text>
+
+          <Text size="md" fontWeight="400">
+            Check out our{" "}
+            <Button
+              as={Link}
+              href={externalHref.WALLET_GUIDE}
+              isExternal
+              variant="link"
+              fontWeight="400"
+              textDecoration="underline"
+              rightIcon={
+                <Icon as={IconArrowUpRight} color="oldPalette.brand.400" />
+              }
+              fontSize="inherit"
+            >
+              Wallet Guide
+            </Button>
+          </Text>
+        </Box>
+
+        <Flex
+          p={8}
+          pt={5}
+          w="full"
+          gap={4}
+          bg="surface.3"
+          borderBottomRadius="md"
+          borderTop={1}
+          borderTopColor="white"
+        >
+          <Image src={tbtcEvmIconSrc} aspectRatio={1} boxSize="44px" />
+
+          <Flex flexFlow="column" align="baseline">
+            <Text fontWeight="600" mb={1}>
+              Only have an EVM wallet?
+            </Text>
+
+            <Text fontWeight="400" mb={5}>
+              You can deposit tBTC into Acre via our partner Threshold Network.
+            </Text>
+
+            <Button
+              href={externalHref.THRESHOLD_ACRE_VAULT}
+              isExternal
+              as={Link}
+              variant="outline"
+              leftIcon={<Icon as={IconArrowUpRight} />}
+              rightIcon={<Image src={evmWalletsLogosSrc} w={12} h={5} ml={3} />}
+              borderColor="brown.30"
+            >
+              Go to Threshold App
+            </Button>
+          </Flex>
+        </Flex>
       </ModalFooter>
     </>
   )

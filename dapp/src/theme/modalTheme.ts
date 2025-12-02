@@ -15,7 +15,9 @@ const baseStyleDialog = defineStyle({
   borderRadius: "md",
   p: { base: 5, sm: 0 },
   bg: "surface.2",
-  border: "none",
+  borderWidth: 1,
+  borderStyle: "solid",
+  borderColor: "white",
 })
 
 const baseCloseButton = defineStyle({
