@@ -100,7 +100,11 @@ export default function DashboardPage() {
 
       <Vaults gridColumn={grid.vaults} />
 
-      <Card gridColumn={grid.history}>
+      <Card
+        gridColumn={grid.history}
+        // Property is mandatory to fix content overflowing outside of the card.
+        overflow="hidden"
+      >
         <TransactionHistory />
       </Card>
     </Grid>
