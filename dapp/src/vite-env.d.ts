@@ -40,4 +40,5 @@ interface InjectedProvider {
 interface Window {
   unisat?: InjectedProvider
   okxwallet?: { bitcoin: InjectedProvider }
+  XverseProviders?: { BitcoinProvider?: object }
 }
