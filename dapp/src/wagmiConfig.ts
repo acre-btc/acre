@@ -21,7 +21,48 @@ const transports = chains.reduce(
   {},
 )
 
+/**
+ * Waits for the Xverse wallet provider to become available.
+ * Xverse 2.0+ injects its provider asynchronously and announces readiness via
+ * the `bitcoin:providers` window event (SatsConnect v2 standard). Without this
+ * wait, `getOrangeKitXverseConnector` captures `undefined` and the wallet
+ * permanently appears as "not installed".
+ */
+function waitForXverseProvider(timeoutMs = 1500): Promise<void> {
+  return new Promise((resolve) => {
+    if (window.XverseProviders?.BitcoinProvider) {
+      resolve()
+      return
+    }
+
+    let settled = false
+
+    const onProvider = () => {
+      if (window.XverseProviders?.BitcoinProvider) {
+        settled = true
+        clearTimeout(timer) // eslint-disable-line @typescript-eslint/no-use-before-define
+        window.removeEventListener("bitcoin:providers", onProvider)
+        resolve()
+      }
+    }
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        window.removeEventListener("bitcoin:providers", onProvider)
+        resolve() // Resolve even on timeout — wallet may not be installed
+      }
+    }, timeoutMs)
+
+    window.addEventListener("bitcoin:providers", onProvider)
+  })
+}
+
 async function getWagmiConfig() {
+  // Wait for async wallet provider injection (Xverse 2.0+) before creating
+  // connectors. The app shows a splash screen during this time.
+  await waitForXverseProvider()
+
   const {
     getOrangeKitUnisatConnector,
     getOrangeKitOKXConnector,
