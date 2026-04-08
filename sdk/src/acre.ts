@@ -1,4 +1,4 @@
-import { GelatoTransactionSender, OrangeKitSdk } from "@orangekit/sdk"
+import { OrangeKitSdk } from "@orangekit/sdk"
 import {
   getDefaultProvider,
   Provider as EthereumProvider,
@@ -15,6 +15,7 @@ import { AcreBitcoinProvider, BitcoinNetwork } from "./lib/bitcoin"
 import { getChainIdByNetwork } from "./lib/ethereum/network"
 import AcreSubgraphApi from "./lib/api/AcreSubgraphApi"
 import Protocol from "./modules/protocol"
+import GelatoGaslessTransactionSender from "./lib/utils/GelatoGaslessTransactionSender"
 
 /**
  * Acre SDK.
@@ -85,9 +86,7 @@ class Acre {
     const orangeKit = await OrangeKitSdk.init(
       Number(ethereumChainId),
       ethereumRpcUrl,
-      new GelatoTransactionSender(gelatoApiKey, {
-        backoffRetrier: { retries: 7, backoffStepMs: 3000 },
-      }),
+      new GelatoGaslessTransactionSender(gelatoApiKey),
     )
 
     const contracts = await getEthereumContracts(

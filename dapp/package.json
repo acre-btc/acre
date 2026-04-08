@@ -47,7 +47,7 @@
     "react-number-format": "^5.3.1",
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.26.0",
-    "viem": "^2.13.8",
+    "viem": "^2.47.10",
     "wagmi": "^2.9.11"
   },
   "devDependencies": {
