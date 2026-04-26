@@ -15,7 +15,7 @@ import { AcreBitcoinProvider, BitcoinNetwork } from "./lib/bitcoin"
 import { getChainIdByNetwork } from "./lib/ethereum/network"
 import AcreSubgraphApi from "./lib/api/AcreSubgraphApi"
 import Protocol from "./modules/protocol"
-import GelatoGaslessTransactionSender from "./lib/utils/GelatoGaslessTransactionSender"
+import AcreRelayerTransactionSender from "./lib/utils/AcreRelayerTransactionSender"
 
 /**
  * Acre SDK.
@@ -60,14 +60,15 @@ class Acre {
    * @param network - Bitcoin network.
    * @param tbtcApiUrl - tBTC API URL.
    * @param ethereumRpcUrl - Ethereum RPC URL.
-   * @param gelatoApiKey - Gelato API key.
+   * @param relayerUrl - Acre relayer endpoint base URL (e.g.
+   *   https://api.acre.fi/api/v2/relay). Withdrawals POST to `${relayerUrl}/transactions`.
    * @param subgraphApiKey - The subgraph API key.
    */
   static async initialize(
     network: BitcoinNetwork,
     tbtcApiUrl: string,
     ethereumRpcUrl: string,
-    gelatoApiKey: string,
+    relayerUrl: string,
     subgraphApiKey: string,
   ) {
     const ethereumNetwork: EthereumNetwork =
@@ -86,7 +87,7 @@ class Acre {
     const orangeKit = await OrangeKitSdk.init(
       Number(ethereumChainId),
       ethereumRpcUrl,
-      new GelatoGaslessTransactionSender(gelatoApiKey),
+      new AcreRelayerTransactionSender(relayerUrl),
     )
 
     const contracts = await getEthereumContracts(

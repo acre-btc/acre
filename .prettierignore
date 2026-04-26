@@ -6,3 +6,6 @@ subgraph/
 
 # Auto-generated files.
 pnpm-lock.yaml
+
+# Local Python virtual environment used by the Ledger app tooling.
+ledger/

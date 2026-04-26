@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_REFERRAL: number
   readonly VITE_TBTC_API_ENDPOINT: string
   readonly VITE_GELATO_RELAY_API_KEY: string
+  readonly VITE_RELAYER_URL: string
   readonly VITE_FEATURE_FLAG_WITHDRAWALS_ENABLED: string
   readonly VITE_FEATURE_FLAG_OKX_WALLET_ENABLED: string
   readonly VITE_FEATURE_FLAG_XVERSE_WALLET_ENABLED: string
