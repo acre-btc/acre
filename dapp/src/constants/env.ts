@@ -14,6 +14,8 @@ const TBTC_API_ENDPOINT = import.meta.env.VITE_TBTC_API_ENDPOINT
 
 const GELATO_RELAY_API_KEY = import.meta.env.VITE_GELATO_RELAY_API_KEY
 
+const RELAYER_URL = import.meta.env.VITE_RELAYER_URL
+
 const SUBGRAPH_API_KEY = import.meta.env.VITE_SUBGRAPH_API_KEY
 
 const NETWORK_TYPE = USE_TESTNET ? "testnet" : "mainnet"
@@ -35,6 +37,7 @@ export default {
   REFERRAL,
   TBTC_API_ENDPOINT,
   GELATO_RELAY_API_KEY,
+  RELAYER_URL,
   SUBGRAPH_API_KEY,
   NETWORK_TYPE,
   LATEST_COMMIT_HASH,
