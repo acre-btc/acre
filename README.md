@@ -1,6 +1,6 @@
 # Acre
 
-Bitcoin Liquid Staking
+Bitcoin Yield Autocompounding
 
 ## Development
 
