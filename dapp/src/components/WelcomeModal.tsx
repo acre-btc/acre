@@ -77,7 +77,7 @@ const steps = [
       <Highlight query="Acre Points Program">
         Deposit BTC to start earning. Monitor your position, review the vaults,
         earn with the Acre Points Program automatically, and redeem back into
-        Bitcoin at any time. Your bitcoin, on-chain, working for you.
+        Bitcoin within 14 days. Your bitcoin, on-chain, working for you.
       </Highlight>
     ),
     video: step3Video,
