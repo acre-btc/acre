@@ -18,7 +18,7 @@ export default function BuildTransactionModal({
       <ModalCloseButton onClick={onClose} />
       <ModalHeader>Preparing withdrawal transaction...</ModalHeader>
       <ModalBody>
-        <Spinner size="xl" variant="filled" />
+        <Spinner size="lg" />
         <Text size="md">This may take a few minutes.</Text>
         <Button size="lg" width="100%" variant="outline" onClick={onClose}>
           Cancel

@@ -1,5 +1,6 @@
 import React from "react"
-import { Button, ButtonProps, Spinner } from "@chakra-ui/react"
+import { Button, ButtonProps } from "@chakra-ui/react"
+import Spinner from "./Spinner"
 
 export default function LoadingButton({
   isLoading,
@@ -9,7 +10,7 @@ export default function LoadingButton({
   return (
     <Button
       isLoading={isLoading}
-      spinner={<Spinner variant="filled" />}
+      spinner={<Spinner variant="unicolor" size="sm" />}
       {...props}
     >
       {children}
