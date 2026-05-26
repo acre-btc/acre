@@ -45,7 +45,7 @@ function UnstakeFormModal({
         <AlertIcon color="blue.50" w="15px" h="15px" alignSelf="self-start" />
         <AlertDescription>
           <Text size="sm">
-            Withdrawals can take up to 72h to complete. You’ll be able to track
+            Withdrawals can take up to 14 days to complete. You’ll be able to track
             the status in your dashboard after submitting the request.
           </Text>
         </AlertDescription>
