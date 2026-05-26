@@ -7,7 +7,7 @@ import { TOKEN_AMOUNT_FIELD_NAME } from "../shared/TokenAmountForm/TokenAmountFo
 import TooltipIcon from "../shared/TooltipIcon"
 
 const TOOLTIP_CONTENT =
-  "Withdrawals are processed in the order they're requested. Completion can take up to 72 hours, depending on request volume, network conditions, and security checks."
+  "Withdrawals are processed in the order they're requested. Completion can take up to 14 days, depending on request volume, network conditions, and security checks."
 
 export default function ActionDurationEstimation({
   type,

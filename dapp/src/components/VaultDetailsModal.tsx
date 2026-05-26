@@ -164,7 +164,7 @@ export function VaultDetailsModalBase({
           <Icon as={IconShieldFilled} color="ink.50" />
           <Text size="xs">
             No centralized custodian. All on-chain. Rewards auto-compound to
-            Bitcoin daily.
+            Bitcoin every ~14 days.
           </Text>
         </Flex>
       </ModalBody>
