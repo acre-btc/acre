@@ -15,7 +15,7 @@ export type WithdrawStatus = Extract<
 >
 
 const PENDING_STATE_TOOLTIP_CONTENT =
-  "Your withdrawal is being processed. The funds will be released and are expected to arrive in your wallet within approximately 72 hours."
+  "Your withdrawal is being processed. The funds will be released upon the next NAV update and are expected to arrive in your wallet within approximately 14 days."
 
 function EstimatedDurationText({ children }: { children: React.ReactNode }) {
   return (
