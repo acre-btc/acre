@@ -120,8 +120,7 @@ export default function PositionDetails() {
                     <br />
                     Withdrawals from the acreBTC vault are temporarily paused
                     while we complete an update. Your funds remain fully secure
-                    and under your control. Withdrawals will be re-enabled
-                    within the next 72 hours.
+                    and under your control.
                     <br />
                     <br />
                     Thank you for your patience as we finalize this upgrade.
