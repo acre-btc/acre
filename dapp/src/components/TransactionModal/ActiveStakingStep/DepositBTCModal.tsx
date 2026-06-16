@@ -8,7 +8,6 @@ import {
   useDepositBTCTransaction,
   usePostHogCapture,
   useStakeFlowContext,
-  useVerifyDepositAddress,
 } from "#/hooks"
 import PostHogEvent from "#/posthog/events"
 import { setStatus, setTxHash } from "#/store/action-flow"
@@ -22,7 +21,6 @@ import WalletInteractionModal from "../WalletInteractionModal"
 export default function DepositBTCModal() {
   const tokenAmount = useActionFlowTokenAmount()
   const { btcAddress, depositReceipt, stake } = useStakeFlowContext()
-  const verifyDepositAddress = useVerifyDepositAddress()
   const dispatch = useAppDispatch()
   const { handlePause } = useActionFlowPause()
   const { refetch: refetchBitcoinBalance } = useBitcoinBalance()
@@ -87,29 +85,19 @@ export default function DepositBTCModal() {
 
   const handledDepositBTC = useCallback(async () => {
     if (!tokenAmount?.amount || !btcAddress || !depositReceipt) return
-    const verificationStatus = await verifyDepositAddress(
-      depositReceipt,
-      btcAddress,
-    )
 
     await resolve()
 
-    if (verificationStatus === "valid") {
-      sendBitcoinTransaction({
-        recipient: btcAddress,
-        amount: tokenAmount?.amount,
-      })
-    } else {
-      onError("Invalid deposit address")
-    }
+    sendBitcoinTransaction({
+      recipient: btcAddress,
+      amount: tokenAmount?.amount,
+    })
   }, [
     tokenAmount?.amount,
     btcAddress,
     depositReceipt,
-    verifyDepositAddress,
     resolve,
     sendBitcoinTransaction,
-    onError,
   ])
 
   const handledDepositBTCWrapper = useCallback(() => {
