@@ -67,8 +67,8 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           )}
           {ACTION_FLOW_TYPES.UNSTAKE === type && (
             <Text size="md">
-              Your BTC will appear in your wallet in approximately 14 days. Track the status
-              in your dashboard.
+              Your BTC will appear in your wallet in approximately 14 days.
+              Track the status in your dashboard.
             </Text>
           )}
           {ACTION_FLOW_TYPES.STAKE === type && txHash && (
