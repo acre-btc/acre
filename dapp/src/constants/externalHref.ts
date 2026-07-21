@@ -1,5 +1,5 @@
 export default {
-  DISCORD: "https://discord.gg/acre",
+  DISCORD: "https://discord.gg/65BHkXA5kb",
   DOCS: "https://docs.acre.fi",
   FAQ: "https://docs.acre.fi/faq",
   CONTRACTS: "https://docs.acre.fi/contracts",
