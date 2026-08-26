@@ -13,6 +13,8 @@ const createBlockExplorerLink = (
   switch (type) {
     case "address":
       return `${prefix}/address/${id}`
+    case "token":
+      return `${prefix}/token/${id}`
     case "transaction":
     default: {
       return `${prefix}/tx/${id}`
