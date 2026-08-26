@@ -3,7 +3,6 @@ import {
   // useActivitiesCount,
   useBitcoinPosition,
   useTransactionModal,
-  useStatistics,
   useWallet,
   useMobileMode,
   useActivities,
@@ -48,10 +47,6 @@ export default function PositionDetails() {
   const { data: activities } = useActivities()
   const isMobileMode = useMobileMode()
 
-  const statistics = useStatistics()
-
-  const { tvl } = statistics.data
-
   const { isConnected } = useWallet()
 
   const isDisabledForMobileMode =
@@ -87,17 +82,14 @@ export default function PositionDetails() {
       <HStack w="full" justify="start" flexWrap="wrap" spacing={5}>
         <UserDataSkeleton>
           <ArrivingSoonTooltip
-            label="This option is not available on mobile yet. Please use the desktop app to deposit."
-            shouldDisplayTooltip={isDisabledForMobileMode}
+            label={
+              isDisabledForMobileMode
+                ? "This option is not available on mobile yet. Please use the desktop app to deposit."
+                : "Deposits are paused as Acre completes a protocol upgrade."
+            }
+            shouldDisplayTooltip
           >
-            <Button
-              {...buttonStyles}
-              onClick={openDepositModal}
-              isDisabled={
-                (featureFlags.DEPOSIT_CAP_ENABLED && tvl.isCapExceeded) ||
-                isDisabledForMobileMode
-              }
-            >
+            <Button {...buttonStyles} onClick={openDepositModal} isDisabled>
               Deposit
             </Button>
           </ArrivingSoonTooltip>
