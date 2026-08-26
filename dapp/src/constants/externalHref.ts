@@ -3,7 +3,6 @@ export default {
   DOCS: "https://docs.acre.fi",
   FAQ: "https://docs.acre.fi/faq",
   CONTRACTS: "https://docs.acre.fi/contracts",
-  BLOG: "https://blog.acre.fi",
   WEBSITE: "https://acre.fi",
   TERMS_OF_USE: "https://acre.fi/terms-of-use",
   PRIVACY_POLICY: "https://acre.fi/privacy-policy",
