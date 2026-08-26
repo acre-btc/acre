@@ -14,7 +14,7 @@ import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
 import TransactionHistory from "./TransactionHistory"
 import BTCDepositedCard from "./BTCDepositedCard"
 import RewardsEarnedCard from "./RewardsEarnedCard"
-import EstimatedAPRCard from "./EstimatedAPRCard"
+import CurrentAPYCard from "./CurrentAPYCard"
 
 const fullWidthGridColumn = { base: "1", md: "span 3" }
 
@@ -100,7 +100,7 @@ export default function DashboardPage() {
             isLoading={isLoading}
             btcAmount={data?.earned}
           />
-          <EstimatedAPRCard gridColumn={grid.stats} />
+          <CurrentAPYCard gridColumn={grid.stats} />
         </>
       )}
 
