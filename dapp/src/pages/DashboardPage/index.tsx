@@ -2,11 +2,12 @@ import React from "react"
 import { featureFlags } from "#/constants"
 import { useActivities, useTriggerConnectWalletModal, useWallet } from "#/hooks"
 import usePositionStats from "#/hooks/usePositionStats"
-import { Card, Grid, VStack } from "@chakra-ui/react"
+import { Box, Card, Grid, VStack } from "@chakra-ui/react"
 import Vaults from "#/components/Vaults"
 import WithdrawalStatusBanner, {
   WithdrawStatus,
 } from "#/components/WithdrawalStatusBanner"
+import ProtocolPauseBanner from "#/components/ProtocolPauseBanner"
 import DashboardCard from "./DashboardCard"
 import AcrePointsCard from "./AcrePointsCard"
 import AcrePointsTemplateCard from "./AcrePointsTemplateCard"
@@ -18,6 +19,7 @@ import EstimatedAPRCard from "./EstimatedAPRCard"
 const fullWidthGridColumn = { base: "1", md: "span 3" }
 
 const grid = {
+  notice: fullWidthGridColumn,
   dashboard: { base: "1", md: "span 2" },
   points: { base: "1", md: "3 / span 1" },
   withdrawals: fullWidthGridColumn,
@@ -60,6 +62,10 @@ export default function DashboardPage() {
       gridGap={{ base: 4, "2xl": 8 }}
       templateColumns={{ base: "1fr ", md: "repeat(3, 1fr)" }}
     >
+      <Box gridColumn={grid.notice}>
+        <ProtocolPauseBanner />
+      </Box>
+
       <DashboardCard gridColumn={grid.dashboard} />
 
       {featureFlags.ACRE_POINTS_ENABLED ? (
