@@ -1,6 +1,6 @@
 import React from "react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { externalHref, transparency, vaults } from "#/constants"
+import { externalHref, transparency } from "#/constants"
 import { addressUtils } from "#/utils"
 import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import { IconArrowUpRight } from "@tabler/icons-react"
@@ -15,43 +15,35 @@ import DeBankLink from "./shared/DeBankLink"
 export default function MidasVaultDetailsDescription() {
   return (
     <>
-      This BTC-neutral vault generates yield from multiple sources: DeFi
-      (liquidity provision + delta-neutral strategies), options premia, and BTC
-      staking (Starknet).{" "}
+      This vault holds tBTC prior to the deployment to vetted strategies.{" "}
       <Link
         fontWeight="bold"
         textDecoration="underline"
-        href={externalHref.MIDAS_TEAM}
+        href={externalHref.MIDAS}
         isExternal
       >
         Midas
       </Link>{" "}
-      provides algorithmic infrastructure and 24/7 portfolio monitoring. Risk
-      and strategy management are handled by{" "}
-      <Link
-        fontWeight="bold"
-        textDecoration="underline"
-        href={externalHref.RE7}
-        isExternal
-      >
-        Re7 Labs
-      </Link>
-      , the innovation arm of Re7 Capital and creators of the Re7 DeFi Ratings
-      framework. Risk parameters for the vault have been reviewed and approved
-      by the Acre Security Council, following the{" "}
-      <Link
-        fontWeight="bold"
-        textDecoration="underline"
-        href={externalHref.ACRE_DEPLOYMENT_POLICY}
-        isExternal
-      >
-        Acre Deployment Policy
-      </Link>
-      . A protocol fee of 20% on earned rewards will go to the Acre DAO and its
-      partners. Deposits and withdrawals are always under your direct control,
-      and all deployments, rewards, and redemptions are fully on-chain and
-      auditable.
+      is the infrastructure provider and reviews all deposits and redemptions
+      for accounting, security and additional infrastructure. The tBTC is ready
+      to request redeem from the Midas vault at any time with approximately 72
+      hour cool down time. If redeeming back to Bitcoin, there is a 0.20% fee
+      from the Threshold Network bridge.
     </>
+  )
+}
+
+function AddressValue({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      size="sm"
+      as="span"
+      color="text.primary"
+      fontWeight="semibold"
+      marginRight={1}
+    >
+      {children}
+    </Text>
   )
 }
 
@@ -67,7 +59,7 @@ export function getMidasVaultDetails({
   vaultTvlInUsd: number
 }) {
   return {
-    vaultName: "BTC-Neutral Blended Yield",
+    vaultName: "Midas acreBTC (macreBTC) Vault",
     description: <MidasVaultDetailsDescription />,
     icon: TbtcIcon,
     sections: [
@@ -77,10 +69,10 @@ export function getMidasVaultDetails({
         tooltip:
           "Annual Percentage Yield (APY) is the annual rate of return earned on an investment.",
         items: [
-          { label: "Gross Annual", value: "4% (est.)" },
-          { label: "Net Annual", value: "3% (est.)" },
-          { label: "Net Monthly", value: "0.87% (est.)" },
-          { label: "Net Weekly", value: "0.20% (est.)" },
+          { label: "Gross Annual", value: "0%" },
+          { label: "Net Annual", value: "0%" },
+          { label: "Net Monthly", value: "0%" },
+          { label: "Net Weekly", value: "0%" },
         ],
       },
       {
@@ -132,81 +124,46 @@ export function getMidasVaultDetails({
         label: "Transparency",
         items: [
           {
-            label: "BTC-Neutral Blended Yield Vault",
+            label: "Available BTC (tBTC) Liquidity",
+            value: (
+              <DeBankLink address={transparency.AVAILABLE_LIQUIDITY_BUFFER}>
+                <AddressValue>
+                  {addressUtils.truncateAddress(
+                    transparency.AVAILABLE_LIQUIDITY_BUFFER,
+                  )}
+                </AddressValue>
+                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
+              </DeBankLink>
+            ),
+          },
+          {
+            label: "AcreBTC",
             value: (
               <BlockExplorerLink
-                type="address"
+                type="token"
                 chain="ethereum"
-                id={vaults.VAULT_PROVIDERS.tbtc.address}
+                id={transparency.ACREBTC_TOKEN}
               >
-                <Text
-                  size="sm"
-                  as="span"
-                  color="text.primary"
-                  fontWeight="semibold"
-                  marginRight={1}
-                >
-                  {addressUtils.truncateAddress(
-                    vaults.VAULT_PROVIDERS.tbtc.address,
-                  )}
-                </Text>
+                <AddressValue>
+                  {addressUtils.truncateAddress(transparency.ACREBTC_TOKEN)}
+                </AddressValue>
                 <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
               </BlockExplorerLink>
             ),
           },
           {
-            label: "Assets to be Deployed",
+            label: "Withdrawal Queue",
             value: (
-              <DeBankLink address={transparency.ASSETS_TO_BE_DEPLOYED}>
-                <Text
-                  size="sm"
-                  as="span"
-                  color="text.primary"
-                  fontWeight="semibold"
-                  marginRight={1}
-                >
-                  {addressUtils.truncateAddress(
-                    transparency.ASSETS_TO_BE_DEPLOYED,
-                  )}
-                </Text>
+              <BlockExplorerLink
+                type="address"
+                chain="ethereum"
+                id={transparency.WITHDRAWAL_QUEUE}
+              >
+                <AddressValue>
+                  {addressUtils.truncateAddress(transparency.WITHDRAWAL_QUEUE)}
+                </AddressValue>
                 <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
-              </DeBankLink>
-            ),
-          },
-          {
-            label: "Onchain Wallets",
-            value: (
-              <DeBankLink address={transparency.ONCHAIN_WALLETS}>
-                <Text
-                  size="sm"
-                  as="span"
-                  color="text.primary"
-                  fontWeight="semibold"
-                  marginRight={1}
-                >
-                  {addressUtils.truncateAddress(transparency.ONCHAIN_WALLETS)}
-                </Text>
-                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
-              </DeBankLink>
-            ),
-          },
-          {
-            label: "Available Liquidity Buffer",
-            value: (
-              <DeBankLink address={transparency.AVAILABLE_LIQUIDITY_BUFFER}>
-                <Text
-                  size="sm"
-                  as="span"
-                  color="text.primary"
-                  fontWeight="semibold"
-                  marginRight={1}
-                >
-                  {addressUtils.truncateAddress(
-                    transparency.AVAILABLE_LIQUIDITY_BUFFER,
-                  )}
-                </Text>
-                <Icon as={IconArrowUpRight} color="acre.50" boxSize={4} />
-              </DeBankLink>
+              </BlockExplorerLink>
             ),
           },
         ],
@@ -215,22 +172,7 @@ export function getMidasVaultDetails({
         sectionKey: "misc",
         items: [
           {
-            label: "Risk Manager",
-            value: (
-              <Button
-                as={Link}
-                fontSize="md"
-                variant="link"
-                rightIcon={<Icon as={IconArrowUpRight} color="acre.50" />}
-                href={externalHref.RE7}
-                isExternal
-              >
-                Re7 Labs
-              </Button>
-            ),
-          },
-          {
-            label: "Vault Infrastructure Provider",
+            label: "Infrastructure Provider",
             value: (
               <Button
                 as={Link}
@@ -254,7 +196,7 @@ export function getMidasVaultDetails({
           },
           {
             label: "Withdrawal Cooldown Time",
-            value: "< 72 hours (14 days after Dec 2025)",
+            value: "Approximately 72 hours",
           },
         ],
       },

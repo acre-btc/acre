@@ -4,21 +4,21 @@ import FeaturedMetricsCard, {
 } from "#/components/shared/FeaturedMetricsCard"
 import { IconTrendingUp } from "@tabler/icons-react"
 
-type EstimatedAPRCardProps = Omit<
+type CurrentAPYCardProps = Omit<
   FeaturedMetricsCardProps,
   "label" | "icon" | "value" | "infoContent"
 >
 
-function EstimatedAPRCard(props: EstimatedAPRCardProps) {
+function CurrentAPYCard(props: CurrentAPYCardProps) {
   return (
     <FeaturedMetricsCard
       icon={IconTrendingUp}
-      label="Target APY"
-      infoContent="Target APY is estimated on past performance. Live APY updated every 2 weeks."
-      value={["14%"]}
+      label="Current APY"
+      infoContent="acreBTC is currently earning Acre Points only with the protocol upgrade and transition."
+      value={["0%"]}
       {...props}
     />
   )
 }
 
-export default EstimatedAPRCard
+export default CurrentAPYCard

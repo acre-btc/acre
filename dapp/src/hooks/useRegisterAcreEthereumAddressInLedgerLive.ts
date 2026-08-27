@@ -43,7 +43,7 @@ const useRegisterAcreEthereumAddressInLedgerLive = () => {
         tokenTicker: TOKEN_TICKER,
         meta: {
           protocol: "Acre",
-          apy: "14%",
+          apy: "0%",
         },
       })
     },

@@ -7,7 +7,6 @@ import TooltipIcon from "#/components/shared/TooltipIcon"
 import useDebounce from "#/hooks/useDebounce"
 import { time } from "#/constants"
 import LabelWrapper from "./LabelWrapper"
-import { NextDropTimestampLabel } from "./AcrePointsLabel"
 
 function ClaimableBalanceLabel() {
   const { mutate: claimPoints } = useClaimPoints()
@@ -79,7 +78,6 @@ export default function UserPointsLabel() {
 
     return (
       <LabelWrapper>
-        <NextDropTimestampLabel />
         <ClaimableBalanceLabel />
       </LabelWrapper>
     )

@@ -162,10 +162,7 @@ export function VaultDetailsModalBase({
 
         <Flex alignSelf="start" gap={1} mt={-1} px={6}>
           <Icon as={IconShieldFilled} color="ink.50" />
-          <Text size="xs">
-            No centralized custodian. All on-chain. Rewards auto-compound to
-            Bitcoin every ~14 days.
-          </Text>
+          <Text size="xs">No centralized custodian. All on-chain.</Text>
         </Flex>
       </ModalBody>
     </>

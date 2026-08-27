@@ -35,8 +35,6 @@ import {
   IconExclamationCircle,
   IconRefresh,
 } from "@tabler/icons-react"
-import { getMidasVaultDetails } from "./MidasVaultDetails"
-import { VaultDetails } from "./VaultDetailsModal"
 
 const { formatNumberToCompactString, getPercentValue } = numbersUtils
 
@@ -47,7 +45,6 @@ type VaultItem = {
   tvl: number
   tvlCap: number
   curator: keyof typeof vaults.VAULT_CURATORS
-  details: VaultDetails
 }
 
 type VaultsRootProps = CardProps
@@ -77,7 +74,7 @@ function VaultsRoot(props: VaultsRootProps) {
               <Th>Portfolio Weight</Th>
               <Th>NET APY</Th>
               <Th>TVL</Th>
-              <Th>Risk Manager</Th>
+              <Th>Infrastructure Provider</Th>
             </Tr>
           </Thead>
 
@@ -152,7 +149,7 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
           {portfolioWeightPercentage}%
         </Box>
       </Td>
-      <Td>{aprPercentage}% (est.)</Td>
+      <Td>{aprPercentage}%</Td>
       <Td letterSpacing="-0.5px">
         <Box as="span" fontWeight="bold">
           {formattedTvl}
@@ -192,8 +189,6 @@ function VaultTableRow({ vault }: { vault: VaultItem }) {
 
 function Vaults(props: VaultsRootProps) {
   const statistics = useStatistics()
-  const { data: depositFeePercentage } = useDepositFeePercentage()
-  const { data: withdrawalFeePercentage } = useWithdrawalFeePercentage()
 
   const handleRefetch = () => logPromiseFailure(statistics.refetch())
 
@@ -246,16 +241,10 @@ function Vaults(props: VaultsRootProps) {
     {
       provider: "tbtc",
       portfolioWeight: 1,
-      apr: 11,
+      apr: 0,
       tvl: statistics.data.tvl.usdValue,
       tvlCap: statistics.data.tvl.cap,
-      curator: "re7",
-      details: getMidasVaultDetails({
-        depositFeePercentage,
-        withdrawalFeePercentage,
-        tvlCapInUsd: statistics.data.tvl.cap,
-        vaultTvlInUsd: statistics.data.tvl.usdValue,
-      }),
+      curator: "midas",
     },
   ]
 

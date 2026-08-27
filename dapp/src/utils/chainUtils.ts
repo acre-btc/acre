@@ -6,13 +6,19 @@ import { Chain, ExplorerDataType } from "#/types"
 //  However, it provides us with an easy way
 // to handle the next data for block explorer.
 const createBlockExplorerLink = (
-  prefix: string,
+  rawPrefix: string,
   id: string,
   type: ExplorerDataType,
 ) => {
+  // Some explorer base URLs carry a trailing slash, which would otherwise
+  // produce a double slash in the resulting link.
+  const prefix = rawPrefix.replace(/\/+$/, "")
+
   switch (type) {
     case "address":
       return `${prefix}/address/${id}`
+    case "token":
+      return `${prefix}/token/${id}`
     case "transaction":
     default: {
       return `${prefix}/tx/${id}`

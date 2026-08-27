@@ -30,10 +30,6 @@ const NAVIGATION: FooterListItem[] = [
     href: externalHref.FAQ,
   },
   {
-    children: "Blog",
-    href: externalHref.BLOG,
-  },
-  {
     children: "Discord",
     href: externalHref.DISCORD,
   },

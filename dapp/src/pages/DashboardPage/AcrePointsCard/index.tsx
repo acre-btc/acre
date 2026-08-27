@@ -13,7 +13,6 @@ import { useAcrePointsData, useUserPointsData, useWallet } from "#/hooks"
 import UserDataSkeleton from "#/components/shared/UserDataSkeleton"
 import TooltipIcon from "#/components/shared/TooltipIcon"
 import acrePointsIllustrationSrc from "#/assets/images/acre-points-illustration.png"
-import AcrePointsLabel from "./AcrePointsLabel"
 import UserPointsLabel from "./UserPointsLabel"
 
 const { numberToLocaleString } = numbersUtils
@@ -40,8 +39,8 @@ export default function AcrePointsCard(props: CardProps) {
         <TooltipIcon
           label={
             isConnected
-              ? "Your current balance of Acre points collected so far. New points drop daily and are ready to be claimed. Unclaimed points roll over to the next day."
-              : "Total points distributed to Acre users so far. New points drop daily and can be claimed in each user's dashboard."
+              ? "Your current balance of Acre points collected so far."
+              : "Total points distributed to Acre users so far."
           }
           w={56}
         />
@@ -58,9 +57,11 @@ export default function AcrePointsCard(props: CardProps) {
 
         <Image src={acrePointsIllustrationSrc} mt={6} />
 
-        <UserDataSkeleton>
-          {isConnected ? <UserPointsLabel /> : <AcrePointsLabel />}
-        </UserDataSkeleton>
+        {isConnected && (
+          <UserDataSkeleton>
+            <UserPointsLabel />
+          </UserDataSkeleton>
+        )}
       </CardBody>
     </Card>
   )
