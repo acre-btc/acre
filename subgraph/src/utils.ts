@@ -4,6 +4,7 @@ import {
   ethereum,
   Bytes,
   BigInt,
+  log as logger,
 } from "@graphprotocol/graph-ts"
 import {
   DepositOwner,
@@ -11,6 +12,7 @@ import {
   Event,
   Withdraw,
   RedemptionKeyToPendingWithdrawal,
+  MidasWithdrawRequest,
 } from "../generated/schema"
 
 export function getOrCreateDepositOwner(depositOwnerId: Address): DepositOwner {
@@ -69,28 +71,35 @@ export function getOrCreateWithdraw(id: string): Withdraw {
   return withdraw
 }
 
+export function getOrCreateMidasWithdrawRequest(
+  id: string,
+): MidasWithdrawRequest {
+  let midasWithdrawRequest = MidasWithdrawRequest.load(id)
+  if (!midasWithdrawRequest) {
+    midasWithdrawRequest = new MidasWithdrawRequest(id)
+  }
+
+  return midasWithdrawRequest
+}
+
 export function getLogByEventSignatureInLogs(
   logs: ethereum.Log[],
   eventSignature: ByteArray,
   contractAddress: Address,
 ): ethereum.Log | null {
-  let logIndex = -1
   for (let i = 0; i < logs.length; i += 1) {
     const receiptLog = logs[i]
 
     if (
       receiptLog.address.equals(contractAddress) &&
+      receiptLog.topics.length > 0 &&
       receiptLog.topics[0].equals(eventSignature)
     ) {
-      logIndex = i
+      return receiptLog
     }
   }
 
-  if (logIndex < 0) {
-    return null
-  }
-
-  return logs[logIndex]
+  return null
 }
 
 export function findLogByEventSignatureInLogs(
@@ -105,6 +114,26 @@ export function findLogByEventSignatureInLogs(
   )
 
   if (!log) {
+    const contractAddresses: string = logs
+      .map<string>((l: ethereum.Log) => l.address.toHexString())
+      .join(";")
+
+    const topics: string = logs
+      .map<string>((l: ethereum.Log) =>
+        l.topics.map<string>((t: Bytes) => t.toHexString()).join(";"),
+      )
+      .join(";")
+
+    logger.error(
+      "Cannot find event (signature : {}, contract address : {}) in transaction logs with topics: [{}] and contract addresses: [{}]",
+      [
+        eventSignature.toHexString(),
+        contractAddress.toHexString(),
+        topics,
+        contractAddresses,
+      ],
+    )
+
     throw new Error(
       `Cannot find event (signature: ${eventSignature.toHexString()}) in transaction logs`,
     )
