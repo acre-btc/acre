@@ -8,6 +8,7 @@ import React, {
 import { time } from "#/constants"
 import {
   useAppDispatch,
+  useConnector,
   useIsEmbed,
   useModal,
   usePostHogIdentity,
@@ -125,6 +126,7 @@ export default function ConnectWalletButton({
     onDisconnect,
     status: connectionStatus,
   } = useWallet()
+  const connectedConnector = useConnector()
   const { signMessageStatus, resetMessageStatus, signMessageAndCreateSession } =
     useSignMessageAndCreateSession()
   const { type, setConnectionAlert, resetConnectionAlert } =
@@ -178,19 +180,19 @@ export default function ConnectWalletButton({
 
       if (!btcAddress) return
 
-      await handleSignMessageAndCreateSession(connector, btcAddress)
+      await handleSignMessageAndCreateSession(connectedConnector, btcAddress)
       handleIdentification(btcAddress, {
         connector: connectedConnector.id,
       })
     },
-    [connector, handleSignMessageAndCreateSession, handleIdentification],
+    [handleSignMessageAndCreateSession, handleIdentification],
   )
 
   const handleConnection = useCallback(() => {
     onConnect(connector, {
       isReconnecting,
-      onSuccess: () => {
-        logPromiseFailure(onSuccessConnection(connector))
+      onSuccess: (walletConnector) => {
+        logPromiseFailure(onSuccessConnection(walletConnector))
       },
       onError: (error: OrangeKitError) => {
         const errorData = orangeKit.parseOrangeKitConnectionError(error)
@@ -335,8 +337,12 @@ export default function ConnectWalletButton({
                     size="lg"
                     variant="outline"
                     onClick={() =>
+                      connectedConnector &&
                       logPromiseFailure(
-                        handleSignMessageAndCreateSession(connector, address),
+                        handleSignMessageAndCreateSession(
+                          connectedConnector,
+                          address,
+                        ),
                       )
                     }
                   >
