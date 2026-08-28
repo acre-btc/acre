@@ -1,22 +1,28 @@
 import { useAcreContext } from "#/acre-react/hooks"
 import { queryKeysFactory } from "#/constants"
+import { WithdrawalDestination } from "#/types"
+import { feesUtils } from "#/utils"
 import { useQuery } from "@tanstack/react-query"
 
 const SAMPLE_DEPOSIT_AMOUNT = 100000000n // 1 BTC in satoshis for fee calculation
 
-export default function useWithdrawalFeePercentage() {
+export default function useWithdrawalFeePercentage(
+  withdrawalDestination: WithdrawalDestination["type"] = "bitcoin",
+) {
   const { acre } = useAcreContext()
 
   return useQuery({
     queryKey: [
       ...queryKeysFactory.userKeys.estimateFee(),
       "withdrawalFeePercentage",
+      withdrawalDestination,
     ],
     queryFn: async () => {
       if (!acre) throw new Error("Acre SDK not available")
 
-      const fees = await acre.protocol.estimateWithdrawalFee(
-        SAMPLE_DEPOSIT_AMOUNT,
+      const fees = feesUtils.forWithdrawalDestination(
+        await acre.protocol.estimateWithdrawalFee(SAMPLE_DEPOSIT_AMOUNT),
+        withdrawalDestination,
       )
 
       const feePercentage =
