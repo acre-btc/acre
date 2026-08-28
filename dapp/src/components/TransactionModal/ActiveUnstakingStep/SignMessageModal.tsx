@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from "react"
 import {
   useActionFlowPause,
   useActionFlowTokenAmount,
+  useActionFlowWithdrawalDestination,
   useAppDispatch,
   useBitcoinPosition,
   useCancelPromise,
@@ -13,7 +14,10 @@ import {
 import { ACTION_FLOW_TYPES, Activity, PROCESS_STATUSES } from "#/types"
 import { timeUtils, eip1193, logPromiseFailure } from "#/utils"
 import { setStatus } from "#/store/action-flow"
-import { useInitializeWithdraw } from "#/acre-react/hooks"
+import {
+  useInitializeTbtcWithdraw,
+  useInitializeWithdraw,
+} from "#/acre-react/hooks"
 import { time, queryKeysFactory } from "#/constants"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import PostHogEvent from "#/posthog/events"
@@ -32,6 +36,10 @@ export default function SignMessageModal() {
   const { closeModal } = useModal()
   const { handlePause } = useActionFlowPause()
   const initializeWithdraw = useInitializeWithdraw()
+  const initializeTbtcWithdraw = useInitializeTbtcWithdraw()
+  const destination = useActionFlowWithdrawalDestination() ?? {
+    type: "bitcoin" as const,
+  }
   const { refetch: refetchBitcoinPosition } = useBitcoinPosition()
 
   const sessionId = useRef(Math.random())
@@ -42,6 +50,7 @@ export default function SignMessageModal() {
   const { transactionFee } = useTransactionDetails(
     amount,
     ACTION_FLOW_TYPES.UNSTAKE,
+    destination.type,
   )
   const { handleCapture, handleCaptureWithCause } = usePostHogCapture()
 
@@ -93,18 +102,37 @@ export default function SignMessageModal() {
     mutationKey: ["sign-message"],
     mutationFn: async () => {
       if (!amount) return
+      if (destination.type === "tbtc" && !destination.evmAddress) return
 
-      const { redemptionRequestId } = await initializeWithdraw(
-        amount,
-        dataBuiltStepCallback,
-        onSignMessageCallback,
-      )
+      // The synchronous tBTC path has no redemption request, so the activity
+      // is keyed off the transaction hash instead.
+      let activityId: string
+      let activityTxHash: string | undefined
+
+      if (destination.type === "tbtc") {
+        const { transactionHash } = await initializeTbtcWithdraw(
+          amount,
+          destination.evmAddress,
+          dataBuiltStepCallback,
+          onSignMessageCallback,
+        )
+        activityId = transactionHash
+        activityTxHash = transactionHash
+      } else {
+        const { redemptionRequestId } = await initializeWithdraw(
+          amount,
+          dataBuiltStepCallback,
+          onSignMessageCallback,
+        )
+        activityId = redemptionRequestId.toString()
+      }
 
       queryClient.setQueriesData(
         { queryKey: queryKeysFactory.userKeys.activities() },
         (oldData: Activity[] | undefined) => {
           const newActivity: Activity = {
-            id: redemptionRequestId.toString(),
+            id: activityId,
+            txHash: activityTxHash,
             type: "withdraw",
             status: "pending",
             // This is a requested amount. The amount of BTC received will be
