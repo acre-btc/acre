@@ -42,8 +42,8 @@ export type VaultDetails = {
 type VaultParamDetails = {
   depositFeePercentage?: number
   withdrawalFeePercentage?: number
-  tvlCapInUsd: number
-  vaultTvlInUsd: number
+  tvlCapInUsd?: number
+  vaultTvlInUsd?: number
 }
 
 export type VaultDetailsModalBaseProps = BaseModalProps & {
