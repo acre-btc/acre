@@ -64,7 +64,7 @@ export default function UnstakeFormBase({
       <FormCheckbox
         name={WITHDRAW_TO_TBTC_FIELD_NAME}
         label="Withdraw as tBTC to an Ethereum address"
-        helperText="Fastest option — your tBTC lands in the account you choose in the same transaction, with no waiting period."
+        helperText="Fastest option. Your tBTC lands in the account you choose in the same transaction, with no waiting period."
         mt={6}
         onValueChange={(checked) => {
           // Validation only runs on submit, so an address error from a previous
@@ -90,7 +90,7 @@ export default function UnstakeFormBase({
             placeholder="0x..."
             autoComplete="off"
             spellCheck={false}
-            mt={4}
+            // mt={4}
             // The shared outline variant reserves 5rem on the right for
             // `TokenBalanceInput`'s `Max` button, which cut a full address off
             // here. Match the default left padding instead.
@@ -110,9 +110,9 @@ export default function UnstakeFormBase({
         <AlertDescription>
           {withdrawToTbtc ? (
             <Text size="sm">
-              Your tBTC is sent to the address above in the same transaction —
-              there’s no queue and no waiting period. You’ll need ETH at that
-              address to move or bridge it later.
+              Your tBTC is sent to the address above in the same transaction.
+              There is no waiting period. You&apos;ll need ETH at that address
+              to move or bridge it later.
             </Text>
           ) : (
             <Text size="sm">
