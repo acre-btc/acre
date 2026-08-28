@@ -29,12 +29,20 @@ const baseStyleControl = defineStyle({
   },
 })
 
+// The root is `inline-flex`, so it shrinks to its content unless stretched,
+// and `ModalBody` centres the label text it inherits.
+const baseStyleContainer = defineStyle({
+  w: "full",
+  textAlign: "left",
+})
+
 const baseStyleLabel = defineStyle({
   color: "text.primary",
   fontWeight: "medium",
 })
 
 const baseStyle = multiStyleConfig.definePartsStyle({
+  container: baseStyleContainer,
   control: baseStyleControl,
   label: baseStyleLabel,
 })
