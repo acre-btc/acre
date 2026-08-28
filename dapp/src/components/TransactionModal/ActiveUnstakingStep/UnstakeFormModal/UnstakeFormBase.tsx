@@ -32,8 +32,6 @@ export type UnstakeFormBaseProps = {
   tokenBalanceInputPlaceholder: string
   tokenAmountLabel?: string
   currency: CurrencyType
-  withMaxButton: boolean
-  defaultAmount?: bigint
 }
 
 export default function UnstakeFormBase({
@@ -42,8 +40,6 @@ export default function UnstakeFormBase({
   currency,
   tokenBalanceInputPlaceholder,
   tokenAmountLabel,
-  withMaxButton,
-  defaultAmount,
   ...formikProps
 }: UnstakeFormBaseProps & FormikProps<UnstakeFormValues>) {
   const withdrawToTbtc = Boolean(
@@ -58,9 +54,10 @@ export default function UnstakeFormBase({
         placeholder={tokenBalanceInputPlaceholder}
         tokenAmountLabel={tokenAmountLabel}
         currency={currency}
-        withMaxButton={withMaxButton}
-        defaultAmount={defaultAmount}
-        autoFocus
+        // A withdrawal always exits the whole position, so the amount is fixed
+        // to the balance and the field is read-only.
+        defaultAmount={tokenBalance}
+        isDisabled
         autoComplete="off"
       />
 
