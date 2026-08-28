@@ -57,6 +57,24 @@ export interface AcreBTC {
   ): Hex
 
   /**
+   * Encodes the transaction data for a transaction that calls the ERC4626
+   * `redeem` function. It burns `shares` from `owner` and transfers the
+   * corresponding tBTC amount to `receiver`, synchronously, in a single
+   * transaction.
+   *
+   * No token approval is involved: the caller is expected to be the `owner`,
+   * in which case the vault does not touch the allowance at all.
+   * @param shares Amount of AcreBTC shares to redeem.
+   * @param receiver The address that will receive the tBTC.
+   * @param owner The address the shares are burned from.
+   */
+  encodeRedeemFunctionData(
+    shares: bigint,
+    receiver: ChainIdentifier,
+    owner: ChainIdentifier,
+  ): Hex
+
+  /**
    * Calculates the amount of tBTC that will be redeemed for the given amount
    * of AcreBTC shares.
    * @param shares Amount of AcreBTC shares to redeem.

@@ -140,6 +140,23 @@ class EthereumAcreBTC
   }
 
   /**
+   * @see {AcreBTC#encodeRedeemFunctionData}
+   */
+  encodeRedeemFunctionData(
+    shares: bigint,
+    receiver: ChainIdentifier,
+    owner: ChainIdentifier,
+  ): Hex {
+    const data = this.instance.interface.encodeFunctionData("redeem", [
+      shares,
+      `0x${receiver.identifierHex}`,
+      `0x${owner.identifierHex}`,
+    ])
+
+    return Hex.from(data)
+  }
+
+  /**
    * Calculates the fee when it's included in the amount.
    * One is added to the result if there is a remainder to match the acreBTC
    * contract calculations rounding.

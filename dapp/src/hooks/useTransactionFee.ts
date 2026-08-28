@@ -1,6 +1,12 @@
 import { useAcreContext } from "#/acre-react/hooks"
 import { queryKeysFactory } from "#/constants"
-import { ACTION_FLOW_TYPES, ActionFlowType, Fees } from "#/types"
+import {
+  ACTION_FLOW_TYPES,
+  ActionFlowType,
+  Fees,
+  WithdrawalDestination,
+} from "#/types"
+import { feesUtils } from "#/utils"
 import { useQuery } from "@tanstack/react-query"
 
 export const initialFee: Fees = {
@@ -12,6 +18,7 @@ export const initialFee: Fees = {
 export default function useTransactionFee(
   amount: bigint | undefined,
   flow: ActionFlowType,
+  withdrawalDestination: WithdrawalDestination["type"] = "bitcoin",
 ) {
   const { acre } = useAcreContext()
 
@@ -20,6 +27,7 @@ export default function useTransactionFee(
       ...queryKeysFactory.userKeys.estimateFee(),
       flow,
       amount?.toString(),
+      withdrawalDestination,
     ],
     queryFn: async () => {
       if (!acre || !amount) return initialFee
@@ -32,7 +40,10 @@ export default function useTransactionFee(
         }
       }
 
-      return acre.protocol.estimateWithdrawalFee(amount)
+      return feesUtils.forWithdrawalDestination(
+        await acre.protocol.estimateWithdrawalFee(amount),
+        withdrawalDestination,
+      )
     },
     initialData: initialFee,
     enabled: !!acre && !!amount,

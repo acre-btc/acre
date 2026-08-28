@@ -1,17 +1,21 @@
 import { OrangeKitSdk, SafeTransactionData } from "@orangekit/sdk"
 import { AcreContracts, ChainIdentifier } from "../lib/contracts"
 import StakeInitialization from "./staking"
-import { fromSatoshi, toSatoshi, Hex } from "../lib/utils"
+import {
+  fromSatoshi,
+  toSatoshi,
+  DataBuiltStepCallback,
+  OnSignMessageStepCallback,
+  MessageSignedStepCallback,
+} from "../lib/utils"
 import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
 import { AcreBitcoinProvider } from "../lib/bitcoin"
+import { EthereumAddress } from "../lib/ethereum"
+import OrangeKitTbtcRedeemerProxy from "../lib/redeemer-proxy"
 
 export { DepositReceipt } from "./tbtc"
-
-export type DataBuiltStepCallback = (safeTxData: Hex) => Promise<void>
-export type OnSignMessageStepCallback = (messageToSign: string) => Promise<void>
-export type MessageSignedStepCallback = (signedMessage: string) => Promise<void>
 
 /**
  * Represents the deposit data.
@@ -212,32 +216,64 @@ export default class Account {
   }
 
   /**
-   * Initializes the withdrawal process.
-   * @param amount Bitcoin amount to withdraw in 1e8 satoshi precision.
+   * Builds the callback OrangeKit uses to have the user sign the Safe
+   * transaction. Shared by both withdrawal paths so they cannot drift apart.
+   */
+  #buildSignCallback(
+    onSignMessageStepCallback?: OnSignMessageStepCallback,
+    messageSignedStepCallback?: MessageSignedStepCallback,
+  ) {
+    return async (message: string, txData: SafeTransactionData) => {
+      await onSignMessageStepCallback?.(message)
+      const signedMessage = await (this.#bitcoinProvider.signWithdrawMessage?.(
+        message,
+        txData,
+      ) ?? (await this.#bitcoinProvider.signMessage(message)))
+
+      await messageSignedStepCallback?.(signedMessage)
+
+      return signedMessage
+    }
+  }
+
+  /**
+   * Redeems the account's AcreBTC position for tBTC and transfers it to the
+   * given Ethereum address, synchronously, in a single transaction.
+   *
+   * This calls the ERC4626 `redeem` function directly - there is no token
+   * approval step, because the account's Safe is both the caller and the owner
+   * of the shares.
+   * @param btcAmount Bitcoin amount to withdraw in 1e8 satoshi precision.
+   * @param receiverEvmAddress `0x`-prefixed Ethereum address that will receive
+   *        the tBTC. This MUST be an address the user controls and can move
+   *        funds from - the account's own Safe holds no ETH and cannot relay
+   *        the tBTC back out. Validation is the caller's responsibility.
    * @param dataBuiltStepCallback A callback triggered after the data
    *        building step.
    * @param onSignMessageStepCallback A callback triggered before the message
    *        signing step.
    * @param messageSignedStepCallback A callback triggered after the message
    *        signing step.
-   * @returns Hash of the withdrawal transaction and the redemption request id.
+   * @returns Hash of the withdrawal transaction. Unlike the Bitcoin path there
+   *          is no redemption request - the redemption is complete once the
+   *          transaction is mined.
    */
-  async initializeWithdrawal(
+  async initializeTbtcWithdrawal(
     btcAmount: bigint,
+    receiverEvmAddress: string,
     dataBuiltStepCallback?: DataBuiltStepCallback,
     onSignMessageStepCallback?: OnSignMessageStepCallback,
     messageSignedStepCallback?: MessageSignedStepCallback,
-  ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
+  ): Promise<{ transactionHash: string }> {
+    const receiver = EthereumAddress.from(receiverEvmAddress)
+
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
 
-    const safeTxData = this.#contracts.acreBTC.encodeApproveAndCallFunctionData(
-      this.#contracts.bitcoinRedeemer.getChainIdentifier(),
+    const safeTxData = this.#contracts.acreBTC.encodeRedeemFunctionData(
       shares,
-      this.#tbtc.buildRedemptionData(
-        this.#ethereumAddress,
-        this.#bitcoinAddress,
-      ),
+      receiver,
+      this.#ethereumAddress,
     )
 
     await dataBuiltStepCallback?.(safeTxData)
@@ -248,23 +284,68 @@ export default class Account {
       safeTxData.toPrefixedString(),
       this.#bitcoinAddress,
       this.#bitcoinPublicKey,
-      async (message: string, txData: SafeTransactionData) => {
-        await onSignMessageStepCallback?.(message)
-        const signedMessage =
-          await (this.#bitcoinProvider.signWithdrawMessage?.(message, txData) ??
-            (await this.#bitcoinProvider.signMessage(message)))
-
-        await messageSignedStepCallback?.(signedMessage)
-
-        return signedMessage
-      },
+      this.#buildSignCallback(
+        onSignMessageStepCallback,
+        messageSignedStepCallback,
+      ),
     )
 
-    const redemptionRequestId =
-      await this.#contracts.bitcoinRedeemer.findRedemptionRequestIdFromTransaction(
-        Hex.from(transactionHash),
-      )
-    return { transactionHash, redemptionRequestId }
+    return { transactionHash }
+  }
+
+  /**
+   * Redeems the account's AcreBTC position for tBTC and bridges it to Bitcoin,
+   * synchronously, in a single transaction.
+   *
+   * This is one of the two withdrawal paths; the other is
+   * {Account#initializeTbtcWithdrawal}, which stops at tBTC on Ethereum. Here
+   * the shares are approved to the BitcoinRedeemer, which redeems them and
+   * hands the tBTC to the tBTC Bridge for redemption to BTC. The live tBTC
+   * wallet and its main UTXO are resolved client-side.
+   * @param btcAmount Bitcoin amount to withdraw in 1e8 satoshi precision.
+   * @param dataBuiltStepCallback A callback triggered after the data
+   *        building step.
+   * @param onSignMessageStepCallback A callback triggered before the message
+   *        signing step.
+   * @param messageSignedStepCallback A callback triggered after the message
+   *        signing step.
+   * @returns Hash of the withdrawal transaction and the tBTC redemption key.
+   *          There is no redemption request id on the synchronous path.
+   */
+  async initializeBitcoinWithdrawal(
+    btcAmount: bigint,
+    dataBuiltStepCallback?: DataBuiltStepCallback,
+    onSignMessageStepCallback?: OnSignMessageStepCallback,
+    messageSignedStepCallback?: MessageSignedStepCallback,
+  ): Promise<{ transactionHash: string; redemptionKey: string }> {
+    const tbtcAmount = fromSatoshi(btcAmount)
+    const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
+
+    // `redeem` returns assets net of the exit fee, and that net amount is what
+    // reaches the tBTC Bridge. Size wallet selection off it rather than the
+    // gross amount, or we may pick a wallet that cannot cover the redemption.
+    const netTbtcAmount = await this.#contracts.acreBTC.previewRedeem(shares)
+
+    const redeemerProxy = new OrangeKitTbtcRedeemerProxy(
+      this.#contracts,
+      this.#orangeKitSdk,
+      {
+        publicKey: this.#bitcoinPublicKey,
+        bitcoinAddress: this.#bitcoinAddress,
+        ethereumAddress: this.#ethereumAddress,
+      },
+      this.#bitcoinProvider,
+      shares,
+      dataBuiltStepCallback,
+      onSignMessageStepCallback,
+      messageSignedStepCallback,
+    )
+
+    return this.#tbtc.initiateRedemption(
+      this.#bitcoinAddress,
+      netTbtcAmount,
+      redeemerProxy,
+    )
   }
 
   /**

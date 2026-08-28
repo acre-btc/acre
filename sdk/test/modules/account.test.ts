@@ -1,7 +1,4 @@
-import {
-  BitcoinAddressConverter,
-  BitcoinTxHash,
-} from "@keep-network/tbtc-v2.ts"
+import { BitcoinTxHash } from "@keep-network/tbtc-v2.ts"
 import { OrangeKitSdk } from "@orangekit/sdk"
 import { ethers } from "ethers"
 import {
@@ -358,18 +355,20 @@ describe("Account", () => {
     })
   })
 
-  describe("initializeWithdrawal", () => {
+  describe("initializeTbtcWithdrawal", () => {
     const btcAmount = 10000000n // 0.1 BTC
     const btcAmountIn1e18 = 100000000000000000n
+    const mockedShares = 90000000000000000n
+    const receiverEvmAddress = "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b"
 
-    const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
-
-    const mockedShares = 90000000000000000n // 0.09 stBTC in 1e18 precision
     const spyOnConvertToShares = jest.spyOn(
       contracts.acreBTC,
       "convertToShares",
     )
-
+    const spyOnEncodeRedeem = jest.spyOn(
+      contracts.acreBTC,
+      "encodeRedeemFunctionData",
+    )
     const spyOnGetAcreChainIdentifier = jest.spyOn(
       contracts.acreBTC,
       "getChainIdentifier",
@@ -377,107 +376,105 @@ describe("Account", () => {
     const acreChainIdentifier = EthereumAddress.from(
       ethers.Wallet.createRandom().address,
     )
-
-    const spyOnGetBitcoinRedeemerChainIdentifier = jest.spyOn(
-      contracts.bitcoinRedeemer,
-      "getChainIdentifier",
-    )
-    const bitcoinRedeemerChainIdentifier = EthereumAddress.from(
-      ethers.Wallet.createRandom().address,
-    )
-
-    const spyOnAddressToOutputScript = jest.spyOn(
-      BitcoinAddressConverter,
-      "addressToOutputScript",
-    )
-    const redeemerOutputScript = Hex.from(
-      "16001473167C206A13859666C2C3204D8D435185C04C56",
-    )
-
-    const spyOnEncodeApproveAndCall = jest.spyOn(
-      contracts.acreBTC,
-      "encodeApproveAndCallFunctionData",
-    )
-    const safeTxData = Hex.from("123456")
-
-    const redemptionData = Hex.from(
-      "0x0000000000000000000000004665ce4697ba6f9572703857fb3d8a0be09295ec944f997c5553a6f3e1028e707c71b5fa0dd3afa700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000017160014e6f9d74726b19b75f16fe1e9feaec048aa4fa1d0000000000000000000",
-    )
-    const spyOnBuildRedemptionData = jest
-      .spyOn(tbtc, "buildRedemptionData")
-      .mockReturnValue(redemptionData)
-
-    const spyOnFindRedemptionRequestId = jest.spyOn(
-      contracts.bitcoinRedeemer,
-      "findRedemptionRequestIdFromTransaction",
-    )
-    const mockedRedemptionRequestId = 123n
-
     const spyOnSendTransaction = jest.spyOn(orangeKit, "sendTransaction")
+    const safeTxData = Hex.from("abcdef")
     const mockedTxHash =
       "0xad19f160667d583a2eb0b844e9b4f669354e79f91ff79a4782184841e66ca06a"
 
-    let result: Awaited<ReturnType<Account["initializeWithdrawal"]>>
-
-    beforeEach(async () => {
+    beforeEach(() => {
+      jest.clearAllMocks()
       spyOnConvertToShares.mockResolvedValue(mockedShares)
+      spyOnEncodeRedeem.mockReturnValue(safeTxData)
       spyOnGetAcreChainIdentifier.mockReturnValue(acreChainIdentifier)
-      spyOnGetBitcoinRedeemerChainIdentifier.mockReturnValue(
-        bitcoinRedeemerChainIdentifier,
-      )
-      spyOnAddressToOutputScript.mockReturnValue(redeemerOutputScript)
-      spyOnEncodeApproveAndCall.mockReturnValue(safeTxData)
-      spyOnFindRedemptionRequestId.mockResolvedValue(mockedRedemptionRequestId)
       spyOnSendTransaction.mockResolvedValue(mockedTxHash)
-
-      result = await account.initializeWithdrawal(btcAmount)
     })
 
-    it("should convert satoshi amount to tBTC 1e18 precision", () => {
-      expect(spyOnFromSatoshi).toHaveBeenLastCalledWith(btcAmount)
-      expect(spyOnFromSatoshi).toHaveReturnedWith(btcAmountIn1e18)
+    describe("when submitted", () => {
+      let result: Awaited<ReturnType<Account["initializeTbtcWithdrawal"]>>
+
+      beforeEach(async () => {
+        result = await account.initializeTbtcWithdrawal(
+          btcAmount,
+          receiverEvmAddress,
+        )
+      })
+
+      it("should convert the satoshi amount to shares", () => {
+        expect(spyOnConvertToShares).toHaveBeenCalledWith(btcAmountIn1e18)
+      })
+
+      it("should encode a direct redeem to the receiver, owned by the account", () => {
+        expect(spyOnEncodeRedeem).toHaveBeenCalledWith(
+          mockedShares,
+          EthereumAddress.from(receiverEvmAddress),
+          accountData.ethereumAddress,
+        )
+      })
+
+      it("should send transaction via orange kit targeting acreBTC", () => {
+        expect(spyOnSendTransaction).toHaveBeenCalledWith(
+          `0x${acreChainIdentifier.identifierHex}`,
+          "0x0",
+          safeTxData.toPrefixedString(),
+          accountData.bitcoinAddress,
+          accountData.bitcoinPublicKey,
+          expect.any(Function),
+        )
+      })
+
+      it("should return only the transaction hash - there is no request id", () => {
+        expect(result).toStrictEqual({ transactionHash: mockedTxHash })
+      })
+    })
+  })
+
+  describe("initializeBitcoinWithdrawal", () => {
+    const btcAmount = 10000000n // 0.1 BTC
+    const btcAmountIn1e18 = 100000000000000000n
+    const mockedShares = 90000000000000000n
+    const netTbtcAmount = 89000000000000000n
+
+    const spyOnConvertToShares = jest.spyOn(
+      contracts.acreBTC,
+      "convertToShares",
+    )
+    const spyOnPreviewRedeem = jest.spyOn(contracts.acreBTC, "previewRedeem")
+    const spyOnInitiateRedemption = jest.spyOn(tbtc, "initiateRedemption")
+    const expectedResult = {
+      transactionHash: "0xabc",
+      redemptionKey: "0xdef",
+    }
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+      spyOnConvertToShares.mockResolvedValue(mockedShares)
+      spyOnPreviewRedeem.mockResolvedValue(netTbtcAmount)
     })
 
-    it("should convert to shares", () => {
-      expect(spyOnConvertToShares).toHaveBeenCalledWith(btcAmountIn1e18)
-    })
+    describe("when submitted", () => {
+      let result: Awaited<ReturnType<Account["initializeBitcoinWithdrawal"]>>
 
-    it("should get bitcoin redeemer chain identifier", () => {
-      expect(spyOnGetBitcoinRedeemerChainIdentifier).toHaveBeenCalled()
-      expect(spyOnGetBitcoinRedeemerChainIdentifier).toHaveReturnedWith(
-        bitcoinRedeemerChainIdentifier,
-      )
-    })
+      beforeEach(async () => {
+        spyOnInitiateRedemption.mockResolvedValue(expectedResult)
 
-    it("should build redemption data via tbtc module", () => {
-      expect(spyOnBuildRedemptionData).toHaveBeenCalledWith(
-        accountData.ethereumAddress,
-        accountData.bitcoinAddress,
-      )
-    })
+        result = await account.initializeBitcoinWithdrawal(btcAmount)
+      })
 
-    it("should build the safe tx data", () => {
-      expect(spyOnEncodeApproveAndCall).toHaveBeenCalledWith(
-        bitcoinRedeemerChainIdentifier,
-        mockedShares,
-        redemptionData,
-      )
-    })
+      it("should convert the satoshi amount to shares", () => {
+        expect(spyOnConvertToShares).toHaveBeenCalledWith(btcAmountIn1e18)
+      })
 
-    it("should send transaction via orange kit", () => {
-      expect(spyOnSendTransaction).toHaveBeenCalledWith(
-        `0x${acreChainIdentifier.identifierHex}`,
-        "0x0",
-        safeTxData.toPrefixedString(),
-        accountData.bitcoinAddress,
-        accountData.bitcoinPublicKey,
-        expect.any(Function),
-      )
-    })
-    it("should return the transaction hash and redemption request id", () => {
-      expect(result).toStrictEqual({
-        transactionHash: mockedTxHash,
-        redemptionRequestId: mockedRedemptionRequestId,
+      it("should size wallet selection off the net amount, after the exit fee", () => {
+        expect(spyOnPreviewRedeem).toHaveBeenCalledWith(mockedShares)
+        expect(spyOnInitiateRedemption).toHaveBeenCalledWith(
+          accountData.bitcoinAddress,
+          netTbtcAmount,
+          expect.anything(),
+        )
+      })
+
+      it("should return the transaction hash and redemption key", () => {
+        expect(result).toStrictEqual(expectedResult)
       })
     })
   })

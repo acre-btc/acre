@@ -29,14 +29,16 @@ function getEstimatedDuration(
   amount: bigint,
   type: ActivityType,
   shouldUseShortenTimeUnitSuffix = false,
-  status: Activity["status"] = "requested",
 ): string {
   const hoursSuffix = shouldUseShortenTimeUnitSuffix ? "h" : " hours"
   // Withdrawal duration is related to the tBTC redemption process, which takes
   // approximately 5 - 7 hours. We use the average value of 6 hours.
-  if (isWithdrawType(type) && status === "pending") return `6${hoursSuffix}`
-
-  if (isWithdrawType(type) && status === "requested") return `72${hoursSuffix}`
+  //
+  // This no longer varies by status: a withdrawal used to wait in the Midas
+  // queue for the next NAV update before redemption started, which is what the
+  // longer `requested` estimate accounted for. Funds now sit on the acreBTC
+  // contract, so a request goes straight into the tBTC redemption process.
+  if (isWithdrawType(type)) return `6${hoursSuffix}`
 
   // Deposit duration is related to the tBTC minting process, which varies based
   // on the amount of BTC deposited.
