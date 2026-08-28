@@ -14,6 +14,13 @@ const PASSWORD_FORM_ERRORS = {
   DEFAULT: "Something went wrong...",
 }
 
+const WITHDRAWAL_ADDRESS_FORM_ERRORS = {
+  REQUIRED: "Please enter an Ethereum address.",
+  INVALID: "Invalid Ethereum address.",
+  ACCOUNT_ADDRESS:
+    "This is your Acre account address. tBTC sent there cannot be moved out.",
+}
+
 const ACTION_FORM_ERRORS = {
   [ACTION_FLOW_TYPES.STAKE]: TOKEN_FORM_ERRORS,
   [ACTION_FLOW_TYPES.UNSTAKE]: {
@@ -25,5 +32,6 @@ const ACTION_FORM_ERRORS = {
 export default {
   TOKEN_FORM_ERRORS,
   PASSWORD_FORM_ERRORS,
+  WITHDRAWAL_ADDRESS_FORM_ERRORS,
   ACTION_FORM_ERRORS,
 }
