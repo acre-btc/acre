@@ -30,3 +30,13 @@ export const PROCESS_STATUSES = {
 
 export type ProcessStatus =
   (typeof PROCESS_STATUSES)[keyof typeof PROCESS_STATUSES]
+
+/**
+ * Where a withdrawal should be paid out.
+ *
+ * A discriminated union rather than an optional address, so the tBTC branch is
+ * unreachable without one.
+ */
+export type WithdrawalDestination =
+  | { type: "bitcoin" }
+  | { type: "tbtc"; evmAddress: string }
