@@ -1,6 +1,6 @@
 import React from "react"
 import { FormikProps } from "formik"
-import { AlertDescription, AlertIcon, Text } from "@chakra-ui/react"
+import { AlertDescription, AlertIcon, Box, Text } from "@chakra-ui/react"
 import {
   TOKEN_AMOUNT_FIELD_NAME,
   TokenAmountFormValues,
@@ -79,15 +79,25 @@ export default function UnstakeFormBase({
       />
 
       {withdrawToTbtc && (
-        <FormInput
-          name={DESTINATION_ADDRESS_FIELD_NAME}
-          label="Ethereum address"
-          placeholder="0x..."
-          autoComplete="off"
-          spellCheck={false}
-          mt={4}
-          helperText="Must be an address you control on Ethereum. Do not use an exchange deposit address."
-        />
+        // `ModalBody` centres its flex children, so `FormInput`'s own
+        // `FormControl` would size to the input's intrinsic width instead of
+        // filling the modal. Its props reach the `Input`, not that
+        // `FormControl`, so the width has to come from a wrapper.
+        <Box w="full">
+          <FormInput
+            name={DESTINATION_ADDRESS_FIELD_NAME}
+            label="Ethereum address"
+            placeholder="0x..."
+            autoComplete="off"
+            spellCheck={false}
+            mt={4}
+            // The shared outline variant reserves 5rem on the right for
+            // `TokenBalanceInput`'s `Max` button, which cut a full address off
+            // here. Match the default left padding instead.
+            pr={4}
+            helperText="Must be an address you control on Ethereum. Do not use an exchange deposit address."
+          />
+        </Box>
       )}
 
       <UnstakeDetails
