@@ -47,6 +47,17 @@ function AddressValue({ children }: { children: React.ReactNode }) {
   )
 }
 
+// The USD values depend on the BTC price from the Acre API, so they are not
+// available until that request resolves, and stay unavailable if it fails.
+function formatUsdValue(value?: number) {
+  if (value === undefined) return "Loading..."
+
+  return formatNumberToCompactString(value, {
+    currency: "USD",
+    withAutoCompactFormat: true,
+  })
+}
+
 export function getMidasVaultDetails({
   depositFeePercentage,
   withdrawalFeePercentage,
@@ -55,8 +66,8 @@ export function getMidasVaultDetails({
 }: {
   depositFeePercentage?: number
   withdrawalFeePercentage?: number
-  tvlCapInUsd: number
-  vaultTvlInUsd: number
+  tvlCapInUsd?: number
+  vaultTvlInUsd?: number
 }) {
   return {
     vaultName: "Midas acreBTC (macreBTC) Vault",
@@ -105,17 +116,11 @@ export function getMidasVaultDetails({
         items: [
           {
             label: "Active Bitcoin Earning",
-            value: formatNumberToCompactString(vaultTvlInUsd, {
-              currency: "USD",
-              withAutoCompactFormat: true,
-            }),
+            value: formatUsdValue(vaultTvlInUsd),
           },
           {
             label: "TVL Cap",
-            value: formatNumberToCompactString(tvlCapInUsd, {
-              currency: "USD",
-              withAutoCompactFormat: true,
-            }),
+            value: formatUsdValue(tvlCapInUsd),
           },
         ],
       },
