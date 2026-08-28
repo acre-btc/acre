@@ -294,4 +294,38 @@ describe("AcreBTC", () => {
       expect(result).toEqual(expectedResult)
     })
   })
+
+  describe("encodeRedeemFunctionData", () => {
+    const shares = 10n
+    const receiver = EthereumAddress.from(
+      "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b",
+    )
+    const owner = EthereumAddress.from(
+      "0x8FF2A98c1F08FD5a4D12bED447b90d4de045C10b",
+    )
+    const mockedEncodedData = "0xdeadbeef"
+    let result: Hex
+
+    beforeAll(() => {
+      mockedContractInstance.interface.encodeFunctionData.mockReturnValue(
+        mockedEncodedData,
+      )
+
+      result = acreBTC.encodeRedeemFunctionData(shares, receiver, owner)
+    })
+
+    it("should encode a direct `redeem` call - no approval is involved", () => {
+      expect(
+        mockedContractInstance.interface.encodeFunctionData,
+      ).toHaveBeenLastCalledWith("redeem", [
+        shares,
+        `0x${receiver.identifierHex}`,
+        `0x${owner.identifierHex}`,
+      ])
+    })
+
+    it("should return the encoded data", () => {
+      expect(result.toPrefixedString()).toEqual(mockedEncodedData)
+    })
+  })
 })
