@@ -85,11 +85,16 @@ export default function TokenBalanceInput({
   tokenAmountLabel = "Amount",
   ...inputProps
 }: TokenBalanceInputProps) {
-  const valueRef = useRef<bigint | undefined>(amount)
-  const [displayedValue, setDisplayedValue] = useState<string | undefined>()
-  const styles = useMultiStyleConfig("TokenBalanceInput", { size })
-
   const { decimals, symbol } = currencyUtils.getCurrencyByType(currency)
+
+  const valueRef = useRef<bigint | undefined>(amount)
+  const [displayedValue, setDisplayedValue] = useState<string | undefined>(
+    () =>
+      defaultAmount
+        ? numbersUtils.fixedPointNumberToString(defaultAmount, decimals)
+        : undefined,
+  )
+  const styles = useMultiStyleConfig("TokenBalanceInput", { size })
 
   const onValueChange = (values: NumberFormatInputValues) => {
     const { value } = values
@@ -115,15 +120,15 @@ export default function TokenBalanceInput({
     typeof errorMsgText === "string" &&
     forms.isFormError("EXCEEDED_VALUE", errorMsgText)
 
-  const defaultValue = defaultAmount
-    ? numbersUtils.fixedPointNumberToString(defaultAmount, decimals)
-    : undefined
-
   useEffect(() => {
     if (!defaultAmount) return
 
+    valueRef.current = defaultAmount
+    setDisplayedValue(
+      numbersUtils.fixedPointNumberToString(defaultAmount, decimals),
+    )
     setAmount(defaultAmount)
-  }, [defaultAmount, setAmount])
+  }, [defaultAmount, decimals, setAmount])
 
   return (
     <FormControl isInvalid={hasError} isDisabled={inputProps.isDisabled}>
@@ -155,7 +160,6 @@ export default function TokenBalanceInput({
           {...inputProps}
           isInvalid={hasError}
           value={displayedValue}
-          defaultValue={defaultValue}
           onValueChange={onValueChange}
           onChange={onChange}
         />
