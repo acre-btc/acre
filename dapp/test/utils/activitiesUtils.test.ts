@@ -4,15 +4,16 @@ import { activitiesUtils } from "#/utils"
 describe("Utils functions for activities", () => {
   describe("getEstimatedDuration", () => {
     describe("withdraw", () => {
+      // The tBTC redemption process does not depend on the amount.
       describe.each([
         // 0.01 BTC
-        { value: 0.01, expectedResult: "72 hours" },
+        { value: 0.01, expectedResult: "6 hours" },
         // 0.1 BTC
-        { value: 0.1, expectedResult: "72 hours" },
+        { value: 0.1, expectedResult: "6 hours" },
         // 1 BTC
-        { value: 1, expectedResult: "72 hours" },
+        { value: 1, expectedResult: "6 hours" },
         // 10 BTC
-        { value: 10, expectedResult: "72 hours" },
+        { value: 10, expectedResult: "6 hours" },
       ])("when it is $value BTC", ({ value, expectedResult }) => {
         it(`should return ${expectedResult}`, () => {
           expect(
