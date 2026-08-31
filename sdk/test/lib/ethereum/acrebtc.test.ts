@@ -1,4 +1,4 @@
-import ethers, { Contract } from "ethers"
+import ethers, { Contract, TransactionReceipt } from "ethers"
 import acreBTCContract from "@acre-btc/contracts/deployments/sepolia/acreBTC.json"
 import { EthereumAcreBTC } from "../../../src/lib/ethereum/acrebtc"
 import { Hex } from "../../../src/lib/utils"
@@ -29,9 +29,17 @@ describe("AcreBTC", () => {
     exitFeeBasisPoints: jest.fn(),
     interface: {
       encodeFunctionData: jest.fn(),
+      getEvent: jest.fn(),
+      parseLog: jest.fn(),
     },
     previewRedeem: jest.fn(),
     convertToShares: jest.fn(),
+  }
+
+  const mockedRunner: EthereumContractRunner = {
+    provider: {
+      getTransactionReceipt: jest.fn(),
+    } as unknown as EthereumContractRunner["provider"],
   }
 
   beforeAll(() => {
@@ -43,7 +51,7 @@ describe("AcreBTC", () => {
 
     acreBTC = new EthereumAcreBTC(
       {
-        runner: {} as EthereumContractRunner,
+        runner: mockedRunner,
       },
       "sepolia",
     )
@@ -292,6 +300,152 @@ describe("AcreBTC", () => {
 
     it("should convert tBTC amount to acreBTC shares", () => {
       expect(result).toEqual(expectedResult)
+    })
+  })
+
+  describe("encodeRequestRedeemFunctionData", () => {
+    const shares = 10n
+    const receiver = EthereumAddress.from(
+      "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b",
+    )
+    const owner = EthereumAddress.from(
+      "0x8FF2A98c1F08FD5a4D12bED447b90d4de045C10b",
+    )
+    const mockedEncodedData = "0xdeadbeef"
+    let result: Hex
+
+    beforeAll(() => {
+      mockedContractInstance.interface.encodeFunctionData.mockReturnValue(
+        mockedEncodedData,
+      )
+
+      result = acreBTC.encodeRequestRedeemFunctionData(shares, receiver, owner)
+    })
+
+    it("should encode a `requestRedeem` call - no approval is involved", () => {
+      expect(
+        mockedContractInstance.interface.encodeFunctionData,
+      ).toHaveBeenLastCalledWith("requestRedeem", [
+        shares,
+        `0x${receiver.identifierHex}`,
+        `0x${owner.identifierHex}`,
+      ])
+    })
+
+    it("should return the encoded data", () => {
+      expect(result.toPrefixedString()).toEqual(mockedEncodedData)
+    })
+  })
+
+  describe("findRedemptionRequestIdFromTransaction", () => {
+    const txHash = Hex.from(
+      "0x6ecf70666399edf65fc1e159b22fbb48cf0e389e84fdbb3550a7366d9af7efff",
+    )
+    const mockedRedemptionRequestedEventTopic =
+      "0x46949ee51143d5b58e4df83122d6c382a04f7bffbe563f78cd7fa61ee519ec08"
+
+    beforeAll(() => {
+      jest
+        .spyOn(mockedContractInstance.interface, "getEvent")
+        .mockReturnValue({ topicHash: mockedRedemptionRequestedEventTopic })
+    })
+
+    describe("when cannot find the tx receipt", () => {
+      beforeAll(() => {
+        jest
+          .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+          .mockResolvedValueOnce(null)
+      })
+
+      it("should throw an error", async () => {
+        await expect(
+          acreBTC.findRedemptionRequestIdFromTransaction(txHash),
+        ).rejects.toThrow(
+          `Cannot find the redemption request id. Transaction with hash ${txHash.toPrefixedString()} not found`,
+        )
+      })
+    })
+
+    describe("when the transaction exists", () => {
+      beforeAll(() => {
+        jest
+          .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+          .mockResolvedValueOnce({ logs: [] } as unknown as TransactionReceipt)
+      })
+
+      describe("when the `RedemptionRequested` event does not exist", () => {
+        it("should throw an error", async () => {
+          await expect(
+            acreBTC.findRedemptionRequestIdFromTransaction(txHash),
+          ).rejects.toThrow(
+            "Cannot find the redemption request id. The RedemptionRequested event not found",
+          )
+        })
+      })
+
+      describe("when the `RedemptionRequested` event exists", () => {
+        const mockedRedemptionRequestId = 1n
+        const mockedRedemptionRequestedLog = {
+          topics: [mockedRedemptionRequestedEventTopic],
+        }
+        let result: bigint
+
+        beforeAll(async () => {
+          jest
+            .spyOn(mockedRunner.provider!, "getTransactionReceipt")
+            .mockResolvedValue({
+              logs: [mockedRedemptionRequestedLog],
+            } as unknown as TransactionReceipt)
+
+          // Read by name, not by position - the acreBTC event puts the request
+          // id first, unlike the `BitcoinRedeemer` event of the same name.
+          jest
+            .spyOn(mockedContractInstance.interface, "parseLog")
+            .mockReturnValue({
+              args: { requestId: mockedRedemptionRequestId },
+            })
+
+          result = await acreBTC.findRedemptionRequestIdFromTransaction(txHash)
+        })
+
+        it("should find the transaction receipt", () => {
+          expect(
+            mockedRunner.provider?.getTransactionReceipt,
+          ).toHaveBeenCalledWith(txHash.toPrefixedString())
+        })
+
+        it("should get the event signature", () => {
+          expect(
+            mockedContractInstance.interface.getEvent,
+          ).toHaveBeenCalledWith("RedemptionRequested")
+        })
+
+        it("should parse log", () => {
+          expect(
+            mockedContractInstance.interface.parseLog,
+          ).toHaveBeenCalledWith(mockedRedemptionRequestedLog)
+        })
+
+        it("should return the redemption request id", () => {
+          expect(result).toEqual(mockedRedemptionRequestId)
+        })
+
+        describe("when `RedemptionRequested` log can't be parsed", () => {
+          beforeAll(() => {
+            jest
+              .spyOn(mockedContractInstance.interface, "parseLog")
+              .mockReturnValue(null)
+          })
+
+          it("should throw an error", async () => {
+            await expect(
+              acreBTC.findRedemptionRequestIdFromTransaction(txHash),
+            ).rejects.toThrow(
+              "Cannot find the redemption request id. Cannot parse log",
+            )
+          })
+        })
+      })
     })
   })
 })

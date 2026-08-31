@@ -3,6 +3,7 @@ import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/acreBTC.json
 import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/acreBTC.json"
 
 import {
+  EthereumContractRunner,
   EthersContractConfig,
   EthersContractDeployment,
   EthersContractWrapper,
@@ -25,6 +26,8 @@ class EthereumAcreBTC
     exitFeeBasisPoints?: bigint
   } = { entryFeeBasisPoints: undefined, exitFeeBasisPoints: undefined }
 
+  #runner: EthereumContractRunner
+
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
@@ -40,6 +43,7 @@ class EthereumAcreBTC
     }
 
     super(config, artifact)
+    this.#runner = config.runner
   }
 
   /**
@@ -123,6 +127,63 @@ class EthereumAcreBTC
     ])
 
     return Hex.from(data)
+  }
+
+  /**
+   * @see {AcreBTC#encodeRequestRedeemFunctionData}
+   */
+  encodeRequestRedeemFunctionData(
+    shares: bigint,
+    receiver: ChainIdentifier,
+    owner: ChainIdentifier,
+  ): Hex {
+    const data = this.instance.interface.encodeFunctionData("requestRedeem", [
+      shares,
+      `0x${receiver.identifierHex}`,
+      `0x${owner.identifierHex}`,
+    ])
+
+    return Hex.from(data)
+  }
+
+  /**
+   * @see {AcreBTC#findRedemptionRequestIdFromTransaction}
+   */
+  async findRedemptionRequestIdFromTransaction(
+    transactionHash: Hex,
+  ): Promise<bigint> {
+    const receipt = await this.#runner.provider?.getTransactionReceipt(
+      transactionHash.toPrefixedString(),
+    )
+
+    if (!receipt)
+      throw new Error(
+        `Cannot find the redemption request id. Transaction with hash ${transactionHash.toPrefixedString()} not found`,
+      )
+
+    const eventTopic = this.instance.interface.getEvent(
+      "RedemptionRequested",
+    ).topicHash
+
+    // We assume only one redemption was requested in this transaction.
+    const log = receipt.logs.find(
+      (receiptLog) => receiptLog.topics[0] === eventTopic,
+    )
+
+    if (!log)
+      throw new Error(
+        "Cannot find the redemption request id. The RedemptionRequested event not found",
+      )
+
+    // @ts-expect-error Something is off with types.
+    const parsedLog = this.instance.interface.parseLog(log)
+
+    if (!parsedLog)
+      throw new Error("Cannot find the redemption request id. Cannot parse log")
+
+    // Read by name: the argument order here is not the same as in the
+    // `BitcoinRedeemer` event of the same name.
+    return parsedLog.args.requestId as bigint
   }
 
   /**
