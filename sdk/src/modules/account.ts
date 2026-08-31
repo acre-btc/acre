@@ -6,6 +6,7 @@ import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
 import { AcreBitcoinProvider } from "../lib/bitcoin"
+import { EthereumAddress } from "../lib/ethereum/address"
 
 export { DepositReceipt } from "./tbtc"
 
@@ -212,6 +213,32 @@ export default class Account {
   }
 
   /**
+   * Builds the callback OrangeKit uses to have the user sign the Safe
+   * transaction. Shared by both withdrawal paths so they cannot drift apart.
+   * @param onSignMessageStepCallback A callback triggered before the message
+   *        signing step.
+   * @param messageSignedStepCallback A callback triggered after the message
+   *        signing step.
+   * @returns The callback passed to `OrangeKitSdk#sendTransaction`.
+   */
+  #buildSignCallback(
+    onSignMessageStepCallback?: OnSignMessageStepCallback,
+    messageSignedStepCallback?: MessageSignedStepCallback,
+  ) {
+    return async (message: string, txData: SafeTransactionData) => {
+      await onSignMessageStepCallback?.(message)
+      const signedMessage = await (this.#bitcoinProvider.signWithdrawMessage?.(
+        message,
+        txData,
+      ) ?? (await this.#bitcoinProvider.signMessage(message)))
+
+      await messageSignedStepCallback?.(signedMessage)
+
+      return signedMessage
+    }
+  }
+
+  /**
    * Initializes the withdrawal process.
    * @param amount Bitcoin amount to withdraw in 1e8 satoshi precision.
    * @param dataBuiltStepCallback A callback triggered after the data
@@ -248,22 +275,84 @@ export default class Account {
       safeTxData.toPrefixedString(),
       this.#bitcoinAddress,
       this.#bitcoinPublicKey,
-      async (message: string, txData: SafeTransactionData) => {
-        await onSignMessageStepCallback?.(message)
-        const signedMessage =
-          await (this.#bitcoinProvider.signWithdrawMessage?.(message, txData) ??
-            (await this.#bitcoinProvider.signMessage(message)))
-
-        await messageSignedStepCallback?.(signedMessage)
-
-        return signedMessage
-      },
+      this.#buildSignCallback(
+        onSignMessageStepCallback,
+        messageSignedStepCallback,
+      ),
     )
 
     const redemptionRequestId =
       await this.#contracts.bitcoinRedeemer.findRedemptionRequestIdFromTransaction(
         Hex.from(transactionHash),
       )
+    return { transactionHash, redemptionRequestId }
+  }
+
+  /**
+   * Requests a redemption of the account's AcreBTC position for tBTC, paid out
+   * to the given Ethereum address.
+   *
+   * This is the tBTC-to-EVM counterpart of {Account#initializeWithdrawal}, and
+   * it is asynchronous: `acreBTC.requestRedeem` moves the shares to the
+   * withdrawal queue, which requests a redemption of the underlying Midas
+   * position. The tBTC reaches `receiverEvmAddress` once that redemption
+   * settles at the next NAV update - not when this transaction is mined.
+   *
+   * Because the account's Safe is both the caller and the owner of the shares,
+   * the vault does not touch the allowance and no approval step is involved.
+   * @param btcAmount Bitcoin amount to withdraw in 1e8 satoshi precision.
+   * @param receiverEvmAddress `0x`-prefixed Ethereum address that will receive
+   *        the tBTC. This MUST be an address the user controls and can move
+   *        funds from - the account's own Safe holds no ETH and cannot relay
+   *        the tBTC back out. Validation is the caller's responsibility.
+   * @param dataBuiltStepCallback A callback triggered after the data
+   *        building step.
+   * @param onSignMessageStepCallback A callback triggered before the message
+   *        signing step.
+   * @param messageSignedStepCallback A callback triggered after the message
+   *        signing step.
+   * @returns Hash of the withdrawal transaction and the redemption request id.
+   */
+  async initializeTbtcWithdrawal(
+    btcAmount: bigint,
+    receiverEvmAddress: string,
+    dataBuiltStepCallback?: DataBuiltStepCallback,
+    onSignMessageStepCallback?: OnSignMessageStepCallback,
+    messageSignedStepCallback?: MessageSignedStepCallback,
+  ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
+    const receiver = EthereumAddress.from(receiverEvmAddress)
+
+    const tbtcAmount = fromSatoshi(btcAmount)
+    const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
+
+    // The receiver is the user's own address; the owner is the account's Safe,
+    // which holds the shares. Swapping the two would send the tBTC to a Safe
+    // that has no ETH and cannot move it on.
+    const safeTxData = this.#contracts.acreBTC.encodeRequestRedeemFunctionData(
+      shares,
+      receiver,
+      this.#ethereumAddress,
+    )
+
+    await dataBuiltStepCallback?.(safeTxData)
+
+    const transactionHash = await this.#orangeKitSdk.sendTransaction(
+      `0x${this.#contracts.acreBTC.getChainIdentifier().identifierHex}`,
+      "0x0",
+      safeTxData.toPrefixedString(),
+      this.#bitcoinAddress,
+      this.#bitcoinPublicKey,
+      this.#buildSignCallback(
+        onSignMessageStepCallback,
+        messageSignedStepCallback,
+      ),
+    )
+
+    const redemptionRequestId =
+      await this.#contracts.acreBTC.findRedemptionRequestIdFromTransaction(
+        Hex.from(transactionHash),
+      )
+
     return { transactionHash, redemptionRequestId }
   }
 
