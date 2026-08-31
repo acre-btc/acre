@@ -64,7 +64,7 @@ export default function UnstakeFormBase({
       <FormCheckbox
         name={WITHDRAW_TO_TBTC_FIELD_NAME}
         label="Withdraw as tBTC to an Ethereum address"
-        helperText="Fastest option. Your tBTC lands in the account you choose in the same transaction, with no waiting period."
+        helperText="Faster option. Your tBTC lands in the account you choose once the withdrawal is processed, skipping the Bitcoin bridge."
         mt={6}
         onValueChange={(checked) => {
           // Validation only runs on submit, so an address error from a previous
@@ -110,9 +110,9 @@ export default function UnstakeFormBase({
         <AlertDescription>
           {withdrawToTbtc ? (
             <Text size="sm">
-              Your tBTC is sent to the address above in the same transaction.
-              There is no waiting period. You&apos;ll need ETH at that address
-              to move or bridge it later.
+              Your tBTC is sent to the address above once the withdrawal is
+              processed. You&apos;ll need ETH at that address to move or bridge
+              it later.
             </Text>
           ) : (
             <Text size="sm">
@@ -133,7 +133,7 @@ export default function UnstakeFormBase({
         {withdrawToTbtc ? "Withdraw tBTC" : "Request Withdraw"}
       </FormSubmitButton>
 
-      {!withdrawToTbtc && <ActionDurationEstimation type="withdraw" />}
+      <ActionDurationEstimation type="withdraw" />
     </Form>
   )
 }

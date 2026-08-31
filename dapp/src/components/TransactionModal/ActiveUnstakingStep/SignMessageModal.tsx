@@ -104,19 +104,21 @@ export default function SignMessageModal() {
       if (!amount) return
       if (destination.type === "tbtc" && !destination.evmAddress) return
 
-      // The synchronous tBTC path has no redemption request, so the activity
-      // is keyed off the transaction hash instead.
+      // Both paths queue a redemption, so both key the activity off the
+      // request id. Only the tBTC path has a transaction hash worth recording
+      // at this point - the Bitcoin one has none yet.
       let activityId: string
       let activityTxHash: string | undefined
 
       if (destination.type === "tbtc") {
-        const { transactionHash } = await initializeTbtcWithdraw(
-          amount,
-          destination.evmAddress,
-          dataBuiltStepCallback,
-          onSignMessageCallback,
-        )
-        activityId = transactionHash
+        const { transactionHash, redemptionRequestId } =
+          await initializeTbtcWithdraw(
+            amount,
+            destination.evmAddress,
+            dataBuiltStepCallback,
+            onSignMessageCallback,
+          )
+        activityId = redemptionRequestId.toString()
         activityTxHash = transactionHash
       } else {
         const { redemptionRequestId } = await initializeWithdraw(
