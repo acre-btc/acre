@@ -6,7 +6,6 @@ import Tbtc from "./tbtc"
 import AcreSubgraphApi from "../lib/api/AcreSubgraphApi"
 import { DepositStatus } from "../lib/api/TbtcApi"
 import { AcreBitcoinProvider } from "../lib/bitcoin"
-import { EthereumAddress } from "../lib/ethereum/address"
 
 export { DepositReceipt } from "./tbtc"
 
@@ -304,7 +303,8 @@ export default class Account {
    * @param receiverEvmAddress `0x`-prefixed Ethereum address that will receive
    *        the tBTC. This MUST be an address the user controls and can move
    *        funds from - the account's own Safe holds no ETH and cannot relay
-   *        the tBTC back out. Validation is the caller's responsibility.
+   *        the tBTC back out. The contract handle parses it and throws if it
+   *        is not a valid address, but it cannot tell who controls it.
    * @param dataBuiltStepCallback A callback triggered after the data
    *        building step.
    * @param onSignMessageStepCallback A callback triggered before the message
@@ -320,17 +320,17 @@ export default class Account {
     onSignMessageStepCallback?: OnSignMessageStepCallback,
     messageSignedStepCallback?: MessageSignedStepCallback,
   ): Promise<{ transactionHash: string; redemptionRequestId: bigint }> {
-    const receiver = EthereumAddress.from(receiverEvmAddress)
-
     const tbtcAmount = fromSatoshi(btcAmount)
     const shares = await this.#contracts.acreBTC.convertToShares(tbtcAmount)
 
     // The receiver is the user's own address; the owner is the account's Safe,
     // which holds the shares. Swapping the two would send the tBTC to a Safe
-    // that has no ETH and cannot move it on.
+    // that has no ETH and cannot move it on. The address is passed through as
+    // a string - parsing it belongs to the contract handle, which is the layer
+    // that knows the chain.
     const safeTxData = this.#contracts.acreBTC.encodeRequestRedeemFunctionData(
       shares,
-      receiver,
+      receiverEvmAddress,
       this.#ethereumAddress,
     )
 

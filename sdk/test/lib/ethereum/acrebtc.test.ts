@@ -305,9 +305,8 @@ describe("AcreBTC", () => {
 
   describe("encodeRequestRedeemFunctionData", () => {
     const shares = 10n
-    const receiver = EthereumAddress.from(
-      "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b",
-    )
+    const receiverEvmAddress = "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b"
+    const receiver = EthereumAddress.from(receiverEvmAddress)
     const owner = EthereumAddress.from(
       "0x8FF2A98c1F08FD5a4D12bED447b90d4de045C10b",
     )
@@ -319,7 +318,11 @@ describe("AcreBTC", () => {
         mockedEncodedData,
       )
 
-      result = acreBTC.encodeRequestRedeemFunctionData(shares, receiver, owner)
+      result = acreBTC.encodeRequestRedeemFunctionData(
+        shares,
+        receiverEvmAddress,
+        owner,
+      )
     })
 
     it("should encode a `requestRedeem` call - no approval is involved", () => {
@@ -334,6 +337,16 @@ describe("AcreBTC", () => {
 
     it("should return the encoded data", () => {
       expect(result.toPrefixedString()).toEqual(mockedEncodedData)
+    })
+
+    it("should reject a receiver that is not a valid Ethereum address", () => {
+      expect(() =>
+        acreBTC.encodeRequestRedeemFunctionData(
+          shares,
+          "not-an-address",
+          owner,
+        ),
+      ).toThrow()
     })
   })
 

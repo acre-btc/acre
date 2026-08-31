@@ -68,12 +68,14 @@ export interface AcreBTC {
    * No token approval is involved as long as the caller is the `owner`, in
    * which case the vault does not touch the allowance at all.
    * @param shares Amount of AcreBTC shares to redeem.
-   * @param receiver The address that will receive the tBTC.
+   * @param receiver The address that will receive the tBTC, as a string in
+   *        whichever format the target chain uses. The implementation parses
+   *        and validates it, so callers need not know the chain.
    * @param owner The address the shares are taken from.
    */
   encodeRequestRedeemFunctionData(
     shares: bigint,
-    receiver: ChainIdentifier,
+    receiver: string,
     owner: ChainIdentifier,
   ): Hex
 

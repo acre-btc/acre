@@ -503,7 +503,6 @@ describe("Account", () => {
     )
 
     const receiverEvmAddress = "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b"
-    const receiver = EthereumAddress.from(receiverEvmAddress)
 
     const spyOnEncodeRequestRedeem = jest.spyOn(
       contracts.acreBTC,
@@ -564,9 +563,11 @@ describe("Account", () => {
     })
 
     it("should build the safe tx data with the receiver and the account's Safe as the owner", () => {
+      // The receiver is handed over as a string - the contract handle is what
+      // knows the chain and parses it.
       expect(spyOnEncodeRequestRedeem).toHaveBeenCalledWith(
         mockedShares,
-        receiver,
+        receiverEvmAddress,
         accountData.ethereumAddress,
       )
     })
