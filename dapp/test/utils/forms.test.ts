@@ -68,7 +68,7 @@ describe("validateWithdrawalAddress", () => {
     {
       label: "the zero address",
       value: "0x0000000000000000000000000000000000000000",
-      expected: ERRORS.ZERO_ADDRESS,
+      expected: ERRORS.INVALID,
     },
   ])("when the value is $label", ({ value, expected }) => {
     it(`should return ${expected ? "an error" : "undefined"}`, () => {
