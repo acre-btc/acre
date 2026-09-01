@@ -348,6 +348,18 @@ describe("AcreBTC", () => {
         ),
       ).toThrow()
     })
+
+    // Well-formed, so the address parser lets it through, and nothing between
+    // here and the Midas vault rejects it either.
+    it("should reject the zero address as the receiver", () => {
+      expect(() =>
+        acreBTC.encodeRequestRedeemFunctionData(
+          shares,
+          "0x0000000000000000000000000000000000000000",
+          owner,
+        ),
+      ).toThrow("Receiver cannot be the zero address")
+    })
   })
 
   describe("findRedemptionRequestIdFromTransaction", () => {

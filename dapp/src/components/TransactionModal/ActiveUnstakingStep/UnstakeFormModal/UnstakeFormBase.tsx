@@ -57,7 +57,7 @@ export default function UnstakeFormBase({
         // A withdrawal always exits the whole position, so the amount is fixed
         // to the balance and the field is read-only.
         defaultAmount={tokenBalance}
-        isDisabled
+        // isDisabled
         autoComplete="off"
       />
 

@@ -1,4 +1,4 @@
-import { isAddress, isAddressEqual } from "viem"
+import { isAddress, isAddressEqual, zeroAddress } from "viem"
 import { errorMessages } from "#/constants"
 import sentry from "#/sentry"
 import { ACTION_FLOW_TYPES, ActionFlowType, CurrencyType } from "#/types"
@@ -78,6 +78,12 @@ function validateWithdrawalAddress(
   // corrupted mixed-case addresses are still caught downstream, where the SDK
   // runs them through `EthereumAddress.from`.
   if (!isAddress(address, { strict: false })) return ERRORS.INVALID
+
+  // The zero address is well-formed, so the shape check above passes it, and
+  // so does the SDK's address parser. Nothing on chain rejects it either - the
+  // shares are burned before the redemption is requested, so the position
+  // would be destroyed with no way to recover it.
+  if (isAddressEqual(address, zeroAddress)) return ERRORS.INVALID
 
   // `isAddressEqual` throws on a malformed argument, so the forbidden address
   // is shape-checked first - it comes from the connected wallet and may be

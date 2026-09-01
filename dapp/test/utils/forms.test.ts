@@ -63,6 +63,13 @@ describe("validateWithdrawalAddress", () => {
       value: `  ${CHECKSUMMED}  `,
       expected: undefined,
     },
+    // Well-formed, so the shape check passes it - but redeeming there burns
+    // the position, and nothing downstream rejects it.
+    {
+      label: "the zero address",
+      value: "0x0000000000000000000000000000000000000000",
+      expected: ERRORS.ZERO_ADDRESS,
+    },
   ])("when the value is $label", ({ value, expected }) => {
     it(`should return ${expected ? "an error" : "undefined"}`, () => {
       expect(forms.validateWithdrawalAddress(value)).toBe(expected)

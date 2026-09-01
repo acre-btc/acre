@@ -143,6 +143,13 @@ class EthereumAcreBTC
     // Ethereum address.
     const receiverAddress = EthereumAddress.from(receiver)
 
+    // The zero address is well-formed, so `EthereumAddress.from` accepts it,
+    // and nothing on the way to the Midas vault rejects it either. The shares
+    // are burned before the redemption is requested, so redeeming to it would
+    // destroy the position with no way to recover it.
+    if (/^0+$/.test(receiverAddress.identifierHex))
+      throw new Error("Receiver cannot be the zero address")
+
     const data = this.instance.interface.encodeFunctionData("requestRedeem", [
       shares,
       `0x${receiverAddress.identifierHex}`,
