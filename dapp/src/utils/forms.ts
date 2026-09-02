@@ -54,6 +54,14 @@ function validateTokenAmount(
       numbersUtils.fixedPointNumberToString(minValue, decimals),
     )
 
+  // Only reachable when `minValue` is zero - the tBTC-to-EVM withdrawal, which
+  // has no dust threshold to enforce. `0n >= 0n` satisfies the minimum, and the
+  // amount would then reach `ActionFormModal`'s `if (!amount) return`, turning
+  // the submit button into a silent no-op. Checked last on purpose: wherever a
+  // real minimum applies, zero fails it first and keeps the message that names
+  // the threshold.
+  if (value === 0n) return ERRORS_BY_ACTION_TYPE.REQUIRED
+
   return undefined
 }
 

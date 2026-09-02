@@ -17,7 +17,6 @@ export type TokenAmountFormBaseProps = {
   currency: CurrencyType
   withMaxButton: boolean
   children?: React.ReactNode
-  defaultAmount?: bigint
 }
 
 export default function TokenAmountFormBase({
@@ -28,7 +27,6 @@ export default function TokenAmountFormBase({
   tokenAmountLabel,
   withMaxButton,
   children,
-  defaultAmount,
   ...formikProps
 }: TokenAmountFormBaseProps & FormikProps<TokenAmountFormValues>) {
   return (
@@ -40,7 +38,6 @@ export default function TokenAmountFormBase({
         tokenAmountLabel={tokenAmountLabel}
         currency={currency}
         withMaxButton={withMaxButton}
-        defaultAmount={defaultAmount}
         autoFocus
         autoComplete="off"
       />

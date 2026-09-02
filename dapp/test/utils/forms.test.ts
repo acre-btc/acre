@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { forms } from "#/utils"
 import { errorMessages } from "#/constants"
+import { ACTION_FLOW_TYPES } from "#/types"
 
 const ERRORS = errorMessages.WITHDRAWAL_ADDRESS_FORM_ERRORS
 
@@ -99,6 +100,100 @@ describe("validateWithdrawalAddress", () => {
           forbiddenAddress: "0x8FF2A98c1F08FD5a4D12bED447b90d4de045C10b",
         }),
       ).toBeUndefined()
+    })
+  })
+})
+
+const UNSTAKE_ERRORS = errorMessages.ACTION_FORM_ERRORS.UNSTAKE
+const STAKE_ERRORS = errorMessages.ACTION_FORM_ERRORS.STAKE
+
+// The Bitcoin-path minimum: a stand-in for the tBTC Bridge redemption dust
+// threshold. The tBTC-to-EVM path never touches the Bridge and passes 0n.
+const BITCOIN_PATH_MINIMUM = 1000000n // 0.01 BTC
+const BALANCE = 5000000n // 0.05 BTC
+
+const validateWithdrawal = (value: bigint | undefined, minValue: bigint) =>
+  forms.validateTokenAmount(
+    ACTION_FLOW_TYPES.UNSTAKE,
+    value,
+    BALANCE,
+    minValue,
+    "bitcoin",
+  )
+
+describe("validateTokenAmount", () => {
+  describe("when withdrawing to Bitcoin - the minimum applies", () => {
+    it("should reject an amount below the minimum", () => {
+      expect(validateWithdrawal(999999n, BITCOIN_PATH_MINIMUM)).toBe(
+        UNSTAKE_ERRORS.INSUFFICIENT_VALUE("withdrawal", "0.01"),
+      )
+    })
+
+    it("should accept an amount exactly at the minimum", () => {
+      expect(
+        validateWithdrawal(BITCOIN_PATH_MINIMUM, BITCOIN_PATH_MINIMUM),
+      ).toBeUndefined()
+    })
+
+    // Ordering guard: the minimum has to be reported before the zero check, so
+    // this path keeps the message that names the threshold.
+    it("should report zero as below the minimum, not as a missing amount", () => {
+      expect(validateWithdrawal(0n, BITCOIN_PATH_MINIMUM)).toBe(
+        UNSTAKE_ERRORS.INSUFFICIENT_VALUE("withdrawal", "0.01"),
+      )
+    })
+  })
+
+  describe("when withdrawing to tBTC - the minimum is bypassed with 0n", () => {
+    it("should accept a single satoshi", () => {
+      expect(validateWithdrawal(1n, 0n)).toBeUndefined()
+    })
+
+    it("should accept an amount far below the Bridge dust threshold", () => {
+      expect(validateWithdrawal(500n, 0n)).toBeUndefined()
+    })
+
+    it("should accept the whole balance", () => {
+      expect(validateWithdrawal(BALANCE, 0n)).toBeUndefined()
+    })
+
+    // Without this the amount satisfies `0n >= 0n`, and the submit button
+    // becomes a silent no-op.
+    it("should still reject a zero amount", () => {
+      expect(validateWithdrawal(0n, 0n)).toBe(UNSTAKE_ERRORS.REQUIRED)
+    })
+
+    it("should still reject an amount above the balance", () => {
+      expect(validateWithdrawal(BALANCE + 1n, 0n)).toBe(
+        UNSTAKE_ERRORS.EXCEEDED_VALUE,
+      )
+    })
+
+    it("should still require an amount", () => {
+      expect(validateWithdrawal(undefined, 0n)).toBe(UNSTAKE_ERRORS.REQUIRED)
+    })
+  })
+
+  describe("when the amount breaches both bounds", () => {
+    it("should report the maximum first", () => {
+      expect(validateWithdrawal(BALANCE + 1n, BALANCE + 100n)).toBe(
+        UNSTAKE_ERRORS.EXCEEDED_VALUE,
+      )
+    })
+  })
+
+  describe("when depositing", () => {
+    // Regression guard: the zero check must not reach the deposit copy.
+    it("should report zero as below the minimum deposit", () => {
+      expect(
+        forms.validateTokenAmount(
+          ACTION_FLOW_TYPES.STAKE,
+          0n,
+          BALANCE,
+          BITCOIN_PATH_MINIMUM,
+          "bitcoin",
+        ),
+      ).toBe(STAKE_ERRORS.INSUFFICIENT_VALUE("deposit", "0.01"))
     })
   })
 })

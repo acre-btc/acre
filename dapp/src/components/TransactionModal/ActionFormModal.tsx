@@ -93,6 +93,10 @@ function ActionFormModal({ type }: { type: ActionFlowType }) {
     ({ amount, withdrawToTbtc, destinationAddress }: UnstakeFormValues) => {
       if (!amount) return
 
+      // The form resolves `withdrawToTbtc` before submitting, and validation
+      // guarantees an address whenever it is set, so the Bitcoin fallback is
+      // defensive only. It must not become the quiet default: a dust position
+      // reaching it would be routed down the one path it cannot use.
       const destination: WithdrawalDestination =
         withdrawToTbtc && destinationAddress
           ? { type: "tbtc", evmAddress: destinationAddress.trim() }

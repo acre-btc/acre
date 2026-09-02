@@ -101,8 +101,12 @@ export default function SignMessageModal() {
   const { mutate: handleSignMessage } = useMutation({
     mutationKey: ["sign-message"],
     mutationFn: async () => {
-      if (!amount) return
-      if (destination.type === "tbtc" && !destination.evmAddress) return
+      // Throw rather than return: a `mutationFn` that resolves with `undefined`
+      // fires `onSuccess`, which would show a withdrawal success screen for a
+      // transaction that was never built.
+      if (!amount) throw new Error("Withdrawal amount is missing")
+      if (destination.type === "tbtc" && !destination.evmAddress)
+        throw new Error("Withdrawal receiver address is missing")
 
       // Both paths queue a redemption, so both key the activity off the
       // request id. Only the tBTC path has a transaction hash worth recording

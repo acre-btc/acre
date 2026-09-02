@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useRef, useState } from "react"
 import {
   Box,
   Button,
@@ -56,7 +56,6 @@ function FiatCurrencyBalance({
 
 export type TokenBalanceInputProps = {
   amount?: bigint
-  defaultAmount?: bigint
   currency: CurrencyType
   tokenBalance: bigint
   placeholder?: string
@@ -71,7 +70,6 @@ export type TokenBalanceInputProps = {
 
 export default function TokenBalanceInput({
   amount,
-  defaultAmount,
   currency,
   tokenBalance,
   placeholder,
@@ -88,12 +86,16 @@ export default function TokenBalanceInput({
   const { decimals, symbol } = currencyUtils.getCurrencyByType(currency)
 
   const valueRef = useRef<bigint | undefined>(amount)
-  const [displayedValue, setDisplayedValue] = useState<string | undefined>(
-    () =>
-      defaultAmount
-        ? numbersUtils.fixedPointNumberToString(defaultAmount, decimals)
-        : undefined,
-  )
+  // Local state holds only what the user has typed, because an in-progress
+  // value like "0." has no faithful `bigint` to round-trip through. Until they
+  // type, the field renders `amount` straight from its owner, so a value that
+  // changes underneath - a balance that refetches, say - is still picked up.
+  const [typedValue, setTypedValue] = useState<string | undefined>(undefined)
+  const displayedValue =
+    typedValue ??
+    (amount !== undefined
+      ? numbersUtils.fixedPointNumberToString(amount, decimals)
+      : undefined)
   const styles = useMultiStyleConfig("TokenBalanceInput", { size })
 
   const onValueChange = (values: NumberFormatInputValues) => {
@@ -102,7 +104,7 @@ export default function TokenBalanceInput({
     valueRef.current = value
       ? numbersUtils.userAmountToBigInt(value, decimals)
       : undefined
-    setDisplayedValue(value)
+    setTypedValue(value)
   }
 
   const onChange = () => {
@@ -111,24 +113,12 @@ export default function TokenBalanceInput({
 
   const onClickMaxButton = () => {
     setAmount(tokenBalance)
-    setDisplayedValue(
-      numbersUtils.fixedPointNumberToString(tokenBalance, decimals),
-    )
+    setTypedValue(numbersUtils.fixedPointNumberToString(tokenBalance, decimals))
   }
 
   const isBalanceExceeded =
     typeof errorMsgText === "string" &&
     forms.isFormError("EXCEEDED_VALUE", errorMsgText)
-
-  useEffect(() => {
-    if (!defaultAmount) return
-
-    valueRef.current = defaultAmount
-    setDisplayedValue(
-      numbersUtils.fixedPointNumberToString(defaultAmount, decimals),
-    )
-    setAmount(defaultAmount)
-  }, [defaultAmount, decimals, setAmount])
 
   return (
     <FormControl isInvalid={hasError} isDisabled={inputProps.isDisabled}>

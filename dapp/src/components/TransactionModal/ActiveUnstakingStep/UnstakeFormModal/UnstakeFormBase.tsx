@@ -13,8 +13,8 @@ import {
 import FormInput from "#/components/shared/Form/FormInput"
 import FormCheckbox from "#/components/shared/Form/FormCheckbox"
 import { Alert } from "#/components/shared/Alert"
-import { CurrencyType } from "#/types"
-import { activitiesUtils } from "#/utils"
+import { CurrencyType, WithdrawalDestination } from "#/types"
+import { activitiesUtils, currencyUtils, numbersUtils } from "#/utils"
 import UnstakeDetails from "./UnstakeDetails"
 import ActionDurationEstimation from "../../ActionDurationEstimation"
 
@@ -29,43 +29,86 @@ export type UnstakeFormValues = TokenAmountFormValues & {
 export type UnstakeFormBaseProps = {
   formId?: string
   tokenBalance: bigint
-  tokenBalanceInputPlaceholder: string
+  minTokenAmount: bigint
   tokenAmountLabel?: string
   currency: CurrencyType
 }
 
+/**
+ * Whether the position is too small to leave over the Bitcoin bridge.
+ *
+ * The minimum comes from the tBTC Bridge dust threshold, so it gates the
+ * Bitcoin path alone. Below it the destination is not the user's to choose.
+ * A withdrawal exits the whole position, so this is a property of the balance
+ * rather than of the amount in the field.
+ */
+export const isDustPosition = (tokenBalance: bigint, minTokenAmount: bigint) =>
+  tokenBalance > 0n && tokenBalance < minTokenAmount
+
+/** The destination the form will use, whether or not the user picked it. */
+export const withdrawsToTbtc = (
+  tokenBalance: bigint,
+  minTokenAmount: bigint,
+  withdrawToTbtc: boolean | undefined,
+) => isDustPosition(tokenBalance, minTokenAmount) || Boolean(withdrawToTbtc)
+
 export default function UnstakeFormBase({
   formId,
   tokenBalance,
+  minTokenAmount,
   currency,
-  tokenBalanceInputPlaceholder,
   tokenAmountLabel,
   ...formikProps
 }: UnstakeFormBaseProps & FormikProps<UnstakeFormValues>) {
-  const withdrawToTbtc = Boolean(
+  const { decimals } = currencyUtils.getCurrencyByType(currency)
+  const minTokenAmountLabel = numbersUtils.fixedPointNumberToString(
+    minTokenAmount,
+    decimals,
+  )
+
+  // A dust position can only leave as tBTC, so the checkbox reports that
+  // decision rather than collecting one.
+  const isDust = isDustPosition(tokenBalance, minTokenAmount)
+  const withdrawToTbtc = withdrawsToTbtc(
+    tokenBalance,
+    minTokenAmount,
     formikProps.values[WITHDRAW_TO_TBTC_FIELD_NAME],
   )
+  const destination: WithdrawalDestination["type"] = withdrawToTbtc
+    ? "tbtc"
+    : "bitcoin"
 
   return (
     <Form id={formId} onSubmit={formikProps.handleSubmit}>
       <FormTokenBalanceInput
         name={TOKEN_AMOUNT_FIELD_NAME}
         tokenBalance={tokenBalance}
-        placeholder={tokenBalanceInputPlaceholder}
+        placeholder={
+          destination === "tbtc"
+            ? "Amount"
+            : `Minimum ${minTokenAmountLabel} BTC`
+        }
         tokenAmountLabel={tokenAmountLabel}
         currency={currency}
-        // A withdrawal always exits the whole position, so the amount is fixed
-        // to the balance and the field is read-only.
-        defaultAmount={tokenBalance}
+        // TODO: add  isDisabled prop
         // isDisabled
+        // The full balance is Formik's initial value - a withdrawal exits the
+        // whole position. Adding `isDisabled` here locks the field to it; left
+        // editable for now so the amount can be varied in testing.
         autoComplete="off"
       />
 
       <FormCheckbox
         name={WITHDRAW_TO_TBTC_FIELD_NAME}
         label="Withdraw as tBTC to an Ethereum address"
-        helperText="Faster option. Your tBTC lands in the account you choose once the withdrawal is processed, skipping the Bitcoin bridge."
+        helperText={
+          isDust
+            ? `Your deposit is below the ${minTokenAmountLabel} BTC minimum for Bitcoin withdrawals, so it has to be withdrawn as tBTC on Ethereum.`
+            : "Faster option. Your tBTC lands in the account you choose once the withdrawal is processed, skipping the Bitcoin bridge."
+        }
         mt={6}
+        isChecked={withdrawToTbtc}
+        isDisabled={isDust}
         onValueChange={(checked) => {
           // Validation only runs on submit, so an address error from a previous
           // attempt would otherwise survive un-ticking the box. `useFormField`
@@ -100,10 +143,7 @@ export default function UnstakeFormBase({
         </Box>
       )}
 
-      <UnstakeDetails
-        currency="bitcoin"
-        withdrawalDestination={withdrawToTbtc ? "tbtc" : "bitcoin"}
-      />
+      <UnstakeDetails currency="bitcoin" withdrawalDestination={destination} />
 
       <Alert bg="oldPalette.opacity.blue.01" justifyContent="start" mt="10">
         <AlertIcon color="blue.50" w="15px" h="15px" alignSelf="self-start" />

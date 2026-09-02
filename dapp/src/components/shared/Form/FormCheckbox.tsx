@@ -8,13 +8,14 @@ export type FormCheckboxProps = {
   label: string | JSX.Element
   helperText?: string | JSX.Element
   onValueChange?: (checked: boolean) => void
-} & Omit<CheckboxProps, "id" | "isInvalid" | "isChecked" | "onChange">
+} & Omit<CheckboxProps, "id" | "isInvalid" | "onChange">
 
 export default function FormCheckbox({
   name,
   label,
   helperText,
   onValueChange,
+  isChecked,
   ...checkboxProps
 }: FormCheckboxProps) {
   const { field, value, errorMsgText, hasError, onChange } =
@@ -31,7 +32,10 @@ export default function FormCheckbox({
         {...checkboxProps}
         {...fieldProps}
         id={name}
-        isChecked={Boolean(value)}
+        // `isChecked` lets a caller drive the control, for the case where the
+        // choice is not the user's to make. Formik still holds the value the
+        // user picked, so un-forcing it restores that choice.
+        isChecked={isChecked ?? Boolean(value)}
         isInvalid={hasError}
         onChange={(event) => {
           onChange(event.target.checked)
