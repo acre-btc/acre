@@ -89,7 +89,11 @@ export default function PositionDetails() {
             }
             shouldDisplayTooltip
           >
-            <Button {...buttonStyles} onClick={openDepositModal} isDisabled>
+            <Button
+              {...buttonStyles}
+              onClick={openDepositModal}
+              isDisabled={isDisabledForMobileMode}
+            >
               Deposit
             </Button>
           </ArrivingSoonTooltip>
