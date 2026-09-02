@@ -25,6 +25,7 @@ import { activitiesUtils } from "#/utils"
 import CurrencyBalance from "#/components/shared/CurrencyBalance"
 import AcreTVLMessage from "./AcreTVLMessage"
 
+const isDepositFlowEnabled = featureFlags.DEPOSITS_ENABLED
 const isWithdrawalFlowEnabled = featureFlags.WITHDRAWALS_ENABLED
 
 const buttonStyles: ButtonProps = {
@@ -87,12 +88,14 @@ export default function PositionDetails() {
                 ? "This option is not available on mobile yet. Please use the desktop app to deposit."
                 : "Deposits are paused as Acre completes a protocol upgrade."
             }
-            shouldDisplayTooltip
+            shouldDisplayTooltip={
+              !isDepositFlowEnabled || isDisabledForMobileMode
+            }
           >
             <Button
               {...buttonStyles}
               onClick={openDepositModal}
-              isDisabled={isDisabledForMobileMode}
+              isDisabled={!isDepositFlowEnabled || isDisabledForMobileMode}
             >
               Deposit
             </Button>
