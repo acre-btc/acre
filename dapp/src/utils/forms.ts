@@ -1,3 +1,4 @@
+import { isAddress, isAddressEqual, zeroAddress } from "viem"
 import { errorMessages } from "#/constants"
 import sentry from "#/sentry"
 import { ACTION_FLOW_TYPES, ActionFlowType, CurrencyType } from "#/types"
@@ -53,6 +54,55 @@ function validateTokenAmount(
       numbersUtils.fixedPointNumberToString(minValue, decimals),
     )
 
+  // Only reachable when `minValue` is zero - the tBTC-to-EVM withdrawal, which
+  // has no dust threshold to enforce. `0n >= 0n` satisfies the minimum, and the
+  // amount would then reach `ActionFormModal`'s `if (!amount) return`, turning
+  // the submit button into a silent no-op. Checked last on purpose: wherever a
+  // real minimum applies, zero fails it first and keeps the message that names
+  // the threshold.
+  if (value === 0n) return ERRORS_BY_ACTION_TYPE.REQUIRED
+
+  return undefined
+}
+
+/**
+ * Validates an Ethereum address a user typed in as a withdrawal destination.
+ * @param value The raw input value.
+ * @param options.forbiddenAddress An address to reject, in practice the user's
+ *        own Acre account (Safe) address - tBTC sent there cannot be moved out.
+ */
+function validateWithdrawalAddress(
+  value: string | undefined,
+  options?: { forbiddenAddress?: string },
+): string | undefined {
+  const address = value?.trim()
+  const ERRORS = errorMessages.WITHDRAWAL_ADDRESS_FORM_ERRORS
+
+  if (!address) return ERRORS.REQUIRED
+
+  // Shape only. Casing is not the user's problem - different tools emit
+  // lowercase, uppercase and EIP-55 forms of the same valid address, and
+  // viem's default `strict: true` would reject the uppercase one. Genuinely
+  // corrupted mixed-case addresses are still caught downstream, where the SDK
+  // runs them through `EthereumAddress.from`.
+  if (!isAddress(address, { strict: false })) return ERRORS.INVALID
+
+  // The zero address is well-formed, so the shape check above passes it, and
+  // so does the SDK's address parser. Nothing on chain rejects it either - the
+  // shares are burned before the redemption is requested, so the position
+  // would be destroyed with no way to recover it.
+  if (isAddressEqual(address, zeroAddress)) return ERRORS.INVALID
+
+  // `isAddressEqual` throws on a malformed argument, so the forbidden address
+  // is shape-checked first - it comes from the connected wallet and may be
+  // absent before the account resolves.
+  if (
+    options?.forbiddenAddress &&
+    isAddress(options.forbiddenAddress, { strict: false }) &&
+    isAddressEqual(address, options.forbiddenAddress)
+  )
+    return ERRORS.ACCOUNT_ADDRESS
+
   return undefined
 }
 
@@ -89,5 +139,6 @@ export default {
   getErrorsObj,
   validatePassword,
   validateTokenAmount,
+  validateWithdrawalAddress,
   isFormError,
 }

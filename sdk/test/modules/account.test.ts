@@ -482,6 +482,130 @@ describe("Account", () => {
     })
   })
 
+  describe("initializeTbtcWithdrawal", () => {
+    const btcAmount = 10000000n // 0.1 BTC
+    const btcAmountIn1e18 = 100000000000000000n
+
+    const spyOnFromSatoshi = jest.spyOn(satoshiConverter, "fromSatoshi")
+
+    const mockedShares = 90000000000000000n // 0.09 acreBTC in 1e18 precision
+    const spyOnConvertToShares = jest.spyOn(
+      contracts.acreBTC,
+      "convertToShares",
+    )
+
+    const spyOnGetAcreChainIdentifier = jest.spyOn(
+      contracts.acreBTC,
+      "getChainIdentifier",
+    )
+    const acreChainIdentifier = EthereumAddress.from(
+      ethers.Wallet.createRandom().address,
+    )
+
+    const receiverEvmAddress = "0x999333A67C9B55E78B97b9C0b287EB4AAeBa3D3b"
+
+    const spyOnEncodeRequestRedeem = jest.spyOn(
+      contracts.acreBTC,
+      "encodeRequestRedeemFunctionData",
+    )
+    const safeTxData = Hex.from("123456")
+
+    const spyOnFindRedemptionRequestId = jest.spyOn(
+      contracts.acreBTC,
+      "findRedemptionRequestIdFromTransaction",
+    )
+    const mockedRedemptionRequestId = 456n
+
+    const spyOnSendTransaction = jest.spyOn(orangeKit, "sendTransaction")
+    const mockedTxHash =
+      "0xad19f160667d583a2eb0b844e9b4f669354e79f91ff79a4782184841e66ca06a"
+
+    const messageToSign = "message-to-sign"
+    const signedMessage = "signed-message"
+
+    const dataBuiltStepCallback = jest.fn()
+    const onSignMessageStepCallback = jest.fn()
+    const messageSignedStepCallback = jest.fn()
+
+    let result: Awaited<ReturnType<Account["initializeTbtcWithdrawal"]>>
+
+    beforeEach(async () => {
+      spyOnConvertToShares.mockResolvedValue(mockedShares)
+      spyOnGetAcreChainIdentifier.mockReturnValue(acreChainIdentifier)
+      spyOnEncodeRequestRedeem.mockReturnValue(safeTxData)
+      spyOnFindRedemptionRequestId.mockResolvedValue(mockedRedemptionRequestId)
+      bitcoinProvider.signMessage.mockResolvedValue(signedMessage)
+
+      // Drive the signing callback so the step callbacks are exercised.
+      spyOnSendTransaction.mockImplementation(
+        async (_to, _value, _data, _bitcoinAddress, _publicKey, signFn) => {
+          await signFn(messageToSign, {} as never)
+          return mockedTxHash
+        },
+      )
+
+      result = await account.initializeTbtcWithdrawal(
+        btcAmount,
+        receiverEvmAddress,
+        dataBuiltStepCallback,
+        onSignMessageStepCallback,
+        messageSignedStepCallback,
+      )
+    })
+
+    it("should convert satoshi amount to tBTC 1e18 precision", () => {
+      expect(spyOnFromSatoshi).toHaveBeenLastCalledWith(btcAmount)
+      expect(spyOnFromSatoshi).toHaveLastReturnedWith(btcAmountIn1e18)
+    })
+
+    it("should convert to shares", () => {
+      expect(spyOnConvertToShares).toHaveBeenCalledWith(btcAmountIn1e18)
+    })
+
+    it("should build the safe tx data with the receiver and the account's Safe as the owner", () => {
+      // The receiver is handed over as a string - the contract handle is what
+      // knows the chain and parses it.
+      expect(spyOnEncodeRequestRedeem).toHaveBeenCalledWith(
+        mockedShares,
+        receiverEvmAddress,
+        accountData.ethereumAddress,
+      )
+    })
+
+    it("should trigger the data built step callback", () => {
+      expect(dataBuiltStepCallback).toHaveBeenCalledWith(safeTxData)
+    })
+
+    it("should send transaction to the acreBTC contract via orange kit", () => {
+      expect(spyOnSendTransaction).toHaveBeenCalledWith(
+        `0x${acreChainIdentifier.identifierHex}`,
+        "0x0",
+        safeTxData.toPrefixedString(),
+        accountData.bitcoinAddress,
+        accountData.bitcoinPublicKey,
+        expect.any(Function),
+      )
+    })
+
+    it("should trigger the message signing step callbacks", () => {
+      expect(onSignMessageStepCallback).toHaveBeenCalledWith(messageToSign)
+      expect(messageSignedStepCallback).toHaveBeenCalledWith(signedMessage)
+    })
+
+    it("should find the redemption request id from the transaction", () => {
+      expect(spyOnFindRedemptionRequestId).toHaveBeenCalledWith(
+        Hex.from(mockedTxHash),
+      )
+    })
+
+    it("should return the transaction hash and redemption request id", () => {
+      expect(result).toStrictEqual({
+        transactionHash: mockedTxHash,
+        redemptionRequestId: mockedRedemptionRequestId,
+      })
+    })
+  })
+
   describe("getWithdrawals", () => {
     const withdrawals = acreSubgraphApiParsedWithdrawalsData
 

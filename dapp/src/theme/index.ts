@@ -11,6 +11,7 @@ import acreTVLProgressTheme from "./acreTVLProgressTheme"
 import alertTheme from "./alertTheme"
 import buttonTheme from "./buttonTheme"
 import cardTheme from "./cardTheme"
+import checkboxTheme from "./checkboxTheme"
 import closeButtonTheme from "./closeButtonTheme"
 import countdownTheme from "./countdownTheme"
 import currencyBalanceTheme from "./currencyBalanceTheme"
@@ -51,6 +52,7 @@ const defaultTheme = {
     Alert: alertTheme,
     Button: buttonTheme,
     Card: cardTheme,
+    Checkbox: checkboxTheme,
     CloseButton: closeButtonTheme,
     CurrencyBalance: currencyBalanceTheme,
     Form: formTheme,
