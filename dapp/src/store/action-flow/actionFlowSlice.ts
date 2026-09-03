@@ -4,6 +4,7 @@ import {
   PROCESS_STATUSES,
   ProcessStatus,
   TokenAmount,
+  WithdrawalDestination,
 } from "#/types"
 import { PayloadAction, createSlice } from "@reduxjs/toolkit"
 
@@ -13,6 +14,7 @@ type ActionFlowState = {
   status: ProcessStatus
   tokenAmount?: TokenAmount
   txHash?: string
+  withdrawalDestination?: WithdrawalDestination
 }
 
 const initialState: ActionFlowState = {
@@ -21,6 +23,7 @@ const initialState: ActionFlowState = {
   status: PROCESS_STATUSES.IDLE,
   tokenAmount: undefined,
   txHash: undefined,
+  withdrawalDestination: undefined,
 }
 
 export const actionFlowSlice = createSlice({
@@ -42,6 +45,12 @@ export const actionFlowSlice = createSlice({
     setTxHash(state, action: PayloadAction<string | undefined>) {
       state.txHash = action.payload
     },
+    setWithdrawalDestination(
+      state,
+      action: PayloadAction<WithdrawalDestination | undefined>,
+    ) {
+      state.withdrawalDestination = action.payload
+    },
     goNextStep(state) {
       state.activeStep += 1
     },
@@ -54,6 +63,7 @@ export const {
   setStatus,
   setTokenAmount,
   setTxHash,
+  setWithdrawalDestination,
   goNextStep,
   resetState,
 } = actionFlowSlice.actions

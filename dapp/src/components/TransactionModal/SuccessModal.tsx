@@ -14,6 +14,7 @@ import { LoadingSpinnerSuccessIcon } from "#/assets/icons"
 import {
   useActionFlowTokenAmount,
   useActionFlowTxHash,
+  useActionFlowWithdrawalDestination,
   useAppDispatch,
 } from "#/hooks"
 import CurrencyBalanceWithConversion from "#/components/shared/CurrencyBalanceWithConversion"
@@ -32,6 +33,9 @@ export default function SuccessModal({ type }: SuccessModalProps) {
   const tokenAmount = useActionFlowTokenAmount()
   const txHash = useActionFlowTxHash()
   const dispatch = useAppDispatch()
+  // The modal renders for both destinations, and only the store knows which
+  // one this withdrawal used. Bitcoin is the default, as everywhere else.
+  const withdrawsToTbtc = useActionFlowWithdrawalDestination()?.type === "tbtc"
 
   // TODO: We should use one type for flow and activity
   const activityType = type === ACTION_FLOW_TYPES.STAKE ? "deposit" : "withdraw"
@@ -67,8 +71,9 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           )}
           {ACTION_FLOW_TYPES.UNSTAKE === type && (
             <Text size="md">
-              Your BTC will appear in your wallet in approximately 14 days.
-              Track the status in your dashboard.
+              {withdrawsToTbtc
+                ? "Your tBTC will be sent to the Ethereum address you provided once the withdrawal is processed. Track the status in your dashboard."
+                : "Your BTC will appear in your wallet in approximately 14 days. Track the status in your dashboard."}
             </Text>
           )}
           {ACTION_FLOW_TYPES.STAKE === type && txHash && (

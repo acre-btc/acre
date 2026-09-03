@@ -6,18 +6,28 @@ import {
   useMinWithdrawAmount,
   useTransactionDetails,
 } from "#/hooks"
-import { ACTION_FLOW_TYPES, CurrencyType } from "#/types"
+import { ACTION_FLOW_TYPES, CurrencyType, WithdrawalDestination } from "#/types"
 import { currencies } from "#/constants"
 import FeesDetailsAmountItem from "#/components/shared/FeesDetails/FeesDetailsAmountItem"
 import TransactionDetailsAmountItem from "#/components/shared/TransactionDetails/TransactionDetailsAmountItem"
 import FeesTooltip from "../../FeesTooltip"
 
-function UnstakeDetails({ currency }: { currency: CurrencyType }) {
+function UnstakeDetails({
+  currency,
+  withdrawalDestination = "bitcoin",
+}: {
+  currency: CurrencyType
+  withdrawalDestination?: WithdrawalDestination["type"]
+}) {
   const { value = 0n } = useFormField<bigint>(TOKEN_AMOUNT_FIELD_NAME)
   const minWithdrawAmount = useMinWithdrawAmount()
+  // The minimum only gates the Bitcoin path - see UnstakeForm's validate.
+  const isAboveMinimum =
+    withdrawalDestination === "tbtc" || value >= minWithdrawAmount
   const { transactionFee, estimatedAmount } = useTransactionDetails(
-    value >= minWithdrawAmount ? value : 0n,
+    isAboveMinimum ? value : 0n,
     ACTION_FLOW_TYPES.UNSTAKE,
+    withdrawalDestination,
   )
 
   const { total: totalFees, ...restFees } = transactionFee

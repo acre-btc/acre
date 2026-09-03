@@ -35,6 +35,8 @@ export class MockAcreContracts implements AcreContracts {
       getChainIdentifier: jest.fn(),
       convertToShares: jest.fn(),
       encodeApproveAndCallFunctionData: jest.fn(),
+      encodeRequestRedeemFunctionData: jest.fn(),
+      findRedemptionRequestIdFromTransaction: jest.fn(),
     } as AcreBTC
 
     this.bitcoinRedeemer = {

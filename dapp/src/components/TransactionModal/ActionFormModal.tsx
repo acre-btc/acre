@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { Box, ModalBody, ModalCloseButton, ModalHeader } from "@chakra-ui/react"
 import {
   useActionFlowStatus,
@@ -10,30 +10,23 @@ import {
 import {
   ACTION_FLOW_TYPES,
   ActionFlowType,
-  BaseFormProps,
   PROCESS_STATUSES,
+  WithdrawalDestination,
 } from "#/types"
 import { TokenAmountFormValues } from "#/components/shared/TokenAmountForm/TokenAmountFormBase"
 import { logPromiseFailure } from "#/utils"
-import { setStatus, setTokenAmount } from "#/store/action-flow"
+import {
+  setStatus,
+  setTokenAmount,
+  setWithdrawalDestination,
+} from "#/store/action-flow"
 import StakeFormModal from "./ActiveStakingStep/StakeFormModal"
 import UnstakeFormModal from "./ActiveUnstakingStep/UnstakeFormModal"
+import { UnstakeFormValues } from "./ActiveUnstakingStep/UnstakeFormModal/UnstakeFormBase"
 
-const FORM_DATA: Record<
-  ActionFlowType,
-  {
-    heading: string
-    FormComponent: (props: BaseFormProps<TokenAmountFormValues>) => ReactNode
-  }
-> = {
-  [ACTION_FLOW_TYPES.STAKE]: {
-    heading: "Deposit",
-    FormComponent: StakeFormModal,
-  },
-  [ACTION_FLOW_TYPES.UNSTAKE]: {
-    heading: "Request withdraw",
-    FormComponent: UnstakeFormModal,
-  },
+const HEADING: Record<ActionFlowType, string> = {
+  [ACTION_FLOW_TYPES.STAKE]: "Deposit",
+  [ACTION_FLOW_TYPES.UNSTAKE]: "Request withdraw",
 }
 
 function ActionFormModal({ type }: { type: ActionFlowType }) {
@@ -46,14 +39,22 @@ function ActionFormModal({ type }: { type: ActionFlowType }) {
 
   const [isLoading, setIsLoading] = useState(false)
 
-  const { heading, FormComponent } = FORM_DATA[type]
+  const heading = HEADING[type]
 
   const handleInitStake = useCallback(async () => {
     await initStake()
   }, [initStake])
 
   const handleUnstake = useCallback(
-    (amount: bigint) => {
+    (amount: bigint, destination: WithdrawalDestination) => {
+      // The leave-behind rule exists because of the tBTC Bridge dust threshold,
+      // which the tBTC-to-EVM path never touches. Applying it there would route
+      // the user into NotEnoughFundsModal for no reason.
+      if (destination.type === "tbtc") {
+        dispatch(setStatus(PROCESS_STATUSES.PENDING))
+        return
+      }
+
       const hasEnoughFundsForFutureWithdrawals =
         depositedAmount - amount >= minWithdrawAmount
 
@@ -71,29 +72,41 @@ function ActionFormModal({ type }: { type: ActionFlowType }) {
     [depositedAmount, dispatch, minWithdrawAmount],
   )
 
-  const handleSubmitForm = useCallback(
-    async (values: TokenAmountFormValues) => {
-      if (!values.amount) return
+  const handleStakeSubmit = useCallback(
+    async ({ amount }: TokenAmountFormValues) => {
+      if (!amount) return
 
       try {
         setIsLoading(true)
-        if (type === ACTION_FLOW_TYPES.STAKE) await handleInitStake()
-        if (type === ACTION_FLOW_TYPES.UNSTAKE) handleUnstake(values.amount)
-
-        dispatch(setTokenAmount({ amount: values.amount, currency: "bitcoin" }))
+        await handleInitStake()
+        dispatch(setTokenAmount({ amount, currency: "bitcoin" }))
       } catch (error) {
         console.error(error)
       } finally {
         setIsLoading(false)
       }
     },
-    [dispatch, handleInitStake, handleUnstake, type],
+    [dispatch, handleInitStake],
   )
 
-  const handleSubmitFormWrapper = useCallback(
-    (values: TokenAmountFormValues) =>
-      logPromiseFailure(handleSubmitForm(values)),
-    [handleSubmitForm],
+  const handleUnstakeSubmit = useCallback(
+    ({ amount, withdrawToTbtc, destinationAddress }: UnstakeFormValues) => {
+      if (!amount) return
+
+      // The form resolves `withdrawToTbtc` before submitting, and validation
+      // guarantees an address whenever it is set, so the Bitcoin fallback is
+      // defensive only. It must not become the quiet default: a dust position
+      // reaching it would be routed down the one path it cannot use.
+      const destination: WithdrawalDestination =
+        withdrawToTbtc && destinationAddress
+          ? { type: "tbtc", evmAddress: destinationAddress.trim() }
+          : { type: "bitcoin" }
+
+      dispatch(setWithdrawalDestination(destination))
+      handleUnstake(amount, destination)
+      dispatch(setTokenAmount({ amount, currency: "bitcoin" }))
+    },
+    [dispatch, handleUnstake],
   )
 
   useEffect(() => {
@@ -109,7 +122,15 @@ function ActionFormModal({ type }: { type: ActionFlowType }) {
       <ModalHeader>{heading}</ModalHeader>
       <ModalBody>
         <Box w="100%">
-          <FormComponent onSubmitForm={handleSubmitFormWrapper} />
+          {type === ACTION_FLOW_TYPES.STAKE ? (
+            <StakeFormModal
+              onSubmitForm={(values) =>
+                logPromiseFailure(handleStakeSubmit(values))
+              }
+            />
+          ) : (
+            <UnstakeFormModal onSubmitForm={handleUnstakeSubmit} />
+          )}
         </Box>
       </ModalBody>
     </>
