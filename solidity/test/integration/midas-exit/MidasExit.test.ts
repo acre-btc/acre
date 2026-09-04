@@ -1,5 +1,4 @@
 import { expect } from "chai"
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs"
 import { ethers, upgrades } from "hardhat"
 import type { Signer } from "ethers"
 
@@ -15,8 +14,10 @@ import type {
   IERC20,
   MidasAllocator,
   WithdrawalQueue,
-  IBridge,
 } from "../../../typechain"
+// Not from `../../../typechain`: the `IBridge` re-exported there is tBTC's
+// integrator interface, which has no `redemptionParameters`.
+import type { IBridge } from "../../../typechain/contracts/bridge/IBridge"
 import type {
   MidasAccessControl,
   MidasRedemptionVault,
@@ -108,6 +109,12 @@ describe("Midas exit - mainnet fork rehearsal", () => {
   const FIRST_SLICE_BPS = 1_000n // 10%
   const SECOND_SLICE_BPS = 500n // 5%
   const BPS_DENOMINATOR = 10_000n
+
+  /**
+   * `TBTCVault.SATOSHI_MULTIPLIER`. tBTC has 18 decimals but Bitcoin only has
+   * 8, so the vault unmints whole satoshi and leaves the remainder behind.
+   */
+  const SATOSHI_MULTIPLIER = 10_000_000_000n
 
   const sliceOfPosition = (bps: bigint): bigint =>
     (holderShares * bps) / BPS_DENOMINATOR
@@ -804,25 +811,59 @@ describe("Midas exit - mainnet fork rehearsal", () => {
       ).to.be.greaterThan(redemptionFixture.dustThresholdWei)
 
       const bridge = await atExternal<IBridge>("Bridge")
+      const redeemerV3Address = await redeemerV3.getAddress()
+      const supplyBefore = await acreBtc.totalSupply()
+
+      // The Bridge works in satoshi, so it truncates. We read the parameters
+      // from the Bridge itself rather than writing them down, because they are
+      // governable and a stale copy here would assert the wrong number.
+      const [, treasuryFeeDivisor, txMaxFee] =
+        await bridge.redemptionParameters()
+      const requestedAmountSat = assets / SATOSHI_MULTIPLIER
+      const treasuryFeeSat = requestedAmountSat / treasuryFeeDivisor
 
       // Check the Bridge accepted our request, not just that some redemption
-      // happened. The wallet, the output script and the refund address must all
-      // match what V3 sent. We do not check the amount and fees, because the
-      // Bridge works those out itself in satoshi.
-      await expect(
-        acreBtc
-          .connect(holder)
-          .approveAndCall(await redeemerV3.getAddress(), shares, extraData),
-      )
+      // happened. Every argument is checked, the amount included: it is exactly
+      // the truncated payout, and leaving it unchecked would let V3 bridge the
+      // wrong amount without failing here.
+      const tx = await acreBtc
+        .connect(holder)
+        .approveAndCall(redeemerV3Address, shares, extraData)
+
+      await expect(tx)
         .to.emit(bridge, "RedemptionRequested")
         .withArgs(
           redemptionFixture.walletPubKeyHash,
           redemptionFixture.redeemerOutputScript,
           TEST_HOLDER,
-          anyValue,
-          anyValue,
-          anyValue,
+          requestedAmountSat,
+          treasuryFeeSat,
+          txMaxFee,
         )
+
+      // V3's own event, so a change to what it reports fails here too.
+      await expect(tx)
+        .to.emit(redeemerV3, "RedemptionRequested")
+        .withArgs(TEST_HOLDER, shares, assets)
+
+      // The shares are burned and the tBTC leaves acreBTC. Without this, V3
+      // could fail to burn or fail to move the assets and the event assertions
+      // above would still pass.
+      await expect(tx).to.changeTokenBalances(acreBtc, [TEST_HOLDER], [-shares])
+      expect(await acreBtc.balanceOf(TEST_HOLDER)).to.equal(0n)
+      expect(await acreBtc.totalSupply()).to.equal(supplyBefore - shares)
+      expect(await acreBtc.allowance(TEST_HOLDER, redeemerV3Address)).to.equal(
+        0n,
+      )
+
+      // What the Bridge truncated stays on V3 for good. TBTCVault unmints only
+      // whole satoshi and leaves the rest on the caller, and V3 has no function
+      // to move it out. We assert the exact remainder rather than allowing any
+      // leftover, so if V3 ever gains a sweep this fails and gets updated.
+      expect(
+        await tbtc.balanceOf(redeemerV3Address),
+        "leftover remainder on BitcoinRedeemerV3 changed",
+      ).to.equal(assets % SATOSHI_MULTIPLIER)
     })
   })
 })
