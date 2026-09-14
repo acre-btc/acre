@@ -104,7 +104,7 @@ export default function UnstakeFormBase({
         helperText={
           isDust
             ? `Your deposit is below the ${minTokenAmountLabel} BTC minimum for Bitcoin withdrawals, so it has to be withdrawn as tBTC on Ethereum.`
-            : "Faster option. Your tBTC lands in the account you choose once the withdrawal is processed, skipping the Bitcoin bridge."
+            : "Faster option. Your tBTC lands in the account you choose in the same transaction, skipping the Bitcoin bridge."
         }
         mt={6}
         isChecked={withdrawToTbtc}
@@ -150,20 +150,14 @@ export default function UnstakeFormBase({
         <AlertDescription>
           {withdrawToTbtc ? (
             <Text size="sm">
-              Your tBTC is sent to the address above once the withdrawal is
-              processed. You&apos;ll need ETH at that address to move or bridge
-              it later.
+              Your tBTC is sent to the address above in the same transaction.
+              You&apos;ll need ETH at that address to move or bridge it later.
             </Text>
           ) : (
             <Text size="sm">
-              Most withdrawals take{" "}
-              {activitiesUtils.getEstimatedDuration(
-                // We can use 0 here. The redemption process is not related to
-                // amount. The withdraw branch returns before `amount` is read.
-                0n,
-                "withdraw",
-              )}{" "}
-              to complete, but in some cases may take up to 24 hours.
+              Most withdrawals take {activitiesUtils.getWithdrawalDuration()} to
+              complete, but in some cases may take up to{" "}
+              {activitiesUtils.getWithdrawalMaxDuration()}.
             </Text>
           )}
         </AlertDescription>
@@ -173,7 +167,10 @@ export default function UnstakeFormBase({
         {withdrawToTbtc ? "Withdraw tBTC" : "Request Withdraw"}
       </FormSubmitButton>
 
-      <ActionDurationEstimation type="withdraw" />
+      <ActionDurationEstimation
+        type="withdraw"
+        withdrawalDestination={destination}
+      />
     </Form>
   )
 }

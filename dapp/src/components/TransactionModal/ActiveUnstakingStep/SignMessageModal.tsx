@@ -108,29 +108,29 @@ export default function SignMessageModal() {
       if (destination.type === "tbtc" && !destination.evmAddress)
         throw new Error("Withdrawal receiver address is missing")
 
-      // Both paths queue a redemption, so both key the activity off the
-      // request id. Only the tBTC path has a transaction hash worth recording
-      // at this point - the Bitcoin one has none yet.
+      // Neither path is queued any more, so there is no request id to key the
+      // activity off. The tBTC redemption settles in the transaction itself,
+      // so its hash identifies it; the Bitcoin one is still in the tBTC
+      // Bridge, and its redemption key is what identifies it there.
       let activityId: string
       let activityTxHash: string | undefined
 
       if (destination.type === "tbtc") {
-        const { transactionHash, redemptionRequestId } =
-          await initializeTbtcWithdraw(
-            amount,
-            destination.evmAddress,
-            dataBuiltStepCallback,
-            onSignMessageCallback,
-          )
-        activityId = redemptionRequestId.toString()
+        const { transactionHash } = await initializeTbtcWithdraw(
+          amount,
+          destination.evmAddress,
+          dataBuiltStepCallback,
+          onSignMessageCallback,
+        )
+        activityId = transactionHash
         activityTxHash = transactionHash
       } else {
-        const { redemptionRequestId } = await initializeWithdraw(
+        const { redemptionKey } = await initializeWithdraw(
           amount,
           dataBuiltStepCallback,
           onSignMessageCallback,
         )
-        activityId = redemptionRequestId.toString()
+        activityId = redemptionKey
       }
 
       queryClient.setQueriesData(
