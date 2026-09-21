@@ -75,6 +75,11 @@
       "address": "0xd41f9774F86e5e5bF17daDcBb20eC54058cC1DAf",
       "txHash": "0x4d2c00e9ee4c5de4eb06da39d5cb466c67e08b5b0d16d03b4dc8e33f936eb29b",
       "kind": "transparent"
+    },
+    {
+      "address": "0xDCBE41F6dcE0Aca6B7c0e9b68D2D7dD51d9eA8A4",
+      "txHash": "0xbbaf65f8927cb9c5dc82dd812d7bd01ac329656dac43d7cc3e97caf095343a81",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -744,7 +749,11 @@
           },
           "t_enum(DepositState)10182": {
             "label": "enum BitcoinDepositor.DepositState",
-            "members": ["Unknown", "Initialized", "Finalized"],
+            "members": [
+              "Unknown",
+              "Initialized",
+              "Finalized"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_enum(DepositState)10182)": {
@@ -1601,7 +1610,11 @@
           },
           "t_enum(DepositState)10182": {
             "label": "enum BitcoinDepositor.DepositState",
-            "members": ["Unknown", "Initialized", "Finalized"],
+            "members": [
+              "Unknown",
+              "Initialized",
+              "Finalized"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_enum(DepositState)10182)": {
@@ -2293,7 +2306,11 @@
           },
           "t_enum(DepositState)10174": {
             "label": "enum BitcoinDepositor.DepositState",
-            "members": ["Unknown", "Initialized", "Finalized"],
+            "members": [
+              "Unknown",
+              "Initialized",
+              "Finalized"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_enum(DepositState)10174)": {
@@ -3403,7 +3420,11 @@
           },
           "t_enum(DepositState)10176": {
             "label": "enum BitcoinDepositor.DepositState",
-            "members": ["Unknown", "Initialized", "Finalized"],
+            "members": [
+              "Unknown",
+              "Initialized",
+              "Finalized"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_enum(DepositState)10176)": {
@@ -3794,6 +3815,143 @@
               "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:45",
               "offset": 0,
               "slot": "4"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "e82bdf9af7126639f5a927de645b0de55e1fa4da9f1be3848cd66201746a4f05": {
+      "address": "0x252724Da8ea6272Ca9aF472B6Fd5295E08291503",
+      "txHash": "0x24209fa12fdff1e0fa3b81752cf39ab567f185fd1009a85dc04351c9696f7bc4",
+      "layout": {
+        "solcVersion": "0.8.24",
+        "storage": [
+          {
+            "label": "tbtcToken",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(ITBTCToken)15212",
+            "contract": "BitcoinRedeemerV3",
+            "src": "contracts/BitcoinRedeemerV3.sol:17"
+          },
+          {
+            "label": "acreBtc",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(acreBTC)15169",
+            "contract": "BitcoinRedeemerV3",
+            "src": "contracts/BitcoinRedeemerV3.sol:20"
+          },
+          {
+            "label": "tbtcVault",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "BitcoinRedeemerV3",
+            "src": "contracts/BitcoinRedeemerV3.sol:23"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)560_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(Ownable2StepStorage)467_storage": {
+            "label": "struct Ownable2StepUpgradeable.Ownable2StepStorage",
+            "members": [
+              {
+                "label": "_pendingOwner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)509_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_contract(ITBTCToken)15212": {
+            "label": "contract ITBTCToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(acreBTC)15169": {
+            "label": "contract acreBTC",
+            "numberOfBytes": "20"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable2Step": [
+            {
+              "contract": "Ownable2StepUpgradeable",
+              "label": "_pendingOwner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol:23",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
             }
           ],
           "erc7201:openzeppelin.storage.Initializable": [

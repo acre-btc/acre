@@ -1,0 +1,21 @@
+{
+  "address": "0x7d5B8ab9C948fb11433e0eDdADD718dc5Cb040bb",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getDataInBase18",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "devdoc": {
+    "details": "Price feed used to value mTBTC when sizing a redemption payout. SUBSET of the deployed ABI: only the single reader the exit rehearsal calls. Vendored by hand."
+  }
+}
