@@ -5,6 +5,13 @@ enum EventType {
   Migrated
 }
 
+# Where the redeemed assets are delivered. `Bitcoin` goes through the tBTC
+# Bridge, `Ethereum` pays tBTC out to an Ethereum address.
+enum WithdrawalDestination {
+  Bitcoin
+  Ethereum
+}
+
 interface ActivityData @key(fields: "id") {
   id: ID!
   depositOwner: DepositOwner!
@@ -39,10 +46,19 @@ type Withdraw implements ActivityData @entity {
   amountToRedeem: BigInt
   bitcoinTransactionId: String
   redeemerOutputScript: String
+  destination: WithdrawalDestination!
 }
 
 type Event @entity {
-  # Id is the transaction hash.
+  # Id is `<transactionHash>_<name>`, or `<transactionHash>_<activityId>_<name>`
+  # where one transaction settles several activities at once and the name alone
+  # would collide. That happens in two places, both because the counterparty
+  # batches: the Midas Vault approves several redemption requests in one
+  # transaction, and the tBTC Bridge proves one Bitcoin transaction whose
+  # outputs pay several redeemers.
+  #
+  # The transaction hash is always the first segment either way, and the SDK
+  # relies on that to link an activity to Etherscan.
   id: ID!
   timestamp: BigInt!
   activity: ActivityData
@@ -65,6 +81,18 @@ type RedemptionKeyToPendingWithdrawal @entity {
   # keccak256(keccak256(redeemerOutputScript) | walletPubKeyHash)
   id: ID!
   withdrawId: String
+}
+
+# Maps a Midas Vault redemption request ID to the withdrawal that filed it. The
+# Midas Vault settles asynchronously and the only thing its settlement event
+# carries is its own request ID, so we have to remember the association at
+# request time. Written only for `WithdrawalQueue.RedeemRequested` - the Bitcoin
+# path also files a Midas request, but it completes when the tBTC Bridge
+# delivers the BTC, not when Midas settles.
+type MidasRequestToWithdrawal @entity {
+  # Midas Vault redemption request ID.
+  id: ID!
+  withdrawId: String!
 }
 
 type RedemptionsCompletedEvent @entity {

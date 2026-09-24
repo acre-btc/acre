@@ -76,6 +76,14 @@ type Deposit = {
   finalizedAt?: number
 }
 
+/**
+ * Where the redeemed assets are delivered. `Bitcoin` goes through the tBTC
+ * Bridge, `Ethereum` pays tBTC out to an Ethereum address.
+ */
+export type WithdrawalDestination = "bitcoin" | "ethereum"
+
+type WithdrawalEventType = "Requested" | "Initialized" | "Finalized"
+
 type WithdrawalsDataResponse = {
   data: {
     withdraws: {
@@ -84,8 +92,10 @@ type WithdrawalsDataResponse = {
       amount: string
       requestedAmount: string
       amountToRedeem: string
+      destination: "Bitcoin" | "Ethereum"
       events: {
-        type: "Requested" | "Initialized" | "Finalized"
+        id: string
+        type: WithdrawalEventType
         timestamp: string
       }[]
     }[]
@@ -116,6 +126,14 @@ type Withdrawal = {
    */
   bitcoinTransactionId?: string
   /**
+   * Where the withdrawal is delivered.
+   */
+  destination: WithdrawalDestination
+  /**
+   * Hash of the Ethereum transaction that requested the withdrawal.
+   */
+  ethereumTransactionId: string
+  /**
    * Timestamp when the withdrawal was requested.
    */
   requestedAt: number
@@ -127,6 +145,20 @@ type Withdrawal = {
    * Timestamp when the withdrawal was finalized.
    */
   finalizedAt?: number
+}
+
+/**
+ * Extracts the Ethereum transaction hash from a subgraph event id. The subgraph
+ * builds every event id as `<transactionHash>_<name>`, or
+ * `<transactionHash>_<activityId>_<name>` where one transaction emits the same
+ * event for several activities - the transaction hash is always the first
+ * segment. See `Event` in `subgraph/schema.graphql`.
+ *
+ * @param eventId The event id returned by the subgraph.
+ * @returns The Ethereum transaction hash.
+ */
+function getTransactionHashFromEventId(eventId: string): string {
+  return eventId.split("_")[0]
 }
 
 export function buildGetDepositsByOwnerQuery(owner: ChainIdentifier) {
@@ -158,7 +190,9 @@ export function buildGetWithdrawalsByOwnerQuery(owner: ChainIdentifier) {
         requestedAmount
         amountToRedeem
         amount
+        destination
         events(orderBy: timestamp, orderDirection: asc) {
+          id
           timestamp
           type
         }
@@ -261,23 +295,34 @@ export default class AcreSubgraphApi extends HttpApi {
         ? BigInt(withdraw.amount)
         : BigInt(withdraw.amountToRedeem)
 
-      const [requestedEvent, initializedEvent, finalizedEvent] = events
-      const requestedAt = parseInt(requestedEvent.timestamp, 10)
-      const initializedAt = initializedEvent
-        ? parseInt(initializedEvent.timestamp, 10)
-        : undefined
-      const finalizedAt = finalizedEvent
-        ? parseInt(finalizedEvent.timestamp, 10)
-        : undefined
+      // Look the events up by type rather than by position: a withdrawal paid
+      // out in tBTC never goes through the tBTC Bridge, so it has no
+      // `Initialized` stage, and positionally its `Finalized` event would be
+      // read as the initialization.
+      const findEventTimestamp = (type: WithdrawalEventType) => {
+        const event = events.find((e) => e.type === type)
+        return event ? parseInt(event.timestamp, 10) : undefined
+      }
+
+      const requestedEvent = events.find(({ type }) => type === "Requested")
 
       return {
         id,
         bitcoinTransactionId,
         amount,
         requestedAmount,
-        requestedAt,
-        initializedAt,
-        finalizedAt,
+        destination:
+          withdraw.destination === "Ethereum"
+            ? ("ethereum" as const)
+            : ("bitcoin" as const),
+        ethereumTransactionId: requestedEvent
+          ? getTransactionHashFromEventId(requestedEvent.id)
+          : "",
+        requestedAt: requestedEvent
+          ? parseInt(requestedEvent.timestamp, 10)
+          : 0,
+        initializedAt: findEventTimestamp("Initialized"),
+        finalizedAt: findEventTimestamp("Finalized"),
       }
     })
   }

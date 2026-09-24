@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { activitiesUtils } from "#/utils"
+import { Activity } from "#/types"
 
 describe("Utils functions for activities", () => {
   describe("getEstimatedDuration", () => {
@@ -54,5 +55,49 @@ describe("Utils functions for activities", () => {
         })
       })
     })
+  })
+
+  describe("isWithdrawToEthereum", () => {
+    const baseActivity = {
+      id: "1",
+      initializedAt: 1760240000,
+      amount: 1000n,
+      status: "requested",
+    } as const
+
+    describe.each([
+      {
+        name: "a withdrawal paid out in tBTC",
+        activity: {
+          ...baseActivity,
+          type: "withdraw",
+          destination: "ethereum",
+        },
+        expectedResult: true,
+      },
+      {
+        name: "a withdrawal bridged to Bitcoin",
+        activity: {
+          ...baseActivity,
+          type: "withdraw",
+          destination: "bitcoin",
+        },
+        expectedResult: false,
+      },
+      {
+        name: "a deposit",
+        activity: { ...baseActivity, type: "deposit" },
+        expectedResult: false,
+      },
+    ] as { name: string; activity: Activity; expectedResult: boolean }[])(
+      "when it is $name",
+      ({ activity, expectedResult }) => {
+        it(`should return ${expectedResult}`, () => {
+          expect(activitiesUtils.isWithdrawToEthereum(activity)).toBe(
+            expectedResult,
+          )
+        })
+      },
+    )
   })
 })

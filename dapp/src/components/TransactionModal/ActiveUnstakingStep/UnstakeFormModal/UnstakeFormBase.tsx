@@ -90,11 +90,9 @@ export default function UnstakeFormBase({
         }
         tokenAmountLabel={tokenAmountLabel}
         currency={currency}
-        // TODO: add  isDisabled prop
-        // isDisabled
+        isDisabled
         // The full balance is Formik's initial value - a withdrawal exits the
-        // whole position. Adding `isDisabled` here locks the field to it; left
-        // editable for now so the amount can be varied in testing.
+        // whole position. Adding `isDisabled` here locks the field to it.
         autoComplete="off"
       />
 

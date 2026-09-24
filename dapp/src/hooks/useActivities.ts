@@ -52,7 +52,14 @@ export default function useActivities<TSelected = Activity[]>(
           return {
             id: withdraw.id,
             initializedAt,
-            txHash: withdraw.bitcoinTransactionId,
+            // A tBTC withdrawal never reaches the Bitcoin chain, so the only
+            // transaction there is to link to is the Ethereum one that
+            // requested it.
+            txHash:
+              withdraw.destination === "ethereum"
+                ? withdraw.ethereumTransactionId
+                : withdraw.bitcoinTransactionId,
+            destination: withdraw.destination,
             status,
             amount: withdraw.amount,
             type: "withdraw",

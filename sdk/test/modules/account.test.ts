@@ -613,24 +613,25 @@ describe("Account", () => {
       .spyOn(acreSubgraph, "getWithdrawalsByOwner")
       .mockImplementationOnce(() => Promise.resolve(withdrawals))
 
-    const expectedWithdrawals = [
-      {
-        ...withdrawals[0],
-        amount: satoshiConverter.toSatoshi(withdrawals[0].amount),
-        requestedAmount: satoshiConverter.toSatoshi(
-          withdrawals[0].requestedAmount,
-        ),
-        status: "requested",
-      },
-      {
-        ...withdrawals[1],
-        amount: satoshiConverter.toSatoshi(withdrawals[1].amount),
-        requestedAmount: satoshiConverter.toSatoshi(
-          withdrawals[1].requestedAmount,
-        ),
-        status: "finalized",
-      },
+    // The fixtures cover, in order: a Bitcoin withdrawal still being bridged, a
+    // completed Bitcoin withdrawal, a tBTC withdrawal waiting for the Midas
+    // vault to settle, one the vault has settled, and a synchronous redemption
+    // straight from acreBTC. The last three have no `Initialized` stage, so
+    // they exercise the status derivation for the tBTC paths.
+    const expectedStatuses = [
+      "requested",
+      "finalized",
+      "requested",
+      "finalized",
+      "finalized",
     ]
+
+    const expectedWithdrawals = withdrawals.map((withdrawal, index) => ({
+      ...withdrawal,
+      amount: satoshiConverter.toSatoshi(withdrawal.amount),
+      requestedAmount: satoshiConverter.toSatoshi(withdrawal.requestedAmount),
+      status: expectedStatuses[index],
+    }))
 
     let result: Awaited<ReturnType<Account["getWithdrawals"]>>
 

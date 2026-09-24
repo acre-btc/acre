@@ -11,6 +11,7 @@ import {
   Event,
   Withdraw,
   RedemptionKeyToPendingWithdrawal,
+  MidasRequestToWithdrawal,
 } from "../generated/schema"
 
 export function getOrCreateDepositOwner(depositOwnerId: Address): DepositOwner {
@@ -64,9 +65,30 @@ export function getOrCreateWithdraw(id: string): Withdraw {
   if (!withdraw) {
     withdraw = new Withdraw(id)
     withdraw.depositOwner = Address.zero().toHexString()
+    // Bitcoin is the default so the handlers of the Bitcoin path - which are
+    // spread across `withdrawal-queue.ts` and `tbtc-bridge.ts` and any of which
+    // may be the one that creates the entity - do not have to set it. The tBTC
+    // handlers overwrite it.
+    withdraw.destination = "Bitcoin"
   }
 
   return withdraw
+}
+
+export function getOrCreateMidasRequestToWithdrawal(
+  midasRequestId: BigInt,
+  withdrawId: string,
+): MidasRequestToWithdrawal {
+  const id = midasRequestId.toString()
+  let entity = MidasRequestToWithdrawal.load(id)
+
+  if (!entity) {
+    entity = new MidasRequestToWithdrawal(id)
+  }
+
+  entity.withdrawId = withdrawId
+
+  return entity
 }
 
 export function getLogByEventSignatureInLogs(
