@@ -140,6 +140,7 @@ export default function SignMessageModal() {
             id: activityId,
             txHash: activityTxHash,
             type: "withdraw",
+            destination: destination.type === "tbtc" ? "ethereum" : "bitcoin",
             status: "pending",
             // This is a requested amount. The amount of BTC received will be
             // around: `amount - transactionFee.total`.

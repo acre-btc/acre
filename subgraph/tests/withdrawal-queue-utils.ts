@@ -5,6 +5,8 @@ import {
 } from "matchstick-as/assembly/defaults"
 import {
   RedeemAndBridgeRequested,
+  RedeemFeeRequested,
+  RedeemRequested,
   RequestRedeemAndBridgeCall,
 } from "../generated/WithdrawalQueue/WithdrawalQueue"
 
@@ -95,4 +97,84 @@ export function createRequestRedeemAndBridgeCall(
       ],
     ),
   )
+}
+
+export function createRedeemRequestedEvent(
+  requestId: BigInt,
+  receiver: Address,
+  midasRequestId: BigInt,
+  tbtcAmount: BigInt,
+  midasShares: BigInt,
+): RedeemRequested {
+  const event = changetype<RedeemRequested>(newMockEvent())
+
+  event.parameters = []
+
+  event.parameters.push(
+    new ethereum.EventParam(
+      "requestId",
+      ethereum.Value.fromUnsignedBigInt(requestId),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "midasRequestId",
+      ethereum.Value.fromUnsignedBigInt(midasRequestId),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "tbtcAmount",
+      ethereum.Value.fromUnsignedBigInt(tbtcAmount),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "midasShares",
+      ethereum.Value.fromUnsignedBigInt(midasShares),
+    ),
+  )
+
+  return event
+}
+
+export function createRedeemFeeRequestedEvent(
+  requestId: BigInt,
+  midasRequestId: BigInt,
+  exitFeeInTbtc: BigInt,
+  exitFeeInMidasShares: BigInt,
+): RedeemFeeRequested {
+  const event = changetype<RedeemFeeRequested>(newMockEvent())
+
+  event.parameters = []
+
+  event.parameters.push(
+    new ethereum.EventParam(
+      "requestId",
+      ethereum.Value.fromUnsignedBigInt(requestId),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "midasRequestId",
+      ethereum.Value.fromUnsignedBigInt(midasRequestId),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "exitFeeInTbtc",
+      ethereum.Value.fromUnsignedBigInt(exitFeeInTbtc),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "exitFeeInMidasShares",
+      ethereum.Value.fromUnsignedBigInt(exitFeeInMidasShares),
+    ),
+  )
+
+  return event
 }

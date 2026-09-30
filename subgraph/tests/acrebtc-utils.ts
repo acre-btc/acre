@@ -1,10 +1,20 @@
 import { ethereum, BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
 import { newMockEvent } from "matchstick-as/assembly/defaults"
-import { Deposit } from "../generated/AcreBTC/AcreBTC"
+import {
+  Deposit,
+  RedemptionRequested,
+  Withdraw,
+} from "../generated/AcreBTC/AcreBTC"
 
 let mockEventCounter = 0
 
-// eslint-disable-next-line import/prefer-default-export
+function nextTransactionHash(): Bytes {
+  mockEventCounter += 1
+  return Bytes.fromHexString(
+    `0x${mockEventCounter.toString(16).padStart(64, "0")}`,
+  )
+}
+
 export function createDepositEvent(
   sender: Address,
   owner: Address,
@@ -12,12 +22,9 @@ export function createDepositEvent(
   shares: BigInt,
 ): Deposit {
   const depositEvent = changetype<Deposit>(newMockEvent())
-  mockEventCounter += 1
 
   depositEvent.parameters = []
-  depositEvent.transaction.hash = Bytes.fromHexString(
-    `0x${mockEventCounter.toString(16).padStart(64, "0")}`,
-  )
+  depositEvent.transaction.hash = nextTransactionHash()
 
   const senderParam = new ethereum.EventParam(
     "sender",
@@ -45,4 +52,78 @@ export function createDepositEvent(
   depositEvent.parameters.push(sharesParam)
 
   return depositEvent
+}
+
+export function createRedemptionRequestedEvent(
+  requestId: BigInt,
+  owner: Address,
+  receiver: Address,
+  caller: Address,
+  shares: BigInt,
+): RedemptionRequested {
+  const event = changetype<RedemptionRequested>(newMockEvent())
+
+  event.parameters = []
+  event.transaction.hash = nextTransactionHash()
+
+  event.parameters.push(
+    new ethereum.EventParam(
+      "requestId",
+      ethereum.Value.fromUnsignedBigInt(requestId),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("owner", ethereum.Value.fromAddress(owner)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "shares",
+      ethereum.Value.fromUnsignedBigInt(shares),
+    ),
+  )
+
+  return event
+}
+
+export function createWithdrawEvent(
+  sender: Address,
+  receiver: Address,
+  owner: Address,
+  assets: BigInt,
+  shares: BigInt,
+): Withdraw {
+  const event = changetype<Withdraw>(newMockEvent())
+
+  event.parameters = []
+  event.transaction.hash = nextTransactionHash()
+
+  event.parameters.push(
+    new ethereum.EventParam("sender", ethereum.Value.fromAddress(sender)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam("owner", ethereum.Value.fromAddress(owner)),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "assets",
+      ethereum.Value.fromUnsignedBigInt(assets),
+    ),
+  )
+  event.parameters.push(
+    new ethereum.EventParam(
+      "shares",
+      ethereum.Value.fromUnsignedBigInt(shares),
+    ),
+  )
+
+  return event
 }

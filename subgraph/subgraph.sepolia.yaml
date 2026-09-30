@@ -51,6 +51,7 @@ dataSources:
         - Deposit
         - Withdraw
         - Event
+        - MidasRequestToWithdrawal
       abis:
         - name: WithdrawalQueue
           file: ./abis/WithdrawalQueue.json
@@ -58,6 +59,10 @@ dataSources:
         - event: RedeemAndBridgeRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256,uint256)
           handler: handleRedeemAndBridgeRequested
           receipt: true
+        - event: RedeemRequested(indexed uint256,indexed address,indexed uint256,uint256,uint256)
+          handler: handleRedeemRequested
+        - event: RedeemFeeRequested(indexed uint256,indexed uint256,uint256,uint256)
+          handler: handleRedeemFeeRequested
       callHandlers:
         - function: requestRedeemAndBridge(uint256,address,bytes,uint256)
           handler: handleRequestRedeemAndBridgeCall
@@ -69,11 +74,16 @@ dataSources:
       withdrawalQueueContractAddress:
         type: Bytes
         data: "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884"
+      bitcoinRedeemerV3ContractAddress:
+        type: Bytes
+        data: "0xDCBE41F6dcE0Aca6B7c0e9b68D2D7dD51d9eA8A4"
     source:
       abi: TbtcBridge
       address: "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
-      # We can start indexing from the same block where the BitcoinRedeemer
-      # contract was deployed since we only want to index Acre redemptions.
+      # We only want to index Acre redemptions, so this starts at the block the
+      # first Acre redeemer was deployed in. Kept as its own config key: driving
+      # it off a redeemer's `startBlock` means repointing that key at a
+      # redeployed redeemer silently drops every earlier Bitcoin withdrawal.
       startBlock: 9169626
     mapping:
       kind: ethereum/events
@@ -104,6 +114,9 @@ dataSources:
       stbtcContractAddress:
         type: Bytes
         data: "0x7e184179b1F95A9ca398E6a16127f06b81Cb37a3"
+      bitcoinRedeemerV3ContractAddress:
+        type: Bytes
+        data: "0xDCBE41F6dcE0Aca6B7c0e9b68D2D7dD51d9eA8A4"
     source:
       address: "0xB8ba4B007321e0EB4586De49E59593E0eD66d367"
       abi: AcreBTC
@@ -115,6 +128,7 @@ dataSources:
       entities:
         - DepositOwner
         - Deposit
+        - Withdraw
         - Event
       abis:
         - name: AcreBTC
@@ -123,4 +137,54 @@ dataSources:
         - event: Deposit(indexed address,indexed address,uint256,uint256)
           handler: handleDeposit
           receipt: true
+        - event: RedemptionRequested(indexed uint256,indexed address,indexed address,address,uint256)
+          handler: handleRedemptionRequested
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
       file: ./src/acrebtc.ts
+  - kind: ethereum
+    name: BitcoinRedeemerV3
+    network: sepolia
+    source:
+      address: "0xDCBE41F6dcE0Aca6B7c0e9b68D2D7dD51d9eA8A4"
+      abi: BitcoinRedeemerV3
+      startBlock: 11667996
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositOwner
+        - Withdraw
+        - Event
+      abis:
+        - name: BitcoinRedeemerV3
+          file: ./abis/BitcoinRedeemerV3.json
+      eventHandlers:
+        - event: RedemptionRequested(indexed address,uint256,uint256)
+          handler: handleRedemptionRequested
+      file: ./src/bitcoin-redeemer-v3.ts
+  - kind: ethereum
+    name: MidasRedemptionVault
+    network: sepolia
+    source:
+      address: "0x6B35F2E4C9D4c1da0eDaf7fd7Dc90D9bCa4b0873"
+      abi: MidasRedemptionVault
+      startBlock: 9169609
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Withdraw
+        - Event
+        - MidasRequestToWithdrawal
+      abis:
+        - name: MidasRedemptionVault
+          file: ./abis/MidasRedemptionVault.json
+      eventHandlers:
+        - event: SafeApproveRequest(indexed uint256,uint256)
+          handler: handleApproveRequest
+        - event: ApproveRequest(indexed uint256,uint256)
+          handler: handleApproveRequest
+      file: ./src/midas-redemption-vault.ts

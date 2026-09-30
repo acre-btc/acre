@@ -4,16 +4,13 @@
     "address": "0x4030348c63e1c8EdDc4485d05Ed6FCE5eB2d35b2",
     "startBlock": 9169564
   },
-  "bitcoinRedeemer": {
-    "address": "0xE1d25025835A89C93d56a029C80699BE056584d2",
-    "startBlock": 9169626
-  },
   "withdrawalQueue": {
     "address": "0x02BfDaee4FB33a69Ecbf008Ad5822971A5382884",
     "startBlock": 9169609
   },
   "tbtcBridge": {
-    "address": "0x9b1a7fE5a16A15F2f9475C5B231750598b113403"
+    "address": "0x9b1a7fE5a16A15F2f9475C5B231750598b113403",
+    "startBlock": 9169626
   },
   "stbtc": {
     "address": "0x7e184179b1F95A9ca398E6a16127f06b81Cb37a3"
@@ -21,5 +18,13 @@
   "acrebtc": {
     "address": "0xB8ba4B007321e0EB4586De49E59593E0eD66d367",
     "startBlock": 9190342
+  },
+  "midasRedemptionVault": {
+    "address": "0x6B35F2E4C9D4c1da0eDaf7fd7Dc90D9bCa4b0873",
+    "startBlock": 9169609
+  },
+  "bitcoinRedeemerV3": {
+    "address": "0xDCBE41F6dcE0Aca6B7c0e9b68D2D7dD51d9eA8A4",
+    "startBlock": 11667996
   }
 }

@@ -50,15 +50,21 @@ export default function TransactionTable() {
               <CardBody as={Flex} flexDirection="column" gap={4}>
                 <Flex flexDirection="column">
                   <Flex justifyContent="space-between">
-                    <Text
-                      size="sm"
-                      color="text.primary"
-                      flex={1}
-                      fontWeight="semibold"
-                      textTransform="capitalize"
-                    >
-                      {activity.type}
-                    </Text>
+                    <HStack spacing={2} flex={1}>
+                      <Text
+                        size="sm"
+                        color="text.primary"
+                        fontWeight="semibold"
+                        textTransform="capitalize"
+                      >
+                        {activity.type}
+                      </Text>
+                      {activitiesUtils.isWithdrawToEthereum(activity) && (
+                        <Tag variant="solid" size="sm">
+                          <TagLabel>tBTC on Ethereum</TagLabel>
+                        </Tag>
+                      )}
+                    </HStack>
                     <CurrencyBalance
                       color="text.primary"
                       size="sm"
@@ -78,7 +84,11 @@ export default function TransactionTable() {
                     {activity.txHash ? (
                       <BlockExplorerLink
                         id={activity.txHash}
-                        chain="bitcoin"
+                        chain={
+                          activitiesUtils.isWithdrawToEthereum(activity)
+                            ? "ethereum"
+                            : "bitcoin"
+                        }
                         type="transaction"
                         color="text.primary"
                         _groupHover={{

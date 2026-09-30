@@ -1,4 +1,4 @@
-import { BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts"
+import { Address, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts"
 import {
   getOrCreateDepositOwner,
   getOrCreateEvent,
@@ -22,27 +22,63 @@ import {
   getTbtcFromRedeemCompletedAndBridgedRequestedLog,
   getRequestIdFromRedeemCompletedAndBridgedRequestedLog,
 } from "./withdrawal-queue-utils"
+import {
+  buildBitcoinRedeemerV3WithdrawId,
+  getBitcoinRedeemerV3RedemptionRequestedLog,
+  getOwnerFromBitcoinRedeemerV3Log,
+  getTbtcAmountFromBitcoinRedeemerV3Log,
+} from "./bitcoin-redeemer-v3-utils"
 import * as BitcoinUtils from "./bitcoin-utils"
 import { RedemptionsCompletedEvent } from "../generated/schema"
 
 export function handleRedemptionRequested(event: RedemptionRequested): void {
-  const withdrawalQueueRedeemCompletedAndBridgedRequestedLog =
-    getRedeemCompletedAndBridgedRequestedLog(
-      (event.receipt as ethereum.TransactionReceipt).logs,
+  // eslint-disable-next-line prefer-destructuring
+  const logs = (event.receipt as ethereum.TransactionReceipt).logs
+
+  // The tBTC Bridge redeems for everyone, so a redemption is only Acre's if the
+  // transaction also carries a log from one of our redemption paths. There are
+  // two, and they cannot both be present:
+  //
+  //  - the Midas `WithdrawalQueue` completing a queued request, where the
+  //    withdrawal was already created at request time and is keyed by the
+  //    queue's request id, and
+  //  - `BitcoinRedeemerV3`, which is not queued, so the redemption is
+  //    requested and handed to the Bridge in this same transaction.
+  let ownerId: Address
+  let withdrawId: string
+  let amount: BigInt
+
+  const redeemCompletedAndBridgeRequestedLog =
+    getRedeemCompletedAndBridgedRequestedLog(logs)
+
+  if (redeemCompletedAndBridgeRequestedLog) {
+    ownerId = getOwnerFromRedeemCompletedAndBridgedRequestedLog(
+      redeemCompletedAndBridgeRequestedLog,
     )
+    withdrawId = getRequestIdFromRedeemCompletedAndBridgedRequestedLog(
+      redeemCompletedAndBridgeRequestedLog,
+    ).toString()
+    amount = getTbtcFromRedeemCompletedAndBridgedRequestedLog(
+      redeemCompletedAndBridgeRequestedLog,
+    )
+  } else {
+    const bitcoinRedeemerV3Log =
+      getBitcoinRedeemerV3RedemptionRequestedLog(logs)
 
-  if (!withdrawalQueueRedeemCompletedAndBridgedRequestedLog) {
-    log.info("The redemption does not come from the Acre", [])
-    return
+    if (!bitcoinRedeemerV3Log) {
+      log.info("The redemption does not come from the Acre", [])
+      return
+    }
+
+    ownerId = getOwnerFromBitcoinRedeemerV3Log(bitcoinRedeemerV3Log)
+    // Must match the id `bitcoin-redeemer-v3.ts` built from the same log, so
+    // this stage lands on the withdrawal that handler already created.
+    withdrawId = buildBitcoinRedeemerV3WithdrawId(
+      event.transaction.hash,
+      bitcoinRedeemerV3Log.logIndex,
+    )
+    amount = getTbtcAmountFromBitcoinRedeemerV3Log(bitcoinRedeemerV3Log)
   }
-
-  const ownerId = getOwnerFromRedeemCompletedAndBridgedRequestedLog(
-    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
-  )
-
-  const withdrawId = getRequestIdFromRedeemCompletedAndBridgedRequestedLog(
-    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
-  ).toString()
 
   const ownerEntity = getOrCreateDepositOwner(ownerId)
 
@@ -55,12 +91,8 @@ export function handleRedemptionRequested(event: RedemptionRequested): void {
     getOrCreateRedemptionKeyToPendingWithdrawal(redemptionKey)
   redemptionKeyToPendingWithdrawal.withdrawId = withdrawId
 
-  const withdraw = getOrCreateWithdraw(withdrawId.toString())
+  const withdraw = getOrCreateWithdraw(withdrawId)
   withdraw.depositOwner = ownerEntity.id
-  const amount = getTbtcFromRedeemCompletedAndBridgedRequestedLog(
-    withdrawalQueueRedeemCompletedAndBridgedRequestedLog,
-  )
-
   withdraw.amount = amount
 
   const redemptionRequestedEvent = getOrCreateEvent(

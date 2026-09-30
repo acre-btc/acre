@@ -16,7 +16,8 @@
   "scripts": {
     "clean": "hardhat clean && rm -rf cache/ export/ gen/ export.json",
     "prepare:env": "cp -n .env.example .env || true",
-    "build": "npm run prepare:env && hardhat compile",
+    "build": "npm run prepare:env && hardhat compile && npm run typechain:external",
+    "typechain:external": "typechain --target ethers-v6 --out-dir typechain/external 'external/mainnet/Midas*.json'",
     "deploy": "npm run prepare:env && hardhat deploy --export export.json",
     "docs": "npm run prepare:env && hardhat docgen",
     "format": "npm run lint:js && npm run lint:sol && npm run lint:config",
@@ -30,7 +31,8 @@
     "node:forking": "FORKING=true hardhat node --no-deploy",
     "test": "npm run prepare:env && hardhat test ./test/*.test.ts",
     "test:integration": "hardhat test --deploy-fixture ./test/integration/*.test.ts --network integration",
-    "test:integration:sepolia": "SEPOLIA_FORKING=true hardhat test --deploy-fixture ./test/integration/*.sepolia.test.ts --network hardhat"
+    "test:integration:sepolia": "SEPOLIA_FORKING=true hardhat test --deploy-fixture ./test/integration/*.sepolia.test.ts --network hardhat",
+    "test:midas-exit": "hardhat test ./test/integration/midas-exit/*.test.ts --network hardhat"
   },
   "devDependencies": {
     "@keep-network/hardhat-helpers": "0.7.2",

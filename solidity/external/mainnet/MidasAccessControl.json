@@ -1,0 +1,50 @@
+{
+  "address": "0x0312A9D1Ff2372DDEdCBB21e4B6389aFc919aC4B",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "grantRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "devdoc": {
+    "details": "MidasAccessControl - holds ACRE_BTC_REDEMPTION_VAULT_ADMIN_ROLE. SUBSET of the deployed ABI: only the two AccessControl functions the exit rehearsal calls. Vendored by hand; Midas does not publish to npm."
+  }
+}

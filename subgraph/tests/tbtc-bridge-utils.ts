@@ -37,7 +37,6 @@ class RedemptionRequestedEventData {
   }
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export function createRedemptionRequestedEvent(
   withdrawId: BigInt,
 ): RedemptionRequestedEventData {
@@ -150,4 +149,30 @@ export function createRedemptionRequestedEvent(
   )
 
   return data
+}
+
+// The unqueued path: the Bridge event arrives with a `BitcoinRedeemerV3` log
+// in the receipt rather than a `WithdrawalQueue` one. Everything else about the
+// Bridge event is identical, which is the point - the emitter of the redeemer
+// log is the only thing that tells the two paths apart.
+export function attachRedemptionRequestedLogToReceipt(
+  event: RedemptionRequested,
+  log: ethereum.Log,
+): RedemptionRequested {
+  ;(event.receipt as ethereum.TransactionReceipt).logs.push(log)
+
+  return event
+}
+
+export function createBareRedemptionRequestedEvent(): RedemptionRequested {
+  const data = createRedemptionRequestedEvent(BigInt.fromI32(1))
+  // eslint-disable-next-line prefer-destructuring
+  const event = data.event
+
+  // Drop the WithdrawalQueue log the helper attached, so only the redeemer log
+  // is left to identify the redemption.
+  const receipt = event.receipt as ethereum.TransactionReceipt
+  receipt.logs.length = 0
+
+  return event
 }

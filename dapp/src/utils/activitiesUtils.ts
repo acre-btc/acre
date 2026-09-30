@@ -39,6 +39,11 @@ const sortActivitiesByTimestamp = (activities: Activity[]): Activity[] =>
 
 const isWithdrawType = (type: ActivityType) => type === "withdraw"
 
+// A withdrawal paid out in tBTC to an Ethereum address, rather than bridged to
+// Bitcoin. Its transaction hash is an Ethereum one.
+const isWithdrawToEthereum = (activity: Activity): boolean =>
+  activity.type === "withdraw" && activity.destination === "ethereum"
+
 // The one place a duration becomes text, so the same estimate never reaches
 // the user as `6 hours` in one spot and `6h` in another.
 const formatDuration = (value: number, unit: "hours" | "minutes"): string =>
@@ -132,6 +137,7 @@ export default {
   hasPendingDeposits,
   sortActivitiesByTimestamp,
   isWithdrawType,
+  isWithdrawToEthereum,
   getEstimatedDuration,
   getWithdrawalDuration,
   getWithdrawalMaxDuration,
