@@ -1,6 +1,6 @@
 import React from "react"
 import TbtcIcon from "#/assets/icons/TbtcIcon"
-import { externalHref, transparency } from "#/constants"
+import { externalHref, transparency, vaults } from "#/constants"
 import { addressUtils } from "#/utils"
 import { Button, Icon, Link, Text } from "@chakra-ui/react"
 import { IconArrowUpRight } from "@tabler/icons-react"
@@ -12,23 +12,23 @@ import {
 import BlockExplorerLink from "./shared/BlockExplorerLink"
 import DeBankLink from "./shared/DeBankLink"
 
-export default function MidasVaultDetailsDescription() {
+export default function AcreBTCVaultDetailsDescription() {
   return (
     <>
-      This vault holds tBTC prior to the deployment to vetted strategies.{" "}
-      <Link
+      This Acre allocator vault (acreBTC) holds tBTC prior to deployment to
+      vetted strategies. Currently, the tBTC is held in the{" "}
+      <BlockExplorerLink
+        type="token"
+        chain="ethereum"
+        id={transparency.ACREBTC_TOKEN}
         fontWeight="bold"
         textDecoration="underline"
-        href={externalHref.MIDAS}
-        isExternal
       >
-        Midas
-      </Link>{" "}
-      is the infrastructure provider and reviews all deposits and redemptions
-      for accounting, security and additional infrastructure. The tBTC is ready
-      to request redeem from the Midas vault at any time with approximately 72
-      hour cool down time. If redeeming back to Bitcoin, there is a 0.20% fee
-      from the Threshold Network bridge.
+        acreBTC contract
+      </BlockExplorerLink>{" "}
+      and is redeemable back to Bitcoin or tBTC at any time. Bitcoin redemptions
+      carry a 0.20% fee on the Threshold Network and will be applied at the time
+      of redemption.
     </>
   )
 }
@@ -58,7 +58,7 @@ function formatUsdValue(value?: number) {
   })
 }
 
-export function getMidasVaultDetails({
+export function getAcreBTCVaultDetails({
   depositFeePercentage,
   withdrawalFeePercentage,
   tvlCapInUsd,
@@ -70,8 +70,8 @@ export function getMidasVaultDetails({
   vaultTvlInUsd?: number
 }) {
   return {
-    vaultName: "Midas acreBTC (macreBTC) Vault",
-    description: <MidasVaultDetailsDescription />,
+    vaultName: vaults.VAULT_PROVIDERS.tbtc.label,
+    description: <AcreBTCVaultDetailsDescription />,
     icon: TbtcIcon,
     sections: [
       {
@@ -201,7 +201,7 @@ export function getMidasVaultDetails({
           },
           {
             label: "Withdrawal Cooldown Time",
-            value: "Approximately 72 hours",
+            value: "None",
           },
         ],
       },

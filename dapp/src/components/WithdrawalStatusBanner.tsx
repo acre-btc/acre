@@ -14,8 +14,7 @@ export type WithdrawStatus = Extract<
   "pending" | "requested"
 >
 
-const PENDING_STATE_TOOLTIP_CONTENT =
-  "Your withdrawal is being processed. The funds will be released upon the next NAV update and are expected to arrive in your wallet within approximately 14 days."
+const PENDING_STATE_TOOLTIP_CONTENT = `Your withdrawal is being redeemed through the tBTC protocol and is expected to arrive in your wallet in approximately ${activitiesUtils.getWithdrawalDuration()}.`
 
 function EstimatedDurationText({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +34,9 @@ function PendingWithdrawBannerTimeInfo({
 }) {
   const [progress, setProgress] = useState(0)
   const availableAtTimestamp = useMemo(
-    () => withdrawnAt + 3 * time.ONE_DAY_IN_SECONDS,
+    // The same estimate the copy quotes, so the bar cannot count down to a
+    // deadline the tooltip beside it contradicts.
+    () => withdrawnAt + activitiesUtils.getWithdrawalDurationInSeconds(),
     [withdrawnAt],
   )
 
@@ -78,8 +79,6 @@ function PendingWithdrawBannerTimeInfo({
           // the timing doesn’t depend on the amount.
           0n,
           "withdraw",
-          undefined,
-          "requested",
         )}
       </EstimatedDurationText>
     )
@@ -163,12 +162,7 @@ export default function WithdrawalStatusBanner({
         )}
         {status === "pending" && (
           <EstimatedDurationText>
-            {activitiesUtils.getEstimatedDuration(
-              btcAmount,
-              "withdraw",
-              undefined,
-              status,
-            )}
+            {activitiesUtils.getEstimatedDuration(btcAmount, "withdraw")}
           </EstimatedDurationText>
         )}
       </HStack>

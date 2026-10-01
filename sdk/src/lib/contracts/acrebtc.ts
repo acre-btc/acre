@@ -57,35 +57,24 @@ export interface AcreBTC {
   ): Hex
 
   /**
-   * Encodes the transaction data for a transaction that calls the
-   * `requestRedeem` function. It moves `shares` from `owner` to the withdrawal
-   * queue and requests a redemption of the underlying Midas position, which
-   * pays the resulting tBTC out to `receiver`.
+   * Encodes the transaction data for a transaction that calls the ERC4626
+   * `redeem` function. It burns `shares` from `owner` and transfers the
+   * corresponding tBTC amount to `receiver`, synchronously, in a single
+   * transaction.
    *
-   * This is asynchronous - the transaction only registers the request. The
-   * tBTC arrives once the Midas redemption settles at the next NAV update.
-   *
-   * No token approval is involved as long as the caller is the `owner`, in
-   * which case the vault does not touch the allowance at all.
+   * No token approval is involved: the caller is expected to be the `owner`,
+   * in which case the vault does not touch the allowance at all.
    * @param shares Amount of AcreBTC shares to redeem.
    * @param receiver The address that will receive the tBTC, as a string in
    *        whichever format the target chain uses. The implementation parses
    *        and validates it, so callers need not know the chain.
-   * @param owner The address the shares are taken from.
+   * @param owner The address the shares are burned from.
    */
-  encodeRequestRedeemFunctionData(
+  encodeRedeemFunctionData(
     shares: bigint,
     receiver: string,
     owner: ChainIdentifier,
   ): Hex
-
-  /**
-   * Finds the redemption request id created by the given transaction, by
-   * reading the `RedemptionRequested` event from its receipt.
-   * @param transactionHash Hash of the transaction that called
-   *        `requestRedeem`.
-   */
-  findRedemptionRequestIdFromTransaction(transactionHash: Hex): Promise<bigint>
 
   /**
    * Calculates the amount of tBTC that will be redeemed for the given amount

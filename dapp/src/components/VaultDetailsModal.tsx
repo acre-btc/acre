@@ -16,7 +16,7 @@ import { IconShieldFilled } from "@tabler/icons-react"
 import { vaults } from "#/constants"
 import withBaseModal from "./ModalRoot/withBaseModal"
 import TooltipIcon from "./shared/TooltipIcon"
-import { getMidasVaultDetails } from "./MidasVaultDetails"
+import { getAcreBTCVaultDetails } from "./AcreBTCVaultDetails"
 
 export type VaultDetailsSectionItem = {
   key?: string
@@ -112,7 +112,7 @@ const VAULT_PROVIDER_TO_DETAILS: Record<
   VaultDetailsModalBaseProps["provider"],
   (options: VaultParamDetails) => VaultDetails
 > = {
-  tbtc: getMidasVaultDetails,
+  tbtc: getAcreBTCVaultDetails,
 }
 
 export function VaultDetailsModalBase({

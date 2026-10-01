@@ -1,15 +1,14 @@
 import {
   BitcoinAddressConverter,
+  BitcoinHashUtils,
   ChainIdentifier,
+  EthereumBridge,
+  RedeemerProxy,
   TBTC as TbtcSdk,
 } from "@keep-network/tbtc-v2.ts"
 
 import { ethers, ZeroAddress } from "ethers"
-import {
-  constants as ethersv5Constants,
-  getDefaultProvider,
-  VoidSigner,
-} from "ethers-v5"
+import { getDefaultProvider, VoidSigner } from "ethers-v5"
 import TbtcApi, { DepositStatus } from "../../lib/api/TbtcApi"
 import { BitcoinDepositor } from "../../lib/contracts"
 import { Hex } from "../../lib/utils"
@@ -158,34 +157,48 @@ export default class Tbtc {
   }
 
   /**
-   * Prepare tBTC Redemption Data in the raw bytes format expected by the
-   * WithdrawalQueue contract. The data is used to requests a redemption with
-   * bridging to Bitcoin.
-   * @param redeemer Chain identifier of the redeemer. This is the address that
-   *        will be able to claim the tBTC tokens if anything goes wrong during
-   *        the redemption process.
-   * @param bitcoinAddress The bitcoin address that the redeemed funds will be
-   *        locked to.
+   * Requests a redemption of tBTC token into BTC. It builds the redemption
+   * data and handles the redemption request through the provided redeemer
+   * proxy.
+   *
+   * The live tBTC wallet and its main UTXO are resolved client-side (via the
+   * tBTC SDK's Electrum client), because the resulting payload goes straight to
+   * `Bridge.requestRedemption` - see `sdk/src/lib/redeemer-proxy.ts`.
+   * @param destinationBitcoinAddress Bitcoin address the redeemed BTC should be
+   *        sent to. Only P2PKH, P2WPKH, P2SH, and P2WSH address types are
+   *        supported.
+   * @param tbtcAmount The amount to be redeemed in 1e18 tBTC token precision.
+   *        Used ONLY to size tBTC wallet selection - the transaction itself
+   *        approves AcreBTC shares.
+   * @param redeemerProxy Object implementing functions required to route tBTC
+   *        redemption requests through the tBTC bridge.
+   * @returns The transaction hash and redemption key.
    */
-  buildRedemptionData(redeemer: ChainIdentifier, bitcoinAddress: string) {
-    // We only need encode `redeemer` and `redeemerOutputScript`. Other values
-    // can be empty because the are not used in the contract.
-    return this.#tbtcSdk.tbtcContracts.tbtcToken.buildRequestRedemptionData(
-      redeemer,
-      Hex.from(
-        // The Ethereum address is 20 bytes so we can use it as "empty"
-        // `bytes20` type.
-        ethers.ZeroAddress,
-      ),
-      {
-        outputIndex: 0,
-        transactionHash: Hex.from(ethers.encodeBytes32String("")),
-        value: ethersv5Constants.Zero,
-      },
-      BitcoinAddressConverter.addressToOutputScript(
-        bitcoinAddress,
-        this.#network,
-      ),
+  async initiateRedemption(
+    destinationBitcoinAddress: string,
+    tbtcAmount: bigint,
+    redeemerProxy: RedeemerProxy,
+  ): Promise<{ transactionHash: string; redemptionKey: string }> {
+    const { targetChainTxHash, walletPublicKey } =
+      await this.#tbtcSdk.redemptions.requestRedemptionWithProxy(
+        destinationBitcoinAddress,
+        tbtcAmount,
+        redeemerProxy,
+      )
+
+    const redeemerOutputScript = BitcoinAddressConverter.addressToOutputScript(
+      destinationBitcoinAddress,
+      this.#network,
     )
+
+    const redemptionKey = EthereumBridge.buildRedemptionKey(
+      BitcoinHashUtils.computeHash160(walletPublicKey),
+      redeemerOutputScript,
+    )
+
+    return {
+      transactionHash: targetChainTxHash.toPrefixedString(),
+      redemptionKey,
+    }
   }
 }

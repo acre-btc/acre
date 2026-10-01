@@ -3,7 +3,6 @@ import SepoliaAcreBTC from "@acre-btc/contracts/deployments/sepolia/acreBTC.json
 import MainnetAcreBTC from "@acre-btc/contracts/deployments/mainnet/acreBTC.json"
 
 import {
-  EthereumContractRunner,
   EthersContractConfig,
   EthersContractDeployment,
   EthersContractWrapper,
@@ -27,8 +26,6 @@ class EthereumAcreBTC
     exitFeeBasisPoints?: bigint
   } = { entryFeeBasisPoints: undefined, exitFeeBasisPoints: undefined }
 
-  #runner: EthereumContractRunner
-
   constructor(config: EthersContractConfig, network: EthereumNetwork) {
     let artifact: EthersContractDeployment
 
@@ -44,7 +41,6 @@ class EthereumAcreBTC
     }
 
     super(config, artifact)
-    this.#runner = config.runner
   }
 
   /**
@@ -131,75 +127,6 @@ class EthereumAcreBTC
   }
 
   /**
-   * @see {AcreBTC#encodeRequestRedeemFunctionData}
-   */
-  encodeRequestRedeemFunctionData(
-    shares: bigint,
-    receiver: string,
-    owner: ChainIdentifier,
-  ): Hex {
-    // Parsed here rather than by the caller: this is the layer that knows the
-    // chain, and `EthereumAddress.from` rejects anything that is not a valid
-    // Ethereum address.
-    const receiverAddress = EthereumAddress.from(receiver)
-
-    // The zero address is well-formed, so `EthereumAddress.from` accepts it,
-    // and nothing on the way to the Midas vault rejects it either. The shares
-    // are burned before the redemption is requested, so redeeming to it would
-    // destroy the position with no way to recover it.
-    if (/^0+$/.test(receiverAddress.identifierHex))
-      throw new Error("Receiver cannot be the zero address")
-
-    const data = this.instance.interface.encodeFunctionData("requestRedeem", [
-      shares,
-      `0x${receiverAddress.identifierHex}`,
-      `0x${owner.identifierHex}`,
-    ])
-
-    return Hex.from(data)
-  }
-
-  /**
-   * @see {AcreBTC#findRedemptionRequestIdFromTransaction}
-   */
-  async findRedemptionRequestIdFromTransaction(
-    transactionHash: Hex,
-  ): Promise<bigint> {
-    const receipt = await this.#runner.provider?.getTransactionReceipt(
-      transactionHash.toPrefixedString(),
-    )
-
-    if (!receipt)
-      throw new Error(
-        `Cannot find the redemption request id. Transaction with hash ${transactionHash.toPrefixedString()} not found`,
-      )
-
-    const eventTopic = this.instance.interface.getEvent(
-      "RedemptionRequested",
-    ).topicHash
-
-    // We assume only one redemption was requested in this transaction.
-    const log = receipt.logs.find(
-      (receiptLog) => receiptLog.topics[0] === eventTopic,
-    )
-
-    if (!log)
-      throw new Error(
-        "Cannot find the redemption request id. The RedemptionRequested event not found",
-      )
-
-    // @ts-expect-error Something is off with types.
-    const parsedLog = this.instance.interface.parseLog(log)
-
-    if (!parsedLog)
-      throw new Error("Cannot find the redemption request id. Cannot parse log")
-
-    // Read by name: the argument order here is not the same as in the
-    // `BitcoinRedeemer` event of the same name.
-    return parsedLog.args.requestId as bigint
-  }
-
-  /**
    * @see {AcreBTC#previewRedeem}
    */
   previewRedeem(shares: bigint): Promise<bigint> {
@@ -211,6 +138,35 @@ class EthereumAcreBTC
    */
   convertToShares(amount: bigint): Promise<bigint> {
     return this.instance.convertToShares(amount)
+  }
+
+  /**
+   * @see {AcreBTC#encodeRedeemFunctionData}
+   */
+  encodeRedeemFunctionData(
+    shares: bigint,
+    receiver: string,
+    owner: ChainIdentifier,
+  ): Hex {
+    // Parsed here rather than by the caller: this is the layer that knows the
+    // chain, and `EthereumAddress.from` rejects anything that is not a valid
+    // Ethereum address.
+    const receiverAddress = EthereumAddress.from(receiver)
+
+    // The zero address is well-formed, so `EthereumAddress.from` accepts it,
+    // and the vault does not reject it either. The shares are burned as part
+    // of the redemption, so redeeming to it would destroy the position with no
+    // way to recover it.
+    if (/^0+$/.test(receiverAddress.identifierHex))
+      throw new Error("Receiver cannot be the zero address")
+
+    const data = this.instance.interface.encodeFunctionData("redeem", [
+      shares,
+      `0x${receiverAddress.identifierHex}`,
+      `0x${owner.identifierHex}`,
+    ])
+
+    return Hex.from(data)
   }
 
   /**

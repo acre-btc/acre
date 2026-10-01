@@ -72,8 +72,8 @@ export default function SuccessModal({ type }: SuccessModalProps) {
           {ACTION_FLOW_TYPES.UNSTAKE === type && (
             <Text size="md">
               {withdrawsToTbtc
-                ? "Your tBTC will be sent to the Ethereum address you provided once the withdrawal is processed. Track the status in your dashboard."
-                : "Your BTC will appear in your wallet in approximately 14 days. Track the status in your dashboard."}
+                ? "Your tBTC has been sent to the Ethereum address you provided. Track the status in your dashboard."
+                : `Your BTC will appear in your wallet in approximately ${activitiesUtils.getWithdrawalDuration()}. Track the status in your dashboard.`}
             </Text>
           )}
           {ACTION_FLOW_TYPES.STAKE === type && txHash && (
@@ -96,10 +96,11 @@ export default function SuccessModal({ type }: SuccessModalProps) {
             <Text size="sm">You can close this window.</Text>
             <Text size="sm">The process will continue in the background.</Text>
             <Text size="sm" color="text.tertiary">
-              Estimated duration&nbsp; ~{" "}
+              Estimated duration&nbsp;{" "}
               {activitiesUtils.getEstimatedDuration(
                 tokenAmount?.amount ?? 0n,
                 activityType,
+                withdrawsToTbtc ? "tbtc" : "bitcoin",
               )}
             </Text>
           </AlertDescription>
