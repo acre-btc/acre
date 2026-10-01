@@ -141,7 +141,11 @@ export default function SignMessageModal() {
             txHash: activityTxHash,
             type: "withdraw",
             destination: destination.type === "tbtc" ? "ethereum" : "bitcoin",
-            status: "pending",
+            // The tBTC redemption settles in the withdrawal transaction itself,
+            // and the relayer returns its hash only once it is mined
+            // successfully - so it is already complete, as the subgraph will
+            // report it. Only the Bitcoin one is still in the tBTC Bridge.
+            status: destination.type === "tbtc" ? "completed" : "pending",
             // This is a requested amount. The amount of BTC received will be
             // around: `amount - transactionFee.total`.
             // TODO: Based on the comment above: shouldn't we use total fee
