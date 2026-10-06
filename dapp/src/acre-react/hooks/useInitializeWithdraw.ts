@@ -18,7 +18,7 @@ export default function useInitializeWithdraw() {
     ) => {
       if (!acre || !isConnected) throw new Error("Account not connected")
 
-      return acre.account.initializeWithdrawal(
+      return acre.account.initializeBitcoinWithdrawal(
         amount,
         dataBuiltStepCallback,
         onSignMessageStep,

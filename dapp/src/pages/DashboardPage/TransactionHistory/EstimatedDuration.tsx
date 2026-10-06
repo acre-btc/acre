@@ -35,8 +35,9 @@ export default function EstimatedDuration({
             {activitiesUtils.getEstimatedDuration(
               activity.amount,
               activity.type,
-              undefined,
-              activity.status,
+              activitiesUtils.isWithdrawToEthereum(activity)
+                ? "tbtc"
+                : "bitcoin",
             )}
           </Box>
         </TagLabel>

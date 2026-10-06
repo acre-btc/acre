@@ -16,6 +16,7 @@ import {
   Text,
 } from "@chakra-ui/react"
 import { BaseModalProps } from "#/types"
+import { activitiesUtils } from "#/utils"
 import { useMobileMode } from "#/hooks"
 import {
   step1Video,
@@ -74,10 +75,10 @@ const steps = [
       </Text>
     ),
     content: () => (
+      // `Highlight` scans a single string for its query, so the estimate has
+      // to be interpolated rather than dropped in as a sibling node.
       <Highlight query="Acre Points Program">
-        Deposit BTC to start earning. Monitor your position, review the vaults,
-        earn with the Acre Points Program automatically, and redeem back into
-        Bitcoin within 14 days. Your bitcoin, on-chain, working for you.
+        {`Deposit BTC to start earning. Monitor your position, review the vaults, earn with the Acre Points Program automatically, and redeem back into Bitcoin in around ${activitiesUtils.getWithdrawalDuration()}. Your bitcoin, on-chain, working for you.`}
       </Highlight>
     ),
     video: step3Video,
